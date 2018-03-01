@@ -1,0 +1,395 @@
+\chapter{Feedback on Issue 3}
+I have received some feedback from a couple of my readers - Hi Wolfgang, Hi George - on a number of the topics covered in the last issue.
+
+\section{BubbleSort}
+
+\subsection{Wolfgang Lenerz}
+
+\textbf{WL: }In line 76 of the bubble sort on page 17, you move the length of the string into d0. What happens if this is a 0 length string (could happen
+if one were to adopt your code to become a basic keyword, for example). In that case, lots of memory might be overwritten. Perhaps a \opcode{BEQ} to the
+end of the routine might be useful.
+
+\textbf{ND: }Yes, good catch. I admit that I always do that! George has told me off for it many times. I though I'd learned but it appears not.
+
+You are correct, if it was zero, it would result in lots of memory being sorted that perhaps didn't need to be!
+
+This problem also appears at line 74 on page 16 too. The solution to both is simple, amend the code to amend \emph{Listing 2.4 Bubblesort} on page 16 and \emph{Listing 2.5 Better Bubblesort} on page 17 to the following, which is a corrected version on listing 2.5 on page 17 by the way.
+
+\begin{lstlisting}[firstnumber=51,caption={Better Bubblesort - Bug Fix 1a}]
+;--------------------------------------------------------------------
+; ENTRY:
+; For entry at label bubblesort:
+;
+; A1.L = Start address of data to be sorted. Word count first.
+;
+;--------------------------------------------------------------------
+; WORKING:
+;
+; A1.L = Start Address of data to be sorted, word count first.
+; A2.L = Data being compared right now. (-1(a2) and (a2)).
+; A3.L = Address of the Compare and swap routine.
+; D0.W = `n' = end of unsorted data.
+; D1.B = Temp for swapping.
+; D2.W = `i' = loop counter.
+; D3.W = `newn' = last item sorted.
+;--------------------------------------------------------------------
+; EXIT:
+;
+; D0.L = 0.
+; A1.L = Preserved - Start address of sorted bytes' word count.
+; All other registers preserved.
+;--------------------------------------------------------------------
+bubblesort
+        movem.l d1-d3/a1-a2,-(a7)
+        move.w (a1)+,d0       ; N = length(a)
+        beq.s bs_done         ; Nothing to do, bale out
+        subq.w #1,d0          ; We need n-1 when testing
+...
+\end{lstlisting}
+
+And now we need a label \asmlabel{bs\_done} at the end which will allow us to exit from the code if there are no items to be sorted.
+
+\begin{lstlisting}[firstnumber=96,caption={Better Bubblesort - Bug Fix 1b}]
+bs_until
+        bne.s bs_repeat       ; Until n = 0
+
+bs_done
+        movem.l (a7)+,d1-d3/a1-a2
+        clr.l d0
+        rts
+\end{lstlisting}
+
+If you wish to save time very slightly, then you could rearrange the above code as follows, because D0 is already set to zero, there's no need for the register to be cleared:
+
+\begin{lstlisting}[firstnumber=96,caption={Better Bubblesort - Better Bug Fix 1b}]
+bs_until
+        bne.s bs_repeat       ; Until n = 0
+        clr.l d0
+
+bs_done
+        movem.l (a7)+,d1-d3/a1-a2
+        rts
+\end{lstlisting}
+
+Of course, that's not all there is to it, as George points out below, what's the point of sorting zero or 1 items? You need at least two to get a decent sort.
+
+\subsection {George Gwilt}
+
+\textbf{GG:}I have two comments on the bubble sort, the first concerns what the program
+does and the second on how it does it.
+
+
+\subsection{Program Content}
+
+\textbf{GG:}The aim is to sort a set of integers into ascending numerical order. The list is scanned several times with successive pairs being swapped if needed to set them in the right order. Since each comparison takes place after any previous swap it implies that the largest item must inevitably end up at the end of the set after each scansion\footnote{An interesting word that I had never seen or heard before, that I could recall. The definition is \emph{The rhythm of a line of poetry, or the process of examining the rhythm of a line of poetry} from \url{https://dictionary.cambridge.org/dictionary/english/scansion}}. 
+
+This means that the number of items scanned can be reduced by one at each go. The algorithm used performs all the scansions down to the last one of two items. One of the members of SQLUG suggested that if you detected a scansion during which there were no swaps you could stop the process at that point. This could reduce the time taken.
+
+\textbf{ND: }I might not be reading the above correctly, but the algorithm used in my version does indeed stop when it reaches the last placed item as it ``knows'' that all following items are already sorted.
+
+This is facilitated by comparing \register{D2.W} with \register{D0.W} at label \asmlabel{bs\_end\_if} where \register{D2.W} is the counter (N) through the array of bytes and \register{D0.W} is the index (NEWN) of the last item sorted on the previous pass.
+
+Having said that, it is of course true that an early exit should be made when there were no swaps made in a pass, the array of bytes is sorted.
+
+
+\subsection{Program Coding}
+
+\textbf{GG:}A BASIC program expresses a FOR loop as proceeding from smaller to larger. For example:
+
+\begin{lstlisting}[firstnumber=1,caption={SuberBasic FOR Statement}]
+FOR x = 1 to 9
+\end{lstlisting}
+
+
+The literal translation of that to Assembly Language requires increasing x by one during each loop and comparing the new value of x with 9 to end the loop. However, the normal method of counting in Assembler programs is by the use of the DBcc instructions which combine the reduction of x from its top value to zero with the test.
+
+
+\subsection{A Suggested Alternative Program}
+
+\textbf{GG:}What follows is a subroutine which deals with both points. Four instructions are marked with asterisks. These instructions are the extra ones needed for earlier detection of completion. The instructions can be omitted if earlier detection is not wanted. 
+
+To detect if a swap has been made during the scanning of a list, the most significant bit of D2 is used. This is set to zero at the start of each scansion and is set to 1 whenever a swap occurs during that scansion.
+
+This program allows for an error exit. This will occur if the word count of
+the string to be sorted is less than 2. You have to have at least two items
+to allow any comparisons. And what is the use of sorting a string length of
+one, or even zero?
+
+\textbf{ND: }Yes, it's obvious really isn't it? Especially when someone points it out!
+
+
+\begin{lstlisting}[firstnumber=1,caption={Even Better Bubblesort!}]
+; At entry
+;
+;  A1.L = Start address of data to be sorted. Word count first.
+;
+; At exit
+;
+;  D0.L = error code
+;  All other registers preserved
+
+
+
+
+bs_reg    reg       d1-2/a1-2
+
+bs_0      movem.l   bs_reg,-(sp)
+          move.w    (a1)+,d2            number of items . .
+          subq.w    #2,d2               . . less 2
+          bpl       bs_1                OK
+          moveq     #-15,d0             bad parameter . .
+          bra       bs_5                . . error exit
+
+bs_1      bclr      #31,d2              clear change marker  **
+          move.w    d2,d0               length of list
+          movea.l   a1,a2               point to start of items
+
+bs_2      move.b    (a2)+,d1            current item . .
+          cmp.b     (a2),d1             . . compare with next
+          ble       bs_3                no change needed
+          move.b    (a2),-1(a2)         swap . .
+          move.b    d1,(a2)             . . items
+          bset      #31,d2              mark change occurred  **
+
+bs_3      dbf       d0,bs_2             count list
+          tst.l     d2                  any changes? . .      **
+          bpl       bs_4                . . no - ended        **
+          dbf       d2,bs_1             sort shorter string
+
+bs_4      moveq     #0,d0               OK exit
+
+bs_5      movem.l   (sp)+,bs_reg
+          rts
+\end{lstlisting}
+
+
+\section{Multiprint}
+
+
+\subsection{Wolfgang Lenerz}
+
+\textbf{WL: }In the \asmlabel{Multiprint} routine on page 22, you have the \asmlabel{mp\_loop} as follows:
+
+
+\begin{lstlisting}[firstnumber=70,caption={Original MultiPrint}]
+mp_loop
+    move.l a1,-(a7)           ; Save current string
+    move.w ut_mtext,a2        ; Get  the vector
+    jsr (a2)                  ; Print current string
+    bne.s mp_oops             ; Something bad happened
+    move.l (a7)+,a1           ; Start of current string
+    adda.w (a1),a1            ; Add size word
+    addq.l #3,a1              ; Prepare to make even
+    move.l a1,d5
+    bclr #0,d5                ; D5 now points at next string
+    move.l d5,a1              ; Back into A1
+\end{lstlisting}
+
+I think this could be replaced by
+
+\begin{lstlisting}[firstnumber=71,caption={Wolfgang's MultiPrint}]
+mp_loop
+    move.l a1,d5              ; Save current string
+    adda.w (a1),d5            ; Preset pointer to next 
+    move.w ut_mtext,a2        ; Get  the vector
+    jsr (a2)                  ; Print current string
+    bne.s mp_oops             ; Something bad happened
+    addq.l #3,d5              ; Prepare to make even
+    bclr #0,d5                ; D5 is now even
+    move.l d5,a1              ; Back into A1
+\end{lstlisting}
+
+This is not only 2 instructions shorter, it also avoids using the stack, and thus accessing memory which is always slow.
+
+\textbf{ND: }I like the stack! That's what it's there for. But yes, you are correct, I could have just used D5 in this manner and saved the need to push and pop pointer values to and from the stack, which is slow memory access rather than speedy register to register access.
+
+How much speedier is using a register? Well, unfortunately, the more recent 680xx Programmer's\footnote{Only \emph{one} programmer?} Manuals don't list the execution times of the instructions, but my old First Edition (1984) copy of \emph{M68000 16/32-Bit Microprocessor Programmer's Reference Manual} lists them for the 68008 and the 68010. The following is from the 68008 section.
+
+To stack \register{A1.L} using Address Register Indirect with Pre-Decrement requires a grand total of 24 clock cycles.
+
+To simply move \register{A1.L} into \register{D5.L} takes a grand total of 8 clock cycles. So Wolfgang's method is quite a bit faster (ok, I admit it, it's 3 times faster for one instruction and I have two of these plus another two that Wolfgang has omitted, so even faster still!)
+
+
+\textbf{WL: }I also have a question which might be due to the fact that I use \program{QMAC}Qmac and you use \program{GWASL}Gwasl which I don't know about.
+
+You write your strings as follows
+
+
+\begin{lstlisting}[firstnumber=1,caption={MultiPrint String Table Example}]
+s1     dc.w s1e-s1-2
+       dc.b 'This is a demo of MultiPrint '
+s1e    equ *
+       ds.w 0
+
+s2     dc.w s2e-s2-2
+\end{lstlisting}
+
+We agree, I presume that if the length of the string is uneven, then label \asmlabel{s1e} points to an odd address. Is this why you use the \opcode{ds.w 0} afterwards, to make sure the following label at \asmlabel{s2} lies at an even address?
+
+Under \program{QMAC}QMAC this wouldn't be necessary since the label at \asmlabel{s2} starts with a \opcode{dc.w} and so \program{QMAC}Qmac would put it at an even address, avoiding the unnecessary \opcode{ds.w}, inserting a padding byte if necessary. I don't know whether this is a speciality of \program{QMAC}Qmac or if \program{GWASL}Gwasl does the same, in which case the \opcode{ds.w} would not be strictly necessary. (I know it doesn't actually add a word to the code itself). 
+
+\textbf{ND: }You are correct. It isn't really required as both \program{GWASL}Gwasl and \program{GWASS}Gwass automatically adjust the address to be even when a \opcode{dc.w} or \opcode{dc.l} directive is found. The various \opcode{ds.w 0} directives are not strictly necessary.
+
+I did have to run a quick test with both of these assemblers to be absolutely certain though!
+
+
+\section{HexDump}
+
+\subsection{Wolfgang Lenerz}
+
+\textbf{WL: }At label \asmlabel{hex\_nibble} in the \asmlabel{hex\_dump} program, instead of stacking \register{D4}, you could \opcode{move.b d4,d2} and do all the calculations on \register{D2}. No need, then, to get \register{D4} back from the stack. 
+
+\textbf{ND: }See above! I sit corrected. Thanks.
+
+
+\subsection{George Gwilt}
+
+\textbf{GG: }The Hexdump utility produces almost the same output as the menu item 7 of my program \program{NET\_PEEK}NET\_PEEK so I was interested to see what were the differences.
+
+The output is identical apart from the ASCII representation being enclosed in square brackets (\program{NET\_PEEK}NET\_PEEK has none) and the unprintable characters are replaced by dot (full stop or period). The first of these is minor but the second, printing a dot for the unprintable, makes it impossible to tell which characters are really dots. I would regard that as a flaw, though a minor one.
+
+\textbf{ND: }As I mentioned in the article, I am a frequent user of the Linux \program{Hexdump}hexdump utility and decided that I needed something similar on my QL. 
+
+To this end, the utility as published prints the data in a manner pretty close to how running the command \opcode{hexdump -C some\_file.bin} would. The only difference is that where I use square brackets, \program{Hexdump}hexdump uses pipe characters, aka `|' instead.
+
+\program{Hexdump}Hexdump also displays unprintable characters as dots, but I wonder how \program{NET\_PEEK}NET\_PEEK displays them? I've never used \program{NET\_PEEK}NET\_PEEK - possibly because the name implies something to do with the QL's network, which I've pretty much never used.
+
+Does \program{NET\_PEEK}NET\_PEEK display unprintable characters with a space? Or a question mark? Whatever character is being printed will cause confusion as there will be a printable character representing an unprintable one! 
+
+Still, as George says, it's a minor flaw, however, it's pretty much a standard to print a dot - I've seen it on various utilities in Linux, Unix, ICL VME mainframes, IBM mainframes and even, Windows.
+
+\textbf{GG: }The program differs in the method of producing the HEX. Although \program{NET\_PEEK}NET\_PEEK has been available for some time now and is expected to work on all types of QL it uses the QDOS ITOH hex routines and these seem to be OK.
+
+\textbf{ND: }I have a vague recollection of checking the QDOS version with the \trap{MT\_INF} trap call and if it was 1.03 and above, I used the internal routines but if not, I used my own. Eventually though, I gave up on having two ways to do the same thing and simply used my own for everyone.
+
+I checked the various docs. 
+
+\begin{note}
+Read on and see just how easily I get confused. I'm about to embarrass myself by getting completely the wrong end of the stick, plus, I've been doing it for years! Maybe I should just give up now while the going is good?
+
+The penny finally dropped just after I read the docs in Tebby \& Karlin.
+
+I could have removed all this, but I'm leaving it in as a reminder that some routines don't work, but mainly as a reminder to myself to \emph{pay attention and learn to read properly!}
+\end{note}
+
+Pennell states in \emph{The Sinclair QDOS Companion} on page 110 that \emph{there are many QDOS vectors to convert between various bases, but unfortunately several do not work in current versions of QDOS.} Dickens on the other hand, is more specific in his \emph{QL Advanced User Guide} where he states that it is version 1.03 of QDOS, and below, where the conversion routines do not work, and specifically notes this against the following on pages 234 onwards:
+
+\begin{itemize}
+\item \vector{CN\_BTOIB} \$104 ASCII Binary to byte.
+\item \vector{CN\_BTOIW} \$106 ASCII Binary to word.
+\item \vector{CN\_BTOIL} \$108 ASCII Binary to long.
+\item \vector{CN\_HTOIB} \$10A ASCII Hex to byte.
+\item \vector{CN\_HTOIW} \$10C ASCII Hex to word.
+\item \vector{CN\_HTOIL} \$10E ASCII Hex to long.
+\end{itemize}
+
+Pennell also notes that these are broken on page 112. Apparently they \emph{contain a large number of mistakes, and so do not work}. :-(
+
+I've used my own versions for many years in numerous (well, quite a few) of my programs where it was required to avoid those bugs in QDOS versions from causing hard to track down problems if anyone using older (JM and previous?) ROMs. I know that they work on JS ROMs as my copy of Pennell is annotated as such for each of the above conversion routines.
+
+I wonder if anyone still uses JM based QLs?
+
+Tebby and Karlin in \emph{QL Technical Guide} also mention that the above are fubar\footnote{FUBAR - F*d Up Beyond All Recognition!} in QDOS 1.03 and below.
+
+Of course, if I had been paying attention, I'd have noticed that these broken routines are the ones which convert \emph{from} an ASCII string of binary or hex digits \emph{to} a value on the maths stack. These are not what I needed to use, so I checked the docs again. The various conversion \emph{from} binary \emph{to} ASCII strings routines \emph{do} work, and have done in all versions of QDOS it seems! One day, I'll learn to read\footnote{Somehow I doubt it!}. Sigh.
+
+\section{Jump tables}
+
+\subsection{George Gwilt}
+
+\textbf{GG: }Curiously enough \program{NET\_PEEK}NET\_PEEK, as well as producing a hex dump, also makes use of a Jump Table.
+
+The table is exactly of the format described in Assembly\_Language\_003 but the coding differs slightly, partly because there seems to have been an
+instruction left out in \asmlabel{got\_good\_option}, the last three instructions of which are:
+
+\begin{lstlisting}[firstnumber=27,caption={Jump Table Code Extract}]
+         lsl.w     #1,d0
+         lea       JumpTable,a2
+         jsr       (a2,d0.w)
+\end{lstlisting}
+
+(This is from page 39.) 
+
+The contents of \register{(a2,d0.w)} are the offset from JumpTable to the option denoted by the content of \register{D0.W}. Alas, the actual program resides at the address whose value is the offset plus the address of the jump table.
+
+Here is what \program{NET\_PEEK}NET\_PEEK does at this point in its program:
+
+\begin{lstlisting}[firstnumber=1,caption={NET\_PEEK Code Extract}]
+         add.w  d7,d7          (a differed doubling and of D7 not D0)
+         lea    prog,a2        The jump table
+         move.w (a2,d7.w),d7   Set D7 to the offset from the Table
+         jmp    (a2,d7.w)      Jump to the program
+\end{lstlisting}
+
+
+I think that the instruction \opcode{move.w (a2,d0.w),d0} must have been forgotten in the printing of Jump Tables.
+
+\textbf{ND: }Yes, this is indeed a bug, which is strange as it's extracted from a working program. I'll need to check that now!
+
+Ok, I checked. The working program does have the missing instruction present, so it's a copy \& paste error on my part. It also uses \opcode{JMP}.
+
+\textbf{GG: }It is a very minor point, but the doubling of \register{D0} is carried out using \opcode{LSL} whereas I have used \opcode{ADD} to double \register{D7}.
+
+Is there any reason for preferring the use of \opcode{LSL} rather than \opcode{ADD} to double a number? 
+
+\textbf{ND: }Timings perhaps? Because I've always done it that way? Someone told me it was quicker? I checked the 68008 timings for \opcode{add.w d0,d0} and \opcode{lsl.w \#1,d0}. The former takes 8 cycles while the latter takes 12. Looks like I've been misinformed again! \opcode{ADD} is about 30\% quicker.
+
+\textbf{GG: }My reason is purely personal. I would always use either \opcode{LSL} or \opcode{ASL} to raise to a power of two greater than one. However, each time I have to decide which to use. Does it make a difference? If so what? Also I have to remember to use \opcode{LSL} (or \opcode{ASL}) instead of \opcode{LSR} (or \opcode{ASR}). I determine this always by pointing to the left (or right) and then deducing whether the shift will make the number bigger or smaller. The use of \opcode{ADD} is thus, for me, much simpler!
+
+\textbf{ND: }Phew! I see what you mean, logical shifts or arithmetic ones? Who needs them when we can simply double a number by adding it to itself!
+
+The ARM processor doesn't have, as far as I remember\footnote{I might just be thinking of Atmel AVR assembly language here actually, an 8 bit microcontroller forund in the Arduino, for example.}, an instruction to shift (logical or arithmetical) one place left or right. You can use the instruction in your source code, but either the assembler converts it to an \opcode{ADD} instruction, or, the bit pattern in the assembled binary code is exactly the same as that for an \opcode{ADD} - it's one or the other. (Apologies in advance if I've got it wrong here, my ARM docs are not at hand!)
+
+\textbf{GG: }The reason for accessing the required program by \opcode{JSR} rather than \opcode{JMP} is given on page 36. Since \program{NET\_PEEK}NET\_PEEK uses \opcode{JMP} I wondered if I had missed out here. However I could not easily see how I could rewrite the code with \opcode{JSR}.
+
+I wondered how a very much simplified system would be improved by the use of \opcode{JSR}. Let us suppose that there are four steps in such a program as follows:
+
+\begin{enumerate}
+\item Display Options.
+\item Find the Choice.
+\item Execute the chosen option.
+\item Return to 1.
+\end{enumerate}
+
+If we use \opcode{JSR} in step 3 then each option program must end \opcode{RTS} and step 4 becomes, in the main program, the branch instruction to step 1.
+
+If we use \opcode{JMP} in step 3 instead of \opcode{JSR} then each option program must end with a branch to step 1 and there is no such branch in the main program.
+
+Thus using \opcode{JMP} instead of \opcode{JSR} reduces the program by one instruction - a good result, both in terms of length and time.
+
+\textbf{ND: }Yes, timings. Yet again, your version outperforms mine. \opcode{JMP (a2,d7.w)} takes 22 cycles plus a further 18 for the \opcode{BRA} to exit each routine. \opcode{JSR (a4,d7.w)} requires 38 plus 32 to execute the \opcode{RTS} and yet another 18 for the \opcode{BRA} that comprises step 4 above. 
+
+\textbf{GG: }What am I missing?
+
+I examined \program{NET\_PEEK}NET\_PEEK more closely and found that the final branches of some options entered at the last few instructions of some other option. There was no set of instructions common to all options which could have been put in the main program and obeyed after \opcode{RTS} from every option. So \opcode{JMP} seems to be necessary for my \program{NET\_PEEK}NET\_PEEK.
+
+\textbf{ND: }Technically, if I'm reading the above correctly, your routines could have been called with \opcode{JSR} and ended with an \opcode{RTS} instruction where necessary. Those routines that exit via the last few instructions of another routine could have continued to do so. You could therefore have used \opcode{JSR} instead of \opcode{JMP} and had the same effect, only slower!
+
+
+\textbf{A Further Twist}
+
+\textbf{GG: }Each line in the Jump Table ends " - JumpTable". When there are many items in a table it can become tedious to type these last few characters each time.
+
+\textbf{ND: }True, at least using a QL to do the source code editing. I'm afraid that I have found that after too many years using Windows and Linux editors, that they are pretty much standard in the use of editing keys etc. 
+
+Also, and most irritatingly, when I use CTRL+ALT+LEFT or CTRL+ALT+RIGHT to delete to the start or end of a line, in Linux it switches my desktops around because Linux grabs the key strokes before \program{QPC}QPC gets them! 
+
+For those who still use Windows, you have a single desktop. In Linux, I have as many as I like, each with different icons on the desktop, programs open in them etc. I can have my source editing on desktop 1, assembler and QPC on desktop 2 and so on. I can switch between them at will.
+
+I use a Linux editor to write my source code these days, and simply open it in \program{QPC}QPC, assemble it, fix it in \program{QED}QED while still in  \program{QPC}QPC. Eventually I get a working version which I save the updated source code back to Linux for inclusion in the articles.
+
+I use copy and paste to generate all those nasty repetitive bits. Or, indeed, sometimes I can use a macro command in the Linux editor.
+
+\textbf{GG: }A very slight change to the coding can reduce the typing. In this version each line of the table contains the offset, not from the start of the table but from that very line. This is achieved by using asterisk instead of the table's name. Thus each line of the table would end " - *"
+
+The instructions could now be:
+
+\begin{lstlisting}[firstnumber=1,caption={Improved Jump Table Code}]
+         lea       JumpTable(d0.w),a2
+         move.w    (a2),d0
+         jmp       (a2,d0.w)
+\end{lstlisting}
+
+The first instruction sets \register{A2} pointing to the appropriate line in the table, not its head.
+
+\textbf{ND: }Saves typing and reduces the program by another instruction too. 

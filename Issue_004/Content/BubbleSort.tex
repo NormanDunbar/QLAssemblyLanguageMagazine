@@ -1,0 +1,161 @@
+\chapter{BubbleSort Revisited}
+Last time out, you may remember, I did a small and simple BubbleSort routine to enable the sorting of the characters in a QDOSMSQ string, or a table of word or long integers. Well, I've received a couple of comments on that article, so here they are. Thanks for the feedback.
+
+\section{Wolfgang Lenerz}
+
+
+In line 76 of the bubble sort on page 17, you move the length of the string into d0. What happens if this is a 0 length string (could happen
+if one were to adopt your code to become a basic keyword, for example). In that case, lots of memory might be overwritten. Perhaps a \opcode{BEQ} to the
+end of the routine might be useful.
+
+\textbf{ND:} Yes, good catch. I admit that I always do that! George has told me off for it many times. I though I'd learned but it appears not.
+
+You are correct, if it was zero, it would result in lots of memory being sorted that perhaps didn't need to be!
+
+This problem also appears at line 74 on page 16 too. The solution to both is simple, amend the code to amend \emph{Listing 2.4 Bubblesort} on page 16 and \emph{Listing 2.5 Better Bubblesort} on page 17 to the following, which is a corrected version on listing 2.5 on page 17 by the way.
+
+\begin{lstlisting}[firstnumber=51,caption={Better Bubblesort - Bug Fix 1a}]
+;--------------------------------------------------------------------
+; ENTRY:
+; For entry at label bubblesort:
+;
+; A1.L = Start address of data to be sorted. Word count first.
+;
+;--------------------------------------------------------------------
+; WORKING:
+;
+; A1.L = Start Address of data to be sorted, word count first.
+; A2.L = Data being compared right now. (-1(a2) and (a2)).
+; A3.L = Address of the Compare and swap routine.
+; D0.W = `n' = end of unsorted data.
+; D1.B = Temp for swapping.
+; D2.W = `i' = loop counter.
+; D3.W = `newn' = last item sorted.
+;--------------------------------------------------------------------
+; EXIT:
+;
+; D0.L = 0.
+; A1.L = Preserved - Start address of sorted bytes' word count.
+; All other registers preserved.
+;--------------------------------------------------------------------
+bubblesort
+        movem.l d1-d3/a1-a2,-(a7)
+        move.w (a1)+,d0       ; N = length(a)
+        beq.s bs_done         ; Nothing to do, bale out
+        subq.w #1,d0          ; We need n-1 when testing
+...
+\end{lstlisting}
+
+And now we need a label \opcode{bs\_done} at the end which will allow us to exit from the code if there are no items to be sorted.
+
+\begin{lstlisting}[firstnumber=96,caption={Better Bubblesort - Bug Fix 1b}]
+bs_until
+        bne.s bs_repeat       ; Until n = 0
+
+bs_done
+        movem.l (a7)+,d1-d3/a1-a2
+        clr.l d0
+        rts
+\end{lstlisting}
+
+If you wish to save time very slightly, then you could rearrange the above code as follows, because D0 is already set to zero, there's no need for the register to be cleared:
+
+\begin{lstlisting}[firstnumber=96,caption={Better Bubblesort - Better Bug Fix 1b}]
+bs_until
+        bne.s bs_repeat       ; Until n = 0
+        clr.l d0
+
+bs_done
+        movem.l (a7)+,d1-d3/a1-a2
+        rts
+\end{lstlisting}
+
+
+\section {George Gwilt}
+
+I have two comments on the bubble sort, the first concerns what the program
+does and the second on how it does it.
+
+
+\subsection{Program Content}
+
+The aim is to sort a set of integers into ascending numerical order. The list is scanned several times with successive pairs being swapped if needed to set them in the right order. Since each comparison takes place after any previous swap it implies that the largest item must inevitably end up at the end of the set after each scansion\footnote{An interesting word that I had never seen or heard before, that I could recall. The definition is \emph{The rhythm of a line of poetry, or the process of examining the rhythm of a line of poetry} from \url{https://dictionary.cambridge.org/dictionary/english/scansion}}. 
+
+This means that the number of items scanned can be reduced by one at each go. The algorithm used performs all the scansions down to the last one of two items. One of the members of SQLUG suggested that if you detected a scansion during which there were no swaps you could stop the process at that point. This could reduce the time taken.
+
+\textbf{ND:} I might not be reading the above correctly, but the algorithm used in my version does indeed stop when it reaches the last placed item as it ``knows'' that all following items are already sorted.
+
+This is facilitated by comparing \opcode{D2.W} with \opcode{D0.W} at label \opcode{bs\_end\_if} where \opcode{D2.W} is the counter (N) through the array of bytes and \opcode{D0.W} is the index (NEWN) of the last item sorted on the previous pass.
+
+Having said that, it is of course true that an early exit should be made when there were no swaps made in a pass, the array of bytes is sorted.
+
+
+\subsection{Program Coding}
+
+A BASIC program expresses a FOR loop as proceeding from smaller to larger. For example:
+
+\begin{lstlisting}[firstnumber=1,caption={SuberBasic FOR Statement}]
+FOR x = 1 to 9
+\end{lstlisting}
+
+
+The literal translation of that to Assembly Language requires increasing x by one during each loop and comparing the new value of x with 9 to end the loop. However, the normal method of counting in Assembler programs is by the use of the DBcc instructions which combine the reduction of x from its top value to zero with the test.
+
+
+\subsection{A Suggested Alternative Program}
+
+What follows is a subroutine which deals with both points. Four instructions are marked with asterisks. These instructions are the extra ones needed for earlier detection of completion. The instructions can be omitted if earlier detection is not wanted. 
+
+To detect if a swap has been made during the scanning of a list, the most significant bit of D2 is used. This is set to zero at the start of each scansion and is set to 1 whenever a swap occurs during that scansion.
+
+This program allows for an error exit. This will occur if the word count of
+the string to be sorted is less than 2. You have to have at least two items
+to allow any comparisons. And what is the use of sorting a string length of
+one, or even zero?
+
+\textbf{ND:} Yes, it's obvious really isn't it? Especially when someone points it out!
+
+
+\begin{lstlisting}[firstnumber=1,caption={Even Better Bubblesort!}]
+; At entry
+;
+;  A1.L = Start address of data to be sorted. Word count first.
+;
+; At exit
+;
+;  D0.L = error code
+;  All other registers preserved
+
+
+
+
+bs_reg    reg       d1-2/a1-2
+
+bs_0      movem.l   bs_reg,-(sp)
+          move.w    (a1)+,d2            number of items . .
+          subq.w    #2,d2               . . less 2
+          bpl       bs_1                OK
+          moveq     #-15,d0             bad parameter . .
+          bra       bs_5                . . error exit
+
+bs_1      bclr      #31,d2              clear change marker  **
+          move.w    d2,d0               length of list
+          movea.l   a1,a2               point to start of items
+
+bs_2      move.b    (a2)+,d1            current item . .
+          cmp.b     (a2),d1             . . compare with next
+          ble       bs_3                no change needed
+          move.b    (a2),-1(a2)         swap . .
+          move.b    d1,(a2)             . . items
+          bset      #31,d2              mark change occurred  **
+
+bs_3      dbf       d0,bs_2             count list
+          tst.l     d2                  any changes? . .      **
+          bpl       bs_4                . . no - ended        **
+          dbf       d2,bs_1             sort shorter string
+
+bs_4      moveq     #0,d0               OK exit
+
+bs_5      movem.l   (sp)+,bs_reg
+          rts
+\end{lstlisting}

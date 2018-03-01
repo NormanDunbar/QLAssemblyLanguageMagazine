@@ -1,0 +1,1052 @@
+\chapter{ASMReformat Utility}
+
+ASMReformat is a utility I wrote out of necessity. When I decided to upload DJToolkit to Github, I needed to convert all the tab characters into spaces (4 per tab) and to reformat the code so that it was consistent - labels in one column, opcodes in another column, operands in another and comments somewhere else on the line and so on.
+
+I started doing this manually but gave up after a while as it was tediously boring. As I was at work, where I used to do QL stuff in my lunch hour, I decided to write a program to assist in the onerous task of reformatting my code into something acceptable. Apart from personal desires, if the code is on Github, then anyone who wants to can download it and amend it as they see fit. With the original code, there were tab characters all over the place and in my setup, these set the positions on the line to 12, 20 and 40 (operands, opcodes and comments) which the Editor SE allowed me to do. Nowadays, I can find very few editors that allow asymmetric tabs in this manner, so opening \texttt{DJToolkit\_asm} in a normal editor would have messed up the code. So, tabs needed to be converted to spaces. Of course, with only three tabs, maximum, per line, setting tabs to any given width was going to be fraught! Some of my comments were a little all over the place too, but that's a smaller problem.
+
+Given that I was at work, the options open to me were Java\footnote{Which I loathe and detest with a vengeance!}, C or C++ as Oracle PL/SQL wouldn't really have cut the mustard! C++ it was then.
+
+If you look on github (\url{https://github.com/SinclairQL/DJToolkit}) you will notice a file named \texttt{DJTKReformat.cpp} in the \texttt{tools} folder. That's the utility I wrote to do the reformatting and while it worked fine, I've since discovered a bug in that it doesn't correctly format lines where a literal, or value, continues over more than  one line, for example:
+
+\begin{lstlisting}[firstnumber=1,caption={Continuation of Operands}]
+			...
+Message dc.w MessageEnd-Message-2       ; Word count
+        dc.b 'Some text goes here.',    ; To be continued...
+        dc.b ' And is continued here',
+        dc.b linefeed
+MessageEnd equ *
+			...	
+\end{lstlisting}
+
+A minor problem as it doesn't prevent the reformatted code from assembling, it just doesn't look nice - to my mind anyway. Plus, I'm a little worried that a utility I write, which might be useful to others, is written in such a way that you need a PC or a MAC to be able to reformat the source code of a QL assembly language program. The only solution was a complete rewrite in assembly.
+
+\subsection{Settings}
+
+The program is hard coded with the following settings:
+
+\begin{itemize}
+	\item Labels start in column 1 (or zero if that's what your text editor says - QD, I'm looking at you!)
+	\item Opcodes, ie the actual instructions, start in column 12. (Aka column 11 in QD.)
+	\item Operands, for those instructions which need them, start in column 20. (Or column 19 in QD etc.)
+	\item Comments, in line, start in column 40, \emph{unless}, the operand has exceeded column 38, in which case there will be a pair of spaces after the operand and the comment will begin in the next column after those two spaces. Adjust the column numbers to suit QD as above!
+	\item Full line comments always start with a semicolon (;), or asterisk (*) in the first column.
+	\item Blank lines are either lines where the only character is a linefeed, or, lines where there are no characters other than spaces, tabs and the final linefeed. This latter option is one which the original C++ utility did not handle specifically, but the library code used did it internally. This caused me some serious bug hunting as QD seems to have a nasty habit of silently inserting tab characters when I don't need or want them.
+	\item When parsing the original source code lines for labels, opcodes, operands and comments, the linefeed indicates the end of the input, and spaces or tabs (or the linefeed of course) indicate the end of whatever I'm parsing at the time.
+	\item Comments are allowed spaces and tabs. Labels, opcodes are not. Operands \emph{may} allow spaces and tabs, but only if they are wrapped in quotes - single or double.
+\end{itemize}
+
+If you do not wish to use my settings, simply locate the equates in the source code for the 4 column places and adjust to suit your wish. I'm pretty sure that labels, in all assembler rules, must begin in the first column of the line, where they are present.
+
+\begin{lstlisting}[firstnumber=62,caption={Configuration of Column Positions}]
+; Where the text goes on the output line(s). We need to offset
+; these by -1 as we count from zero in the buffers.
+labelPos
+           equ     1-1                 ; Labels in column 1
+opcodePos
+           equ     12-1                ; Opcodes in column 12
+operandPos
+           equ     20-1                ; Operands in column 20
+commentPos
+           equ     40-1                ; Comments in column 40
+\end{lstlisting}
+
+
+\subsection{Usage of ASMReformat}
+As with many of my recent articles\footnote{Yes, I know, it's been a long while since the last edition. Sorry about that, but I've been busy!}, \texttt{ASMReformat} is written as a filter, so execution is as follows:
+
+\begin{lstlisting}[numbers=none,caption={Executing ASMReformat}]
+ew ASMReformat_bin, 'input_file', 'output_file'
+\end{lstlisting}
+
+You will notice that I've used \texttt{EW} rather than \texttt{EX} as this returns an error code (and message) if there are problems with the execution. If you use \texttt{EX} instead, you don't see any error messages if the utility encounters any errors in its execution.
+
+The basic steps carried out by the utility are as follows:
+
+\begin{itemize}
+	\item Check the correct number of channels have been supplied.
+	\item Reads the input file in a loop, until EOF is detected. If errors occur, exit the utility. 
+	\item For each line of input read, the following processing takes place:
+
+	\begin{itemize}
+		\item If this is an operand continuation line then
+		
+		\begin{itemize}
+			\item Extract the operand continuation.
+			\item Extract any comments, if present.
+			\item Format the operand \& comments.
+			\item Write the reformatted line to the output, followed by a newline.
+			\item Skip back to the main loop again.
+		\end{itemize}
+		
+		\item If this line is entirely a comment, write it to the output file unchanged, and skip to the main loop start again.
+		\item If the line is blank, or has no actual content, write a blank line to the output file and skip back to the main loop start again.
+		\item Extract the label, if present.
+		\item Extract the opcode (or instruction) if present.
+		\item Determine if the opcode needs an operand to be presentt.
+		\item Extract the operand, if one is necessary.
+		\item Extract any comments at the end of the line.
+		\item Reformat the line as required.		
+	\end{itemize}
+	
+	\item The reformatted line is written to the output file, followed by a linefeed.
+	\item The main loop is then executed again.
+	\item At the end of file, the utility exits with no errors.	
+\end{itemize}
+
+\subsection{Field Extraction}
+
+To extract any of the required fields from the source line, the utility will first scan from the current position on the line until it hits a character that is not a space or tab. Actually, it scans for anything that is higher in the ASCII table than a space. A linefeed or character 10 ($ \$0A_{hex} $) indicates the end of the extraction.
+
+During extraction, all characters are read and buffered until a space, tab or linefeed\footnote{Once again, it's actually any character with an ASCII code less than or equal to a space - it's easier that way!} is detected in the line of text from the input file.
+
+For labels and opcodes, the text is simply extracted until a terminating character is read. For operands we have to be careful that we don't prematurely end the extraction during the parsing of a quoted string - all characters within the string are valid. Finally, comments allow all characters up to the terminating linefeed.
+
+
+\section{The Source Code}
+
+Having explained briefly what is happening, I'll now dive into the source code and attempt to explain what is happening.
+
+\begin{note}
+By the way, I will soon have the code uploaded to Github to save you all having to type in the long listings. When I get a chance, I'll upload all the code from previous articles too.
+\end{note}
+
+\begin{lstlisting}[firstnumber=1,caption={ASMReformat Source - Equates etc}]
+;--------------------------------------------------------------------
+; ASMReformat:
+;
+; A filter program using an input and output channel, passed on
+; the stack for its files.
+; 
+; EX ASMReformat_bin, input_file, output_file_or_channel
+;
+;--------------------------------------------------------------------
+; 29/12/2017 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------------
+; (c) Norman Dunbar, 2017. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------------
+
+me
+           equ     -1                  ; This job
+infinite
+           equ     -1                  ; For timeouts
+err_bp
+           equ     -15                 ; Bad parameter error
+err_ef
+           equ     -10                 ; End of file
+
+
+; Flag bits in D5.B:
+inComment
+           equ     0                   ; No comments on this line
+noOperand
+           equ     1                   ; This opcode has no operands
+continue
+           equ     2                   ; Operand continues on next line
+lfRequired
+           equ     3                   ; Do I need to print a linefeed?
+
+; Resets inComment, noOperand and lfRequired flags
+flagMask
+           equ     %11110100           ; Reset flags
+lowerCase2
+           equ     $2020               ; Mask to lowercase 2 characters
+lowerCase1
+           equ     $20                 ; Mask to lowercase 1 characters
+
+
+; Various character constants.
+linefeed
+           equ     $0A                 ; You can probably guess these!
+space
+           equ     $20
+comma
+           equ     ','
+tab
+           equ     $09
+semiColon
+           equ     ';'
+asterisk
+           equ     '*'
+dQuote
+           equ     '"'
+sQuote
+           equ     "'"
+\end{lstlisting}
+
+The first part of the listing is nothing exciting I'm afraid, it consists of a number of equates. Moving on...
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Configuration Section}]
+; Where the text goes on the output line(s). We need to offset
+; these by -1 as we count from zero in the buffers.
+labelPos
+           equ     1-1                 ; Labels in column 1
+opcodePos
+           equ     12-1                ; Opcodes in column 12
+operandPos
+           equ     20-1                ; Operands in column 20
+commentPos
+           equ     40-1                ; Comments in column 40
+\end{lstlisting}
+
+This is the section that allows you to reconfigure my default options to suit your code writing style. Remember to subtract 1 from each ``tab'' position that you wish to use - offsets into the buffer used to reformat the lines of code are indexed from zero. Some editors, notably \texttt{QD} number column positions from zero, while others do it from 1. Strangely enough, \texttt{QD} numbers lines from 1 - hmmm! 
+           
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Stack Offsets}]
+
+
+; Stack stuff.
+sourceId
+           equ     $02                 ; Offset(A7) to input file id
+destId
+           equ     $06                 ; Offset(A7) to output file id
+paramSize
+           equ     $0A                 ; Offset(A7) to command size
+paramStr
+           equ     $0C                 ; Offset(A7) to command bytes
+
+;====================================================================
+; Here begins the code.
+;--------------------------------------------------------------------
+; Stack on entry:
+;
+; $0c(a7) = bytes of parameter + padding, if odd length.
+; $0a(a7) = Parameter size word.
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;====================================================================
+\end{lstlisting}
+
+The code above defines the offsets onto the stack where the utility will find the count of files that should be on the stack - we need two of those, and where the two file IDs will be found when we need them.
+
+The size and contents of the command string passed are also defined here, but currently, there are no uses for a command string for this utility and they are simply ignored. If necessary, and for a bit of homework, you \emph{could} amend the program to accept a command line consisting of 4 numbers, comma separated, that define the desired ``tab'' positions for the output. It's up to you!
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Start Here!}]
+start
+           bra.s   checkStack
+           dc.l    $00
+           dc.w    $4afb
+name
+           dc.w    name_end-name-2
+           dc.b    'ASMReformat'
+name_end
+           equ     *
+
+version
+           dc.w    vers_end-version-2
+           dc.b    'Version 1.00'
+vers_end
+           equ     *
+
+
+bad_parameter
+           moveq   #err_bp,d0          ; Guess!
+           bra     errorExit           ; Die horribly
+\end{lstlisting}
+
+Finally, we get to some actual code. The section above consists of the standard QDOSMSQ job header and some error handling for those occasions when we get too few or too many files on the stack at runtime.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Clear Buffers }]
+
+clearBuffers
+           lea     labelBuffer,a0
+           clr.w   (a0)                ; Nothing in labelBuffer
+           lea     opcodeBuffer,a0
+           clr.w   (a0)                ; Nothing in opcodeBuffer
+           lea     operandBuffer,a0
+           clr.w   (a0)                ; Nothing in operandBuffer
+           lea     commentBuffer,a0
+           clr.w   (a0)                ; Nothing in commentBuffer
+           rts
+\end{lstlisting}
+
+The subroutine above is called from the main loop to make sure that the 4 buffers used for the 4 different fields of a source code line, are empty before we read the next line from the input file. 
+
+You can see that I've not bothered space filling the buffers - which would slow down the processing of a file - I simply set the word count to zero. When fields are extract from a source line, the appropriate word counts are correctly set so there are no spurious characters left over from previous lines to worry about.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Check Stack}]
+
+;--------------------------------------------------------------------
+; Check the stack on entry. We only require two channels and if a 
+; command string is passed, we simply ignore it - for now anyway!
+; We initialise the flags in D5.B to all off.
+;--------------------------------------------------------------------
+checkStack
+           cmpi.w  #$02,(a7)           ; Two channels is a must
+           bne.s   bad_parameter       ; Oops
+           moveq   #0,d5               ; Clear all flags 
+\end{lstlisting}
+
+A simple check of the number of opened files is done first. If we have two file IDs then we are good to go, otherwise, we bale out with a bad parameter error.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Main Loop}]
+
+startLoop
+           moveq   #infinite,d3        ; Timeout - preserved throughout
+
+;--------------------------------------------------------------------
+; Clear all the buffers and set up for the next read of the input
+; file. On EOF, we are done here, on error, we exit. This will return
+; the error code to SuperBASIC only if we EXEC_W/EW the program, EX
+; will never show the error.
+;--------------------------------------------------------------------
+readLoop
+           andi.b  #flagMask,d5        ; Reset some flags
+           bsr.s   clearBuffers        ; Clear all buffers
+           move.l  sourceId(a7),a0     ; Input channel id
+           lea     inputBuffer+2,a1    ; Buffer for read to use
+           move.l  a1,a4               ; inputPointer for later
+           moveq   #io_fline,d0        ; Fetch a line and LF
+           move.w  #1024,d2            ; Maximum buffer size = 1024
+           trap    #3                  ; Read next line
+           tst.l   d0                  ; Did it work?
+           beq.s   checkContinue       ; Not EOF yet, carry on
+           cmpi.l  #err_ef,d0          ; EOF?
+           beq     allDone             ; No, exit the main loop
+           bra     errorExit           ; Something bad happened then
+\end{lstlisting}
+
+Here we begin the main loop. First of all, and just before we start it, we set an infinite timeout in \texttt{D3}. We only have to do this once as that register is preserved throughout all the calls we make to QDOSMSQ.
+
+The loop begins by clearing out some flags that may have been set on the previous pass. These flags indicate the there was a comment on the previous line, that the previous line's opcode did not require an operand and the previous line required to be followed by a linefeed. We do not clear the continuation flag as we may still be processing a continuation line.
+
+The code reads up to 1024 characters, including the linefeed, from the input file. Any errors, other than EOF, cause the utility to abort, hopefully returning the error code to SuperBASIC as it dies horribly! At EOF, the utility exits quietly and without any fuss.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Operand Continuations}]
+
+;--------------------------------------------------------------------
+; The read was ok, so we need to check if this line is a continuation
+; of the operand from the previous line. We also store the word count
+; of the string just read at the start of the input buffer.
+;--------------------------------------------------------------------
+checkContinue
+           move.w  d1,-2(a4)           ; Save the string size	
+           btst    #continue,d5        ; Continuation set?
+           beq.s   checkAllComment     ; No, skip
+
+;--------------------------------------------------------------------
+; We are on a continuation line, so extract the operand and that will
+; also reset/set the continuation flag if necessary for a further
+; continuation of the operand.
+;--------------------------------------------------------------------
+doContinue
+           bclr    #lfRequired,d5      ; Nothing printed yet
+           bsr     extractOperand      ; Extract operand and set flag
+           bsr     extractComment      ; Grab any comments as well
+           bsr     clearBuffer         ; We always do this here
+           move.l  destID(a7),a0       ; Output channel Id
+           bra     doOperand           ; And continue from there
+\end{lstlisting}
+
+The code above processes any operand continuation lines. These are lines such as the following example:
+
+
+\begin{lstlisting}[numbers=none,caption={Example Operand Continuation}]
+           ...
+Message    dc.w MessageEnd-Message-2
+           dc.b 'This is the start of the text, ',  ; To be continued...
+           dc.b 'and this is the end.',    
+           dc.b linefeed           
+           ...
+\end{lstlisting}
+
+As you see there some instructions (or assembler directives) can have their operand split over many lines by the use of a trailing comma (before any comments of course).
+
+The section of code under discussion checks the flag and if set, the previous line was part of a continuation. In this case, we call the subroutines that extract an operand and any following comments, clear the input buffer - which is now being used as the output buffer, grab the output file  ID and branch to the code which writes out the operand followed by the comments, if present. From there, the code will return to the start of the main loop to process the next line of input, which may also be a continuation.
+
+\begin{lstlisting}[firstnumber=183,caption={ASMReformat Source - Comment Lines}]
+
+;--------------------------------------------------------------------
+; Is this line completely a comment line - in other words, is the 
+; first character a '*' or a ';' which indicates that it is a comment
+; line. Write it to the output, unchanged, if so, then read the next
+; line.
+;--------------------------------------------------------------------
+checkAllComment
+           cmpi.b  #semiColon,(a4)     ; Comment flag?
+           beq.s   doWriteComment      ; Yes
+           cmpi.b  #asterisk,(a4)      ; Or a comment flag?
+           bne.s   checkBlank          ; Not this kind, no.
+
+doWriteComment
+           move.l  destID(a7),a0       ; Output channel Id
+           lea     inputBuffer,a1      ; Buffer to write
+           bsr     doWrite             ; Write out a line
+           bra.s   readLoop            ; And go around again
+\end{lstlisting}
+
+If this line of source code is not a continuation, then the code above attempts to find out if it is a single line comment. Quite simply, if there is a semicolon (;) or an asterisk (*) in the first column, it's a comment line and if so, we simply write it to the output channel unchanged, then skip back to the top of the main loop.
+
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Checking for Blank Lines}]
+
+;--------------------------------------------------------------------
+; If D1.W = 1 we must assume it is a linefeed only, so this line is
+; blank. In this case we simply write it out.
+;--------------------------------------------------------------------
+checkBlank
+           cmpi.w  #1,d1               ; Linefeed only read in?
+           beq.s   doWriteComment      ; Print out blank line.
+\end{lstlisting}
+
+Assuming that the source line read in is not a comment line, is it a completely blank line? These are easily determined as the line length put into \texttt{D1.W} by the read routine includes the linefeed. If the counter happens to be 1, then we must only have read a linefeed character.
+
+If this is the case, we skip off to \texttt{doWriteComment} where we simply write out the input buffer to the output then return to the top of the main loop. This effectively writes a linefeed to the output file - as we desire.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Checking for Content}]
+
+;--------------------------------------------------------------------
+; Does the line actually have any content, if not just a linefeed?
+; Can you tell I got trapped in this? A4 = first character of the 
+; input buffer, just after the word count.
+; Calling scanForward adjusts A4 to the first non tab/space character
+; in the input buffer. If A4 points at a linefeed, the line is blank.
+;--------------------------------------------------------------------
+checkContent
+           bsr     scanForward         ; Return A4 at first character
+           cmpi.b  #linefeed,(a4)      ; Is line blank?
+           bne.s   gotContent          ; We have content - extract it
+
+;--------------------------------------------------------------------
+; We have hit the linefeed, so there's no actual content on this line
+; only tabs and/or spaces. Print a blank line to the output.
+;--------------------------------------------------------------------
+gotNoContent
+           move.l  destId(a7),a0       ; Output channel ID
+           bsr     doLineFeed          ; Print a linefeed
+           bra     readLoop            ; Go around
+
+;--------------------------------------------------------------------
+; We do have content, so go process it.
+;--------------------------------------------------------------------
+gotContent
+           lea     inputBuffer+2,a4    ; Reset input pointer
+           bra     extractData         ; No, do the necessary
+\end{lstlisting}
+
+Originally, I \emph{thought} that the above check for blank lines would suffice, after all, it's how I make a blank line - simply press the ENTER key. However, QD seems to have other ideas and I spent a lot of time hunting down a nasty bug whereby the output file was \emph{all over the place}.\footnote{A technical term!}
+
+I eventually discovered the problem by running the \texttt{HexDump} utility from a previous issue of this somewhat irregular eComic, and that showed that the blank lines in question had spaces, tabs and other invisible character and did not consist of a single linefeed after all. Sigh.
+
+The code above was written so that whenever a line is not blank, or suspected of not being blank, it will be scanned to see if there are characters that make it a valid source line.
+
+The code calls \texttt{scanForward} to do this and the character pointed to by \texttt{A4} on return is either a linefeed for the end of the input text, or a character which is above the space in the ASCII charts - a printable character in other words.
+
+If we have a linefeed, we skip off to write a linefeed to the output and rejoin the main loop at the top again, otherwise, we have got some content on the line and must process it. That processing starts a little way down the listing, so we skip over the following subroutines - which are involved in the extraction of the various fields in a source code line - to the code at label \texttt{extractData} which we can find at line 493 below. Did I mention that there are a few subroutines coming up next?
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Extracting Labels}]
+
+;--------------------------------------------------------------------
+; Copy any label from the inputBuffer to the labelBuffer. A4 is the
+; input buffer and we should be sitting at the start.
+; We assume there will be no label - most assembly lines have no
+; label - and check from there. A label has a non-space/tab/newline
+; in the first character, anything else is assumed to be a label. As
+; all those non-label characters are less than a space (ASCII) then
+; a simple test for anything lower or eqal to a space is done.
+;--------------------------------------------------------------------
+extractLabel
+           cmpi.b  #space,(a4)         ; First character a space?
+           bls.s   extractLabelDone    ; Yes, exit - no label
+
+;--------------------------------------------------------------------
+; We have a label, copy it to the labelBuffer. Keep a count of chars
+; copied in D0.
+;--------------------------------------------------------------------
+           lea     labelBuffer+2,a5    ; Our output buffer
+
+doCopyText
+           move.l  a5,a1               ; Save buffer
+           bsr     copyText            ; Go copy it
+
+extractLabelDone
+           rts
+\end{lstlisting}
+
+The subroutine above extracts labels from the start of a line. If the character at the start of the line is higher up the ASCII charts than a space character is, then we consider this to be a label and extract it using the \texttt{copyText} code, coming soon.
+
+Labels are copied from the input buffer to the label buffer.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Extracting Opcodes}]
+
+;--------------------------------------------------------------------
+; Copy any opcode from the inputBuffer to the labelBuffer. A4 should
+; be the first character in the inputBuffer. If the extracted opCode
+; doesn't need an operand, we set that flag accordingly.
+;
+; This routine leaves A5 1 byte past the last character read if the
+; opcode is NOT 3 or 5 in size - otherwise it will be the address of
+; the 1st or 3rd character read, depending on the opcode. See below.
+;--------------------------------------------------------------------
+extractOpcode
+           lea     opcodeBuffer+2,a5   ; Output buffer
+           bsr.s   doCopyText          ; Extract & copy opcode
+
+;--------------------------------------------------------------------
+; A5 now points one past the last character copied. A1 is still 
+; pointing at the first character read. D0 is the size of the opcode.
+; If the opcode is not 3 or 5 in size, it needs an operand.
+; The noOperand flag is currently reset as per the start of readLoop.
+;--------------------------------------------------------------------
+checkThree
+           cmpi.w  #3,d0               ; Did we get three characters?
+           beq.s   doThreeFive         ; Yes, skip
+
+checkFive
+           cmpi.w  #5,d0               ; Did we get 5 characters?
+           beq.s   doThreeFive         ; Yes, skip
+
+notThreeFive
+           rts                         ; We need an operand
+
+;--------------------------------------------------------------------
+; We get here if the opcode is 3 or 5 characters, now, is it one of
+; the ones we want?
+; We check the first 2 characters for 'no', 'rt', 're' or 'tr' and if
+; found we have to check the remainder of the opcode to see if it is
+; one which doesn't require an operand.
+;
+; These are: nop, reset, rte, rtr, rts, trapv.
+;
+; Reset and trapv are easy as they are the only 5 character opcodes
+; starting with 're' or 'tr' and they both do not take operands.
+;--------------------------------------------------------------------
+doThreeFive
+           move.l  a1,a5               ; Save first character start
+           move.w  (a1),d1             ; Get first 2 characters
+           ori.w   #lowerCase2,d1      ; Make lower case
+           cmpi.w  #'no',d1            ; NO for NOP
+           beq.s   doNO                ; Yes, skip
+           cmpi.w  #'rt',d1            ; RT for RTE, RTR, RTS
+           beq.s   doRT                ; Yes, skip
+           cmpi.w  #'re',d1            ; RE for RESET
+           beq.s   doTRRE              ; Yes, skip
+           cmpi.w  #'tr',d1            ; TR for TRAPV
+           bne.s   notThreeFive        ; No, exit
+
+;--------------------------------------------------------------------
+; This could be trapv or reset ... which as they are the only 5 
+; character opcodes that starts with 'tr' or 're' we must have a hit.
+; Exit with A5 pointing at the 1st character of the opcode.
+;--------------------------------------------------------------------
+doTRRE
+           bset    #noOperand,d5       ; There is no operand
+           rts                         ; Done
+
+;--------------------------------------------------------------------
+; This could be rte, rtr, rts ...
+; Exit with A5 pointing at the third character of the opcode.
+;--------------------------------------------------------------------
+doRT
+           addq.l  #2,a5               ; Next two characters
+           move.b  (a5),d1             ; Only need 1 character
+           ori.b   #lowerCase1,d1      ; Make lower case
+           cmpi.b  #'e',d1             ; RTE?
+           beq.s   doTRRE              ; Yes
+           cmpi.b  #'r',d1             ; RTR?
+           beq.s   doTRRE              ; Yes
+           cmpi.b  #'s',d1             ; RTS?
+           beq.s   doTRRE              ; Yes
+           rts                         ; It's not one of the above
+
+;--------------------------------------------------------------------
+; This could be nop ...
+; Exit with A5 pointing at the third character of the opcode.
+;--------------------------------------------------------------------
+doNO
+           addq.l  #2,a5               ; Next two characters
+           move.b  (a5),d1             ; Only need 1 character
+           ori.b   #lowerCase1,d1      ; Make lower case
+           cmpi.b  #'p',d1             ; NOP?
+           beq.s   doTRRE              ; Yes
+           rts                         ; It's not NOP           
+\end{lstlisting}
+
+The subroutine above extracts opcodes from the input line. It does this by calling the \texttt{copyText} subroutine. Opcodes are copied from the input buffer to the opcode buffer.
+
+Once an opcode has been extracted we check it to see if it requires an operand or not. Any operand which is not exactly three or five characters in size needs an operand. 
+
+If the length of the opcode is three or five, then we lower case the first two characters and begin a search for \texttt{NOP}, \texttt{RTE}, \texttt{RTR}, \texttt{RTS}, \texttt{RESET}, \texttt{TRAPV}. If those are found we set the \texttt{noOperand} flag so that we don't attempt to extract any operands for these instructions. 
+
+\texttt{RESET} and \texttt{TRAPV} are the only 5 character instructions, beginning with `RE' and `TR' that do not have operands, so if we have a 5 character opcode that begins with either of those two characters, then we definitely have to set the flag.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Extracting Operands}]
+
+;--------------------------------------------------------------------
+; Copy any operand from the inputBuffer to the operandBuffer. If this
+; opcode has no operands, do nothing, otherwise extract the operand
+; into the buffer. A4 is the input buffer pointer.
+; If the operand ends with a comma, then we need to set the continue
+; flag for the next line to continue the operand.
+;--------------------------------------------------------------------
+extractOperand
+           btst    #noOperand,d5       ; Do we need to do anything?
+           bne.s   extractOperandDone  ; No, skip
+
+;--------------------------------------------------------------------
+; We have an operand, copy it to the operandBuffer. Keep a count of 
+; chars copied in D0.
+;--------------------------------------------------------------------
+           bclr    #continue,d5        ; Assume no continuation
+           lea     operandBuffer+2,a5  ; Our output buffer
+           bsr     doCopyText          ; Copy operand
+           cmpi.b  #comma,-1(a5)       ; Last character a comma?
+           bne.s   extractOperandDone  ; No, skip
+           bset    #continue,d5        ; We have a continuation
+
+extractOperandDone
+           rts
+\end{lstlisting}
+
+The subroutine above extracts operands from the input line. It does this by calling the \texttt{copyText} subroutine. Operands are copied from the input buffer to the operand buffer.
+
+We obviously do not need to extract an operand if the flag that says not to is set. After extracting the operand, if the final character was a comma (,) then we need to continue extracting this operand on the following line(s) of the input file, so we set the \texttt{continue} flag before continuing.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Extracting Comments}]
+
+;--------------------------------------------------------------------
+; Copy any comment from the inputBuffer to the commentBuffer. A4 is 
+; the input buffer pointer. Returns with A5 one past the last char.
+; Never returns here though.
+;--------------------------------------------------------------------
+extractComment
+           bset    #inComment,d5       ; We are doing comments
+           lea     commentBuffer+2,a5  ; Our output buffer
+           bra     doCopyText          ; Copy comment
+\end{lstlisting}
+
+The subroutine above extracts comments from the input line. It does this by calling the \texttt{copyText} subroutine after setting a flag that indicates that we are in a comment. Comments are copied from the input buffer to the comment buffer.
+
+The flag set indicates to the \texttt{copyText} code that all characters are valid, even spaces, tabs, etc - up to the terminating linefeed.
+
+The hard work of extracting labels, opcodes etc is done by the code that follows. 
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Copying Input Source Lines Around}]
+
+;--------------------------------------------------------------------
+; Copy text from the input buffer (A4) to the output buffer (A5) and
+; keep a count in D0. Scan forward in the input until we hit a non-
+; space/tab character. Newline indicates the buffer end.
+; A1 is a pointer to the start of the output buffer on entry and will
+; be used to save the word count on completion.
+; Watch out for quotes!
+; If we are in a comment, then simply scan until the end.
+;--------------------------------------------------------------------
+copyText
+           bsr.s   scanForward         ; Locate next valid character
+           moveq   #0,d0               ; Counter
+
+copyLoop
+           cmpi.b  #linefeed,(a4)      ; Done yet?
+           beq.s   copyTextDone        ; Yes, return
+           btst    #inComment,d5       ; Are we in a comment?
+           bne.s   copyComment         ; Yes, skip
+
+;--------------------------------------------------------------------
+; We are not in a comment, so check for quotes. If we find one we 
+; must copy all characters until we get to the end quote. Otherwise
+; any space/tab/newline character will end this copy.
+;--------------------------------------------------------------------
+           cmpi.b  #sQuote,(a4)        ; Single quote?
+           beq.s   copyString          ; Yes, skip
+           cmpi.b  #dQuote,(a4)        ; Double quote?
+           beq.s   copyString          ; Yes, skip
+
+;--------------------------------------------------------------------
+; Not in a quoted string, are we done yet? If not, copy the current
+; character and go around again.
+;--------------------------------------------------------------------
+           cmpi.b  #space,(a4)         ; Done yet?
+           bls.s   copyTextDone        ; Yes, return 
+           bra.s   copyComment         ; Copy one character 
+
+;--------------------------------------------------------------------
+; We have found a quote, grab it, then copy & scan to the end quote.
+;--------------------------------------------------------------------
+copyString
+           move.b  (a4)+,d1            ; Grab opening quote
+           move.b  d1,(a5)+            ; Save opening quote
+           addq.w  #1,d0               ; Update counter
+
+;--------------------------------------------------------------------
+; We have copied the start quote and incremented counters & pointers
+; so we are now ready to copy the remaining characters in the quoted
+; string.
+;--------------------------------------------------------------------
+copyCharLoop
+           move.b  (a4)+,(a5)          ; Copy current character
+           addq.w  #1,d0               ; Update counter
+           cmp.b   (a5),d1             ; Copied closing quote?
+           addq.l  #1,a5               ; Dest address, Z unchanged
+           bne.s   copyCharLoop        ; No, keep copying
+           bra.s   copyLoop            ; String done, carry on	
+
+;--------------------------------------------------------------------
+; If we are in a comment, we don't care what characters we read as 
+; all are required up to the terminating linefeed.
+;--------------------------------------------------------------------
+copyComment
+           move.b  (a4)+,(a5)+         ; Copy character
+           addq.w  #1,d0               ; Increment counter
+           bra.s   copyLoop            ; Do some more
+
+;--------------------------------------------------------------------
+; At the end, store the word count at the start of this buffer.
+;--------------------------------------------------------------------
+copyTextDone
+           move.w  d0,-2(a1)           ; Save text length
+           rts
+\end{lstlisting}
+
+This subroutine reads the input and copies valid text to whatever buffer is pointed to by \texttt{A5}. On entry, the input pointer \texttt{A4} could be pointing anywhere in the input buffer, so in order to find a valid starting point, we call out to \texttt{scanForward} to ignore anything that is not a printable ASCII character.
+On return, \texttt(A4) is pointing at either a linefeed - indicating end of input, or at a valid printable character.
+
+\texttt{D0} is used to count the characters in whichever field (label, opcode, operand, comment) that we are extracting.
+
+If the current character is a linefeed, we are done and we store \texttt{D0} at the start of the output buffer - which \texttt{A1} is pointing to - and return to the caller.
+
+Assuming we have not hit the end yet, we enter some convoluted code to make sure that what we extract is valid. If we are in a comment, any character is allowed, so we skip off to copy the current character from the input buffer to the output buffer that we are using just now. An easy case.
+
+If we are not in a comment, we must check if we have one or other of the two quote characters as the current character. In this case we are about to copy a string so again, all characters are allowed until we come across the terminating quote character.
+
+The code at \texttt{copyString} first copies the opening quote to the output buffer, and saves it in \texttt{D1} so that we can check for the end of the string.
+
+Then we copy each of the following characters to the output buffer but note that we don't update \texttt{A5} using post increment addressing, like we do with \texttt{A4}. We check the character just copied for a closing quote which sets the Z flag accordingly, \emph{then} we update \texttt{A5} which we can do without affecting any of the flags. This allows us to make sure we copy over the closing quote and still be able to check for when we have finished copying a string value.
+
+If we are not copying a string then we only allow printable characters. If we have a space, or lower, as the current input character, we are done and exit by storing \texttt{D0} in the start of the output buffer.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Scanning the Input Lines}]
+
+;--------------------------------------------------------------------
+; Scan forward to the next non space/tab character. A newline is the
+; end of the line and that will cause a return. Actually, we simply
+; test for anything less than of equal to a space, other than a
+; linefeed and keep incrementing until we get something else.
+;
+; Expects A4 to point into the current inputBuffer and exits with A4
+; pointing at the next non-space/tab character, which might be a line
+; feed.
+;--------------------------------------------------------------------
+scanForward
+           cmpi.b  #linefeed,(a4)      ; Newline?
+           beq.s   scanDone            ; Yes, done
+
+           cmpi.b  #space,(a4)         ; Space (or less)?
+           bhi.s   scanDone            ; No, done
+
+           addq.l  #1,a4               ; Increment currentPointer
+           bra.s   scanForward         ; Keep scanning
+
+scanDone
+           rts                         ; Done. (A4) is the next char
+\end{lstlisting}
+
+This subroutine looks at the input characters and increments the input pointer register, \texttt{A4}, until we hit either a linefeed or any character higher than space in the ASCII chart.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Main Extraction Control Code}]
+
+;--------------------------------------------------------------------
+; We don't have a comment or blank, nor do we have an operand that has
+; been continued over two (or more) lines, so we need to extract all
+; the data from the input line.
+;--------------------------------------------------------------------
+extractData
+           bsr     extractLabel        ; Get any label
+           bsr     extractOpcode       ; Get opcode - sets noOperand
+           bsr     extractOperand      ; get Operand - sets continue
+           bsr.s   extractComment      ; Get comments - sets inComment
+           bra.s   doLabel             ; Go do label processing
+\end{lstlisting}
+
+The code above calls out to the four field extraction subroutines described above, then on return, skips to the output routines below where the reformatting takes place prior to writing out the newly reformatted line.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Trap \#3 Code}]
+
+;--------------------------------------------------------------------
+; Some code to write out some text at the current position in the
+; output file. On error, will exit via errorExit and never return.
+; Assumes A0 has the correct channel ID and that A1 points to a QDOS
+; string ready to be printed.
+;--------------------------------------------------------------------
+doWrite
+           moveq   #io_sstrg,d0        ; Trap code
+           move.w  (a1)+,d2            ; Word count
+
+;--------------------------------------------------------------------
+; Do a trap #3 and only return to the caller if it worked. Otherwise
+; exit back to SuperBASIC with the error code.
+;--------------------------------------------------------------------
+doTrap3
+           trap    #3                  ; Write the line/byte
+           tst.l   d0                  ; Ok?
+           bne     errorExit           ; No, bad stuff happened.
+           rts                         ; Back to caller
+
+doLineFeed
+           moveq   #io_sbyte,d0        ; Send a single byte
+           moveq   #linefeed,d1        ; Byte to send
+           bra.s   doTrap3             ; Do it
+\end{lstlisting}
+
+The code above is a small collection of \texttt{TRAP \#3} routines to write the output buffers, send linefeeds etc.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Copying Buffers Around}]
+
+;--------------------------------------------------------------------
+; Copy a buffer from the word count at (A1) to the byte space at (A5)
+; this is used when we copy the various buffers to the inputBuffer
+; which we are using as an output Buffer now!
+;
+; Uses A1 as the source, A5 as the dest and D0.W as a counter.
+; Corrupts A1 and D0.W. A5 exits as the next free byte in the buffer.
+;--------------------------------------------------------------------
+copyBuffer
+           move.w  (a1)+,d0            ; Counter
+           beq.s   copyBufferDone      ; Nothing to do, return
+           subq.w  #1,d0               ; Adjust for dbra
+
+copyBufferByte
+           move.b  (a1)+,(a5)+         ; Copy a byte
+           dbra    d0,copyBufferByte   ; And the rest
+
+copyBufferDone
+           rts                         ; Back to caller
+\end{lstlisting}
+
+The code above is called when we need to copy one of the input buffers holding labels, opcodes, operands or comments, back into the output buffer at the appropriate character position.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Clearing the Input Buffer}]
+
+;--------------------------------------------------------------------
+; Space fill the inputBuffer prior to using it as the outputBuffer to
+; write the reformatted line to the output file.
+;--------------------------------------------------------------------
+clearBuffer
+           move.w  #255,d0             ; Counter for 256 longs
+           lea     inputBuffer,a0      ; Guess!
+           move.w  #0,(a0)+            ; No string in buffer
+
+clearBufferLong
+           move.l  #$20202020,(a0)+    ; Clear one long
+           dbra    d0,clearBufferLong  ; Do the rest 
+           rts
+\end{lstlisting}
+
+We use the input buffer for our output buffer too, so before we start, we need to make sure that it is space filled.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Writing Labels}]
+
+;--------------------------------------------------------------------
+; Labels get a line of their own, so we will write out the label by
+; itself before looking at the rest of the stuff on the line.
+;--------------------------------------------------------------------
+doLabel
+           lea     labelBuffer,a1      ; Label word count
+           tst.w   (a1)                ; Any label?
+           beq.s   doOpcode            ; No, skip
+           move.l  destId(a7),a0       ; Destination channel id
+           bsr.s   doWrite             ; Print out the label by itself
+           bsr.s   doLineFeed          ; And a linefeed
+\end{lstlisting}
+
+If we have extracted a label from the input source line, we write it out here, by itself and follow it with a linefeed. Labels get written to the start of the output line, so we simply write the label out from the label buffer where it can currently be found.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Writing Opcodes}]
+
+;--------------------------------------------------------------------
+; If we have an opcode, and normally we should have one, tab to the
+; desired position and write it out. It is not normal for an opcode
+; to exceed the space allocated, so no checks are done here.
+; We always clear the inputBuffer at this point.
+; We use D5 from here on to show if we printed anything and if so, we
+; will need a linefeed afterwards, otherwise, no linefeed is needed.
+;--------------------------------------------------------------------
+doOpcode
+           bsr.s   clearBuffer         ; We always do this here
+           bclr    #lfRequired,d5      ; Nothing printed so far
+           lea     opcodeBuffer,a1     ; Source word count
+           tst.w   (a1)                ; Got an opcode?
+           beq.s   doComment           ; No opcode, no operand
+           bset    #lfRequired,d5      ; Flag something (to be) printed
+           lea     inputBuffer+opcodePos+2,a5  ; Dest byte area
+           bsr.s   copyBuffer          ; Copy the opCode
+\end{lstlisting}
+
+Opcodes, if we have one, are copied from the opcode buffer to the input buffer at the desired position, after clearing the input buffer of its current contents. If the opcode has no operands, we skip down to checking for comments. After sending something to the output buffer, we set a flag to show that we must print a linefeed when done.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Writing Operands}]
+
+;--------------------------------------------------------------------
+; Write out an operand. This may be a new one, or a continuation. If
+; the operand exceeds commentPos-2 then add a couple of spaces to the
+; output line before the comment gets printed. We use D6.W to hold
+; any extra bytes used for use below.
+;
+; If commentPos = 40 and operandPos = 20 then max operand size is
+; 40 - 20 - 1 = 19 before we have to extend the comment position.
+;--------------------------------------------------------------------
+doOperand
+           moveq   #0,d6               ; Extra byte counter
+           lea     operandBuffer,a1    ; Operand word count
+           tst.w   (a1)                ; Do we have an operand?
+           beq.s   doComment           ; No, skip
+           bset    #lfRequired,d5      ; Something printed
+           move.l  a1,a4               ; Save buffer address
+           lea     inputBuffer+operandPos+2,a5  
+           bsr.s   copyBuffer          ; Copy operand
+           move.w  (a4),d0             ; Operand size
+           cmpi.w  #commentPos-operandPos-1,d0  ; Check width
+           bls.s   doComment           ; Narrow operand
+
+doWideOperand
+           addq.l  #2,a5               ; Adjust A5
+           moveq   #2,d6               ; Two extra bytes now
+\end{lstlisting}
+
+Operands, if we have one, get copied into the output buffer at the desired location. There are no opcodes that are so long that they span from the opcode position over the operand position, so no checks are done here.
+
+If you decide to change the buffer positions then you might need to do some additional checks here. Caveat emptor and all that!
+
+Operands, on the other hand, \emph{might} span well past the comment position, so, if they do, we add a couple of extra spaces to the output and set \texttt{D6} to show that we have a wide operand to cope with.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Writing Comments}]
+
+;--------------------------------------------------------------------
+; If we have a comment then print it at the desired position. If the
+; operand took too much space (above) then offset the comment by a
+; couple of extra spaces - as per D6.W.
+; If there is no comment, then simply print a linefeed, if required.
+;--------------------------------------------------------------------
+doComment
+           lea     commentBuffer,a1    ; Comment word count
+           tst.w   (a1)                ; Do we have a comment?
+           beq.s   addLineFeed         ; No, skip
+           bset    #lfRequired,d5      ; Something printed
+
+;--------------------------------------------------------------------
+; If D6 is non-zero, then A5 is set to the correct output byte,
+; otherwise, set A5 to the normal comment position in the buffer.
+;--------------------------------------------------------------------
+
+           tst.w   d6                  ; Zero = normal comment position
+           bne.s   commentPositionSet  ; Non-zero = A5 is set correctly
+
+setNormalOperandComment
+           lea     inputBuffer+commentPos+2,a5  ; Destination
+
+commentPositionSet
+           bsr     copyBuffer          ; Copy the comment
+\end{lstlisting}
+
+Comments either get printed at their desired position, or, if the operand was a wide one, wherever they happen to find space on the output line. If \texttt{D6} is zero, the desired position can be used, otherwise, \texttt{A5} is already set to the first available space on the output.
+
+The comment is copied from the comment buffer to wherever \texttt{A5} is pointing to in the output buffer.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - End of Line Feed}]
+
+addLineFeed
+           btst    #lfRequired,d5      ; Anything printed?
+           beq     readLoop            ; No, read next input line
+           move.b  #linefeed,(a5)      ; Tag on a linefeed
+
+;--------------------------------------------------------------------
+; By here A5 is the linefeed charater written to the buffer so we 
+; can get the size of the text now, quite easily. The word count is
+; the lastCharacter (in A5) minus the bufferStart (in A1) minus 1.
+;
+; For example: 
+;
+;    A1---> 012345
+;           __NOPx <---A5
+;
+; x = LineFeed.
+; _ = Unknown/don't care.
+; 
+; We need to print 4 characters 'NOP' plus linefeed, so 5-0-1 = 4.
+;--------------------------------------------------------------------
+           lea     inputBuffer,a1      ; Buffer word count
+           move.l  a5,d0               ; Copy 
+           subq.l  #1,d0               ; Minus 1
+           sub.l   a1,d0               ; Offset into buffer
+           move.w  d0,(a1)             ; Store in buffer
+\end{lstlisting}
+
+If we have an opcode, operand and/or comment in the buffer, we need to print a linefeed after writing the line out, so if the flag is set, we append a linefeed to the output buffer.
+
+We also have to determine how wide the output buffer is, so, we do this by calculating $ A5 - A1 - 1 $ and storing the result in the start of the buffer. The input buffer, now being used for output, is ready to be printed.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - End of Main Loop}]
+
+;--------------------------------------------------------------------
+; Write the reformatted line to the output channel using the code in
+; doWriteComment above. This also returns to the start of readLoop.
+;--------------------------------------------------------------------
+doWriteLine
+           bra     doWriteComment      ; Print the line & loop around
+\end{lstlisting}
+
+This short piece of code prints the output buffer and skips back to the top of the main loop, ready to process the next line from the input file.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - End of Job Code}]
+
+;--------------------------------------------------------------------
+; We have hit an error so we copy the code to D3 then exit via a
+; forcible removal of this job. EXEC_W/EW will display the error in
+; SuperBASIC, but EXEC/EX will not.
+;--------------------------------------------------------------------
+allDone
+           moveq   #0,d0
+
+errorExit
+           move.l  d0,d3               ; Error code we want to return
+
+;--------------------------------------------------------------------
+; Kill myself when an error was detected, or at EOF.
+;--------------------------------------------------------------------
+suicide
+           moveq   #mt_frjob,d0        ; This job will die soon
+           moveq   #me,d1
+           trap    #1
+\end{lstlisting}
+
+When we hit EOF on the input file, we exit the main loop and arrive at \texttt{allDone} where we flag no errors, and then the job kills itself.
+
+Had we hit any errors in processing the input or output files, the main loop would exit via \texttt{errorExit} where we set \texttt{D3} as required by QDOSMSQ, and then kill the job.
+
+Assuming we executed the utility using \texttt{EW} we would be able to see the error message.
+
+\begin{lstlisting}[firstnumber=last,caption={ASMReformat Source - Various Buffers}]
+
+;--------------------------------------------------------------------
+; Various buffers. Having them here keeps them separate from code and
+; makes it easier for disassemblers to decode the code without having
+; to worry about embedded data!
+;--------------------------------------------------------------------
+
+inputBuffer
+           ds.w    512+1               ; Input - 1024 bytes + count
+
+labelBuffer
+           ds.w    128+1               ; Label - 256 bytes + count
+
+opcodeBuffer
+           ds.w    10+1                ; Opcode - 20 bytes + count
+
+operandBuffer
+           ds.w    128+1               ; Operand - 256 bytes + count
+
+commentBuffer
+           ds.w    246+1               ; Comment - 492 bytes + count
+\end{lstlisting}
+
+And finally - you will be glad to hear - these are the various buffers used by the utility to store the input (and output) as well as temporary storage for the 4 separate fields in an assembly source line.
+
+\section{Finally}
+
+Are you wondering about some of the labels used in the above source code? Do they look odd? or simply too long etc? Well, the reason for that is that this code was used to reformat itself, so I was testing with short and long labels and found too many problems, so I ended up just putting labels on an output line by themselves.
+
+Hopefully you will find this utility useful. I know I have done - so far!
+
+One last thing, on Linux, the C++ version of this utility compiled down to around 38 KB - which is not much for a useful utility. However, it does use a number of shared libraries to carry out a lot of the hard work and those are not included in the 38 Kb.
+
+The entire utility on my QPC setup, assembled to a total of 2,728 Bytes!

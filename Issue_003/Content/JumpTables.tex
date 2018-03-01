@@ -1,0 +1,251 @@
+\chapter{Jump Tables}
+
+Imagine that your next great programming wonder is not based on the Pointer Environment, but does display a menu to the user with a number of options\footnote{It wouldn't be much of a menu otherwise, would it? :-)}. Each option can be selected by a single key press, and your application code has to choose a piece of code, a subroutine, to handle the user's choice.
+
+You could do something like the following, where we assume that only the 10 digits are allowed and that D0.B holds the keypress character from the menu.
+
+\begin{lstlisting}[firstnumber=1,caption={Processing User Options - First Attempt}]
+;--------------------------------------------------------------------
+main_loop
+       bsr display_menu       ; CLS and display the menu
+       bsr get_menu_option    ; Wait for a menu choice
+       
+got_menu_option
+       cmpi.b #'0',d0         ; Zero or above?
+       bcs bad_option         ; Oops
+       cmpi.b #'9',d0         ; Nine or below?
+       bcc bad_option         ; Oops
+       
+got_good_option
+       cmpi.b #'0',d0
+       beq option_0           ; Process option '0'
+       cmpi.b #'1',d0
+       beq option_1           ; Process option '1'
+       ...
+       ...
+       cmpi.b #'8',d0
+       beq option_8           ; Process option '8'
+       cmpi.b #'9',d0         ; Not strictly required, but safe
+       beq option_9           ; Process option '9'
+
+option_return     
+       ; do some post routine clean up here      
+       ...
+       ...
+       bra main_loop          ; Ready for the next option
+
+option_0
+       ; Process option zero here.
+       ...
+       bra option_return      ; Back to the main loop
+       
+option_1
+       ; Process option one here.
+       ...
+       bra option_return      ; Back to the main loop
+       ...
+       ...
+;--------------------------------------------------------------------
+\end{lstlisting}
+
+Ignoring the fact that there are numerous helper routines called, but not shown in the above example, then we can see that the above is quite simple to read and is fine for a small number of options. However, note that none of the option handling subroutines can use an \opcode{RTS} instruction to exit, as the call to the subroutine was by way of a \opcode{BEQ} instruction. They must therefore execute a \opcode{bra option\_return} to get back into the clean up code and back to the main loop.
+
+We could improve matters slightly and use the \opcode{PEA} here to set up a pseudo subroutine call, by pushing the \opcode{common\_return} address onto the stack prior to calling any of the subroutines, as follows.
+
+\begin{lstlisting}[firstnumber=1,caption={Processing User Options - Improved First Attempt}]
+;--------------------------------------------------------------------
+main_loop
+       bsr display_menu       ; CLS and display the menu
+       bsr get_menu_option    ; Wait for a menu choice
+       
+got_menu_option
+       cmpi.b #'0',d0         ; Zero or above?
+       bcs bad_option         ; Oops
+       cmpi.b #'9',d0         ; Nine or below?
+       bcc bad_option         ; Oops
+       
+got_good_option
+       pea option_return      ; Stack a "return" address
+       
+       cmpi.b #'0',d0
+       beq option_0           ; Process option '0'
+       ...
+       ...
+       cmpi.b #'9',d0         ; Not strictly required, but safe
+       beq option_9           ; Process option '9'
+
+option_return           
+       ; do some post routine clean up here      
+       ...
+       ...
+       bra main_loop          ; Ready for the next option
+
+option_0
+       ; Process option zero here.
+       ...
+       rts                    ; Back to option_return
+       
+option_1
+       ; Process option one here.
+       ...
+       rts                    ; Back to option_return
+       
+       ...
+       ...
+;--------------------------------------------------------------------
+\end{lstlisting}
+
+This version is a lot better, while we are still calling the subroutines with a \opcode{BEQ} instruction, we have fiddled the stack by pushing a common return address onto it when we know we have a valid menu option. When each individual subroutine executes the \opcode{RTS} at the end, it will pop the address of \opcode{option\_return} and continue executing from there.
+
+We could, if we wished to use the actual \opcode{BSR} instruction, perhaps to avoid confusion, code something like the following.
+
+\begin{lstlisting}[firstnumber=1,caption={Processing User Options - Another Improved First Attempt}]
+;--------------------------------------------------------------------
+main_loop
+       bsr display_menu       ; CLS and display the menu
+       bsr get_menu_option    ; Wait for a menu choice
+       
+got_menu_option
+       cmpi.b #'0',d0         ; Zero or above?
+       bcs bad_option         ; Oops
+       cmpi.b #'9',d0         ; Nine or below?
+       bcc bad_option         ; Oops
+       
+got_good_option
+       cmpi.b #'0',d0
+       bne.s ggo_try_1        ; Not zero
+       bsr option_0           ; Process option '0'
+       bra option_return      ; Do cleanup
+
+ggo_try_1
+       cmpi.b #'1',d0
+       bne.s ggo_try_2        ; Not '1'
+       bsr option_1           ; Process option '1'
+       bra option_return      ; Do cleanup
+
+       ...
+       ...
+ggo_try_8
+       cmpi.b #'8',d0
+       bne.s ggo_try_9        ; Not '8'
+       bsr option_8           ; Process option '8'
+       bra option_return      ; Do cleanup
+
+ggo_try_9
+       cmpi.b #'9',d0         ; Not strictly required, but safe
+       bne.s option_return    ; Not '9'
+       bsr option_9           ; Process option '9'
+       bra option_return      ; Do cleanup
+
+option_return           
+       ; do some post routine clean up here      
+       ...
+       ...
+       bra main_loop          ; Ready for the next option
+
+option_0
+       ; Process option zero here.
+       ...
+       rts
+       
+option_1
+       ; Process option one here.
+       ...
+       rts
+
+       ...
+       ...
+;--------------------------------------------------------------------
+\end{lstlisting}
+
+So, in this version, we are using the \opcode{BSR} instruction that we wanted to, but now we've had to invert all the flag checks after the \opcode{cmpi.b \#whatever,d0} and add in numerous new labels and branches, plus, after a successful return from the subroutine, we need an explicit branch to the clean up code at the bottom of the loop. It's all getting rather messy now.
+
+You can imagine that as we add more and more menu options, that adding in new subroutines etc could get a bit frantic, especially trying to remember to do all the branches etc. In addition, there's much more typing, and, if you type like I do, too much room for errors!\footnote{I've been in the IT business since around 1982, I \emph{still} cannot touch type, I have to look at the keyboard to see where the next key I want is hiding!}
+
+Jump tables are easily set up, and can make life so much easier, with a lot less typing, although, it could be said that they are slightly less easily understood\footnote{At least until you begin to understand exactly how useful they really are!}.
+
+\begin{lstlisting}[firstnumber=1,caption={Processing User Options - Jump Tables}]
+;--------------------------------------------------------------------  
+JumpTable
+       dc.w option_0-JumpTable
+       dc.w option_1-JumpTable
+       dc.w option_2-JumpTable
+       dc.w option_3-JumpTable
+       dc.w option_4-JumpTable
+       dc.w option_5-JumpTable
+       dc.w option_6-JumpTable
+       dc.w option_7-JumpTable
+       dc.w option_8-JumpTable
+       dc.w option_9-JumpTable
+       
+main_loop
+       bsr display_menu       ; CLS and display the menu
+       bsr get_menu_option    ; Wait for a menu choice
+       
+got_menu_option
+       cmpi.b #'0',d0         ; Zero or above?
+       bcs bad_option         ; Oops
+       cmpi.b #'9',d0         ; Nine or below?
+       bcc bad_option         ; Oops
+       
+got_good_option
+       subq.b #'0',d0         ; D0.B = 0 to 9 as a number
+       ext.w d0               ; Now extend to a word
+       lsl.w #1,d0            ; Convert to a table offset
+       lea JumpTable,a2       ; Where the jump table lives
+       jsr (a2,d0.w)          ; Jump to the correct subroutine
+
+option_return           
+       ; do some post routine clean up here      
+       ...
+       ...
+       bra main_loop          ; Ready for the next option
+       
+option_0
+       ; Process option zero here.
+       ...
+       rts
+       
+option_1
+       ; Process option one here.
+       ...
+       rts
+
+       ...
+       ...
+;--------------------------------------------------------------------
+\end{lstlisting}
+
+Each entry in the table surprisingly names \opcode{JumpTable} is a word sized \emph{signed} offset to the desired routine, from the start of the table itself. This allows for subroutines that are located prior to, or after, the jump table being defined. Negative offsets are to subroutines defined before the table, and positive offsets are to subroutines defined after the jump table. Simple? 
+
+You can see how much less code there is at the label \opcode{got\_good\_option}. At that point all we have to do is convert D0.B from a byte, containing one of the characters `0' through `9', into a word containing the numeric value zero to nine, as opposed to the character `0' to `9', then double it as each entry in the table takes two bytes. The offset to the \opcode{option\_0} subroutine is at \opcode{JumpTable} + 0, while that for the \opcode{option\_1} subroutine is at \opcode{JumpTable} + 2 and so on.
+
+Obviously, the code at \opcode{main\_loop} is executed without passing through the preceding jump table, or who knows what might happen! Jump tables are data, not code.
+
+The \opcode{jsr (a2,d0.w)} takes care of calling the correct routine, as A2 is pre-loaded with the address of \opcode{JumpTable}. On return, we drop into the clean up code and pass back to the main loop start again. Remember, D0.W will be sign extended to a long word prior to adding it to A2.L.
+
+Adding new options is a simple matter of inserting or appending a new entry to the jump table \emph{in the correct place}, and making sure that D0.W is set equal to the offset in the jump table, so that when we execute the \opcode{jsr (a2,d0.w)} instruction, we get the correct subroutine address.
+
+\subsection{What About Missing Options}
+So far so good, our table holds one subroutine offset for each menu option from `0' to `9', which gets translated to a value between 0 and 9, and subsequently, into an offset into the table of offset words\footnote{Ugh! Too many offsets in that sentence!}. What do we do if, for example, option 5 is not actually allowed? We have a couple of choices:
+
+\begin{itemize}
+\item Filter out the illegal option(s) when checking for a valid choice.
+\item Use a `do nothing' entry for the invalid choice(s) in the table.
+\item Use a zero offset in the table,test for it in the  and don't jump if that is found.
+\end{itemize}
+
+The first option is obviously the best as it gives you the opportunity to advise the user of their error when they try to make an invalid choice. The last option would require a slight change to the code at \opcode{got\_good\_option}, as follows:
+
+\begin{lstlisting}[firstnumber=1,caption={Processing User Options - Jump Tables}]
+got_good_option
+       subq.b #'0',d0         ; D0.B = 0 to 9 as a number
+       ext.w d0               ; Now extend to a word
+       lsl.w #1,d0            ; Convert to a table offset
+       lea JumpTable,a2       ; Where the jump table lives
+       tst.w (a2,d0.w)        ; Valid offset?
+       beq.s no_jump          ; No, do nothing
+       jsr (a2,d0.w)          ; Jump to the correct subroutine
+\end{lstlisting}
+
+The code at label \opcode{no\_jump} would do whatever is required prior to the next pass through the main loop.

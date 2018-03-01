@@ -1,0 +1,575 @@
+\chapter{QL Assembly - Comments by George Gwilt}
+
+\emph{The following is a list of observations and comments from George, on the first version of the QL\_Assembly.pdf eBook, which was made available for download just before Christmas. Since then, it has been updated to include the following.}
+
+Here are some notes on your Assembly Language Programming Series.
+
+\begin{enumerate}
+\item The definition of \texttt{LEA} on page 37 should state that the effective address put into the address register is a long word. The official definition by Motorola states that the size is long.
+
+[ND] \emph{Fixed.}
+
+\item The \texttt{PEA} instruction is defined on page 39. As for \texttt{LEA} the size for \texttt{PEA} is long. This should be made clear.
+
+[ND] \emph{Fixed.}
+
+\item On page 39 you ask what use \texttt{PEA} is, when \texttt{LEA} could be used instead. There are three answers.
+
+\begin{enumerate}
+         \item Using \texttt{LEA} requires the use of a register, such as A1, whereas \texttt{PEA}  does not. It also needs one more instruction.
+
+        \item \texttt{PEA} allows you to choose between several subroutines but return to the same address form each. An example occurs in GWASS:
+\begin{lstlisting}[firstnumber=1,caption={PEA Example from Gwass Assembler}]
+             PEA   INS_FP4   the return address
+             BEQ   FP_XD
+             BRA   FP_XS
+\end{lstlisting}
+         \item \texttt{PEA} can be used to put a number on the stack. EG
+\begin{lstlisting}[firstnumber=1,caption={PEA Stacking a Literal Value}]
+             PEA   4         puts 4 on the stack.
+\end{lstlisting}             
+\end{enumerate}
+
+[ND] \emph{I did cover these in the book, at least the part about needing two instructions, and a register.}
+
+\item On page 40 the first line is wrong (as you can easily see!).
+
+[ND] \emph{Yes indeed I can! Oops.}
+
+\item On the same page you deal with \texttt{LINK}, suggesting that it is probably most used by compilers. The official Motorola User's Manual says that \texttt{LINK} and \texttt{UNLK} can be used to maintain a linked list of local variables and parameter areas on the stack for nested subroutine calls. 
+
+As it happens I use \texttt{LINK}/\texttt{UNLK} in GWASS as part of the assembly of macros. Each area allocated by \texttt{LINK} is used to store the macro parameters. Since the number of these can vary from macro to macro, I need to use \texttt{LINK} with a variety of displacement values.
+
+Moreover, since macros can contain calls to other macros, the set of
+LINK/UNLK instructions can indeed be nested.
+
+In order to allow a variety of displacements I produce a table of pointers to the different \texttt{LINK} instructions needed. This, of course, is done by means of a macro.
+
+One problem with the use of nested \texttt{LINK}s is that each time you use a further one the available stack space becomes smaller. To avoid trouble I check for each new \texttt{LINK} that there will indeed be enough space for it.
+
+[ND] \emph{See elsewhere in this issue for a few examples of PEA, LINK and UNLK.}
+
+\item Section 6.4 deals with exceptions. The descriptions of the stack frame at the bottom of page 48 and the top of page 49 are upside down. I think this is copied (wrongly) from Pennel's QDOS Companion page 91. Also, the description on page 49 is an atypical exception stack frame and applies only to the 68000/8 Bus or Address Error.
+
+[ND] \emph{It was actually copied from the official Motorola 68000 Programmer's Reference Manual, 4th Edition page 39. On that page there is a diagram of the MC68000 and MC68008 Group 1 and Group 2 Exception Stack Frame which shows the SSP pointing at the Status Register at the low address of the stack frame, then the PC high word and PC low word are next, going up in memory.}
+
+\emph{I wonder if the Motorola book is wrong?}
+
+\emph{The final line on page 48 explains that the diagram on page 49 is indeed for a BUS ERROR, ADDRESS EROR or a RESET exception and that those three differ from all the others.]}
+
+\item Section 6.5 deals with a redirection of some of the traps and exception vectors. These range from address error to trap \#15. You then show how to program each exception handler. I would very much suggest that this is definitely something to avoid. The main reason for \texttt{MT.TRAPV} probably is to allow the user to alter only one or two of the handlers, in particular the traps numbered 5 to 15, which are not used by QDOS.
+
+[ND] \emph{Fair point. The example did show redefining all the available vectors, which could be handy, in a debugger/monitor perhaps. I agree that redefining one or two might be more common.}
+
+\item A minor point in 7.2 on page 54 is that I would use
+
+\begin{lstlisting}[firstnumber=1,caption={Saving an RTS Instruction}]
+   jmp (a2)
+\end{lstlisting}
+
+instead of
+
+\begin{lstlisting}[firstnumber=1,caption={Wasting an RTS Instruction}]
+   jsr(a2)
+   rts
+\end{lstlisting}
+
+[ND]  \emph{Yes, I have a habit of doing that.}
+
+\item You can operate doubly linked lists, described on page 118 by using only one pointer instead of two. Replace the two addresses, next (A say) and prior (B say) by their XOR combination (C say).
+
+Thus $$C = A \operatorname{ xor } B$$ so that $$B = A \operatorname{ xor } C$$ and $$A = B \operatorname{ xor } C$$
+
+[ND] \emph{This is quite neat, and I have seen it used before, a long time back. I suspect back then there was a need to save every possibly byte at the expense of having to use a couple more instructions to extract the data required - but I am rather fond of the XOR operation, I have to say.}
+
+To illustrate how such a doubly linked list can be operated I have produced a small PE program. This has loose items A, D, H and W.
+
+\begin{itemize}
+\item A adds an item (to the start of the list).
+\item D deletes an item from the list.
+\item H prints the number of items in the list.
+\item W prints, in hex, the address of an item.
+\end{itemize}
+
+Since this program is designed to show how to perform these operations not as a real working program with a real list, the list is constrained to consist of items which are simply a digit between 0 and 9 inclusive.
+
+The minimum initial information you need is the address of the first item,
+stored at fadd(A6), and the address of the last item, stored at ladd(A6).
+
+These are made zero when the program starts so that initially there is no
+list.
+
+The program is given below.
+\end{enumerate}
+
+
+
+\begin{lstlisting}[firstnumber=1,caption={George's Linked List Example Program}]
+; LIST a_asm
+
+
+          bra.s     start
+          dc.l      0
+          dc.w      $4afb
+fname     dc.w      fname_e-fname-2
+          dc.b      "LIST v1.01"
+fname_e ds.b        0
+          ds.w      0
+
+          in        win1_ass_pe_keys_pe
+          in        win1_ass_pe_qdos_pt
+          in        win1_ass_pe_keys_wwork
+          in        win1_ass_pe_keys_wstatus
+          in        win1_ass_pe_keys_wman
+          in        win1_ass_pe_keys_wdef
+          in        win1_lib_hed1
+
+          rsset     0
+id        rs.l      1
+wmvec     rs.l      1
+slimit    rs.l      1
+fadd      rs.l      1
+ladd      rs.l      1
+num       rs.l      1                   long int for conversion
+buf       rs.l      2                   ASCII hex of num
+*
+start     lea       (a6,a4.l),a6        dataspace
+          clr.l     fadd(a6)            mark  . .
+          clr.l     ladd(a6)            . . no list
+          bsr.s     ope                 open a con channel . .
+          move.l    a0,id(a6)           . . keep the ID
+          moveq     #iop_pinf,d0
+          moveq     #-1,d3
+          trap      #3
+          tst.l     d0                  ptr_gen present? ..
+          bne       sui       ---->     .. no
+          move.l    a1,wmvec(a6)        keep WM vector ..
+          beq       sui       ---->     .. wasn't there!
+          movea.l   a1,a2               set WM vector in A2
+          lea       slimit(a6),a1
+          moveq     #0,d2               this must be zero
+          moveq     #iop_flim,d0        max size of window ..
+          trap      #3
+          subi.l    #$C0008,(a1)        .. less 12, 8
+          lea       wd0,a3              window definition addr
+          move.l    #ww0_0,d1 size of   working definition ..
+          bsr       getsp               .. sets ALCHP'd addr ..
+          movea.l   a0,a4               .. to A0 and to A4
+
+; We need to set the status area to zeros
+; and the loose items to "available" (zero)
+
+          lea       wst0,a1             Status ..
+          movea.l   a1,a0               .. area ..
+          moveq     #wst0_e-wst0-1,d1   bytes to clear - 1
+st1       clr.b     (a0)+
+          dbf       d1,st1
+          movea.l   id(a6),a0           Replace the channel ID
+          move.l    wd_xmin+wd_rbase(a3),d1     minimum size
+          andi.l    #$FFF0FFF,d1        Lop off scaling factors
+          jsr       wm_setup(a2)        Set up working defn
+          moveq     #-1,d1              Set the window . .
+          jsr       wm_prpos(a2)        . . where the pointer is
+          jsr       wm_wdraw(a2)        Draw the contents
+wrpt      jsr       wm_rptr(a2)         Read the pointer
+
+          beq.s     no_err              Since D0 is zero then ..
+;                                       .. D4 is non zero
+          bra       sui       ---->     D0 is non zero
+
+
+*
+
+con       dc.w      3
+          dc.b      'con'
+
+ope       lea       con,a0              To open "con" . .
+          moveq     #-1,d1              . . for this job
+          moveq     #0,d3
+          moveq     #io_open,d0
+          trap      #2
+          rts
+
+; We come here if we exit from wm_rptr without an error
+; This means that D4 is non-zero which in turn means either that 
+; there was a window event (eg CTRL/F4) or that a loose item 
+; action routine has set a non-zero value in D4. If there was a  
+; window event (and no loose item) the appropriate bit will have
+;  been set in the event vector in the status area.
+
+; If a loose item has a select key equal to that for an event, 
+; the event will not be detected by WM_RPTR since the loose 
+; item's action routine will have been called instead. The loose
+; item's action routine can then set the event bit in the event
+; vector and force an exit from WM_RPTR by setting the event 
+; number in D4. In that case the following code would be used.
+; On the other hand the loose item's action routine could  
+; process the event internally without exiting from WM_RPTR.
+
+no_err    movea.l   (a4),a1     status area
+          btst      #p        t__can,wsp_weve(a1)
+          bne       sui         Exit
+
+          btst      #pt__move,wsp_weve(a1)
+          beq.s     wrpt
+          bsr       move
+          bra.s     wrpt
+
+
+; Loose item action routines
+
+; MOVE
+
+afun0_0   bsr       move
+af1       move.w    wwl_item(a3),d1               item number
+          move.b    #wsi_mkav,ws_litem(a1,d1.w)   ask for redraw
+          moveq     #-1,d3                        selective draw
+          jsr       wm_ldraw(a2)
+          clr.b     ws_litem(a1,d1.w)             available
+          moveq     #0,d4
+          moveq     #0,d0
+          rts
+
+; EXIT
+
+afun0_3 moveq       #0,d0
+          moveq     #pt__can,d4                   ESC
+          bset      #pt__can,wsp_weve(a1)
+          rts
+
+; A - Add an item to the list
+
+afun0_1 move.l      a1,-(sp)
+          bsr       dwin
+          bsr       cls                 clear window
+          lea       pt_1,a5             text
+          bsr       mtext
+          moveq     #-1,d3
+          moveq     #0,d7
+          moveq     #io_fbyte,d0        item in D1.B
+          bsr       tp3
+          move.b    d1,d7
+          subi.l    #'0',d7             0 to 9 (we hope)
+          bmi       af1_er    ---->     (te6)
+          cmpi.b    #9,d7
+          bgt       af1_er    ---->
+          bsr       add_it
+          beq       af1_2               OK        (te5)
+          bmi       af1_3               duplicate (te4)
+          lea       te2,a5              list full (te2)
+          bra       af1_4
+af1_er    lea       te6,a5
+          bra       af1_4
+af1_2     lea       te5,a5
+          bra       af1_4
+af1_3     lea       te4,a5
+af1_4     bsr       mtext
+          movea.l   (sp)+,a1
+          bra       af1
+
+
+; W - Where is the item?
+
+afun0_2 move.l      a1,-(sp)
+          bsr       dwin
+          bsr       cls                 clear window
+          lea       pt_2,a5             text
+          bsr       mtext
+          moveq     #-1,d3
+          moveq     #0,d7
+          moveq     #io_fbyte,d0        item in D1.B
+          bsr       tp3
+          move.b    d1,d7
+          subi.l    #'0',d7             0 to 9 (we hope)
+          bmi       af1_er    ---->     (te6)
+          cmpi.b    #9,d7
+          bgt       af1_er    ---->
+          bsr       there
+          beq       af5_3               Not There
+          bpl       af2_1               OK
+          lea       te1,a5
+          bra       af1_4
+af2_1     move.l    d0,num(a6)          for printingn num(A6)
+          movem.l   a0/a2-3,-(sp)       keep regs
+          lea       num,a1              arithmetic buffer
+          lea       buf,a0              space for answer
+          movea.w   cn_itohl,a2
+          jsr       (a2)
+          movem.l   (sp)+,a0/a2-3       replace regs
+          lea       buf(a6),a1          for printing
+          moveq     #8,d2               to print 8 bytes
+          moveq     #io_sstrg,d0
+          bsr       tp3
+          movea.l   (sp)+,a1            reset A1
+          bra       af1                 return
+
+; H - How many in the list?
+
+afun0_4 move.l      a1,-(sp)
+          bsr       dwin
+          bsr       cls
+          bsr       howmany             number -> A4
+          move.w    d4,d1
+          movem.l   a2-3,-(sp)
+          movea.w   ut_mint,a2
+          jsr       (a2)
+          movem.l   (sp)+,a2-3
+          movea.l   (sp)+,a1
+          bra       af1
+
+; D - Delete an item from the list
+
+afun0_5 move.l      a1,-(sp)
+          bsr       dwin
+          bsr       cls                 clear window
+          lea       pt_5,a5   text
+          bsr       mtext
+          moveq     #-1,d3
+          moveq     #0,d7
+          moveq     #io_fbyte,d0        item in D1.B
+          bsr       tp3
+          move.b    d1,d7
+          subi.l    #'0',d7             0 to 9 (we hope)
+          bmi       af1_er    ---->     (te6)
+          cmpi.b    #9,d7
+          bgt       af1_er    ---->
+          bsr       drop_it
+          bne       af5_1               OK
+af5_3     lea       te3,a5              'not there'
+          bra       af5_2
+af5_1     lea       te7,a5              'value dropped'
+af5_2     bsr       mtext
+          movea.l   (sp)+,a1
+          bra       af1
+
+          hed1      <'A'>,t1
+          hed1      <'W'>,t2
+          hed1      <'H'>,t3
+          hed1      <'D'>,t4
+
+dwin      move.l    a1,-(sp)
+          moveq     #0,d1
+          moveq     #7,d2
+          jsr       wm_swinf(a2)
+          movea.l   (sp)+,a1
+          rts
+
+cls       moveq     #-1,d3
+          moveq     #sd_clear,d0
+tp3       trap      #3
+          rts
+
+; mtext prints the string @A5
+
+mtxt_reg  reg       d1-2/a1-3
+mtext     movem.l   mtxt_reg,-(sp)
+          movea.w   ut_mtext,a2
+          movea.l   a5,a1
+          jsr       (a2)
+          movem.l   (sp)+,mtxt_reg
+          rts
+
+; Adds item with value D7.L
+; D0 = 0  if OK : + if full : - if already there
+ai_reg    reg       d0-1/d4/a0-1
+add_it    movem.l   ai_reg,-(sp)
+          bsr       howmany
+          cmpi.w    #9,d4
+          ble       ai5                 OK
+          move.w    #1,d0
+          bra       ai2                 Full
+ai5
+          bsr       there
+          ble       ai3                 not already there
+          moveq     #-1,d0              mark alredy there
+          bra       ai2
+ai3       moveq     #8,d1
+          bsr       getsp
+          move.l    d7,4(a0)            Set item value
+          tst.l     fadd(a6)
+          bne       ai1
+          move.l    a0,fadd(a6)
+          move.l    a0,ladd(a6)
+          clr.l     (a0)
+          bra       ai4
+ai1       movea.l   fadd(a6),a1
+          move.l    a1,(a0)
+          move.l    (a1),d0
+          move.l    a0,d1
+          eor.l     d1,d0
+          move.l    d0,(a1)             update pointers
+          move.l    a0,fadd(a6)         new start address
+ai4       moveq     #0,d0               mark OK
+ai2       movem.l   (sp)+,ai_reg
+          rts
+
+; To delete the item with value in D7.L
+; First find the item then delete it
+; On exit D0.L = 0 NOT THERE
+;              = 1 Done OK
+
+di_reg    reg       d0-1/d4-6/a0/a2/a4
+drop_it   movem.l   di_reg,-(sp)
+          bsr       there
+          beq       di6       not there
+          movea.l   d0,a4
+          move.l    (a4),d1
+          eor.l     d6,d1     next address
+
+
+
+; D6.L = previous address
+; A4.L and D0.L = address to be deleted
+; D1.l = next address
+
+          bsr       rechp     return item space to the heap
+          tst.l     d6
+          bne       di3       there is a previous address
+          tst.l     d1
+          bne       di4       there is a next address
+
+; here the list is only the item to be deleted!!
+
+          clr.l     fadd(a6)
+          clr.l     ladd(a6)
+          bra       di8
+
+; next but no previous
+
+di4       move.l    d1,fadd(a6)         new 1st address
+          movea.l   d1,a0
+di7       move.l    a4,d0
+          eor.l     d0,(a0)
+di8       moveq     #1,d0               mark OK
+di6       movem.l   (sp)+,di_reg
+          rts
+
+di3       tst.l     d1
+          bne       di5                 both previous and 
+;                                       next addresses
+
+; previous but no next
+
+          move.l    d6,ladd(a6)         new last address
+          movea.l   d6,a0
+          bra       di7
+
+; Both before (B) and after (A) the current (C)
+
+di5        movea.l  d1,a0
+           move.l   (a0),d3             AC
+           movea.l  d6,a0
+           move.l   (a0),d4             BC
+           move.l   (a4),d5             CC
+
+           move.l   a4,d0               C -> D0
+
+           eor.l    d0,d4
+           eor.l    d1,d4               New BC
+
+           eor.l    d0,d3
+           eor.l    d6,d3               New AC
+
+           movea.l  d1,a0
+           move.l   d3,(a0)             set New AC
+
+           movea.l  d6,a0
+           move.l   d4,(a0)             set New BC
+
+           bra      di8
+
+
+
+
+; Returns the number of items in the list in D4.W
+; Uses no other registers
+hm_reg    reg       d1-3/a0
+howmany   movem.l   hm_reg,-(sp)
+          clr.w     d4
+          move.l    fadd(a6),d1         1st address
+          beq       hm1                 none!!!
+          clr.l     d2
+          addq.w    #1,d4               advance count
+hm2       movea.l   d1,a0
+          move.l    (a0),d3             pointer
+          eor.l     d2,d3               next address
+          beq       hm1                 finished
+          move.l    d1,d2               new previous
+          move.l    d3,d1               new current
+          addq.w    #1,d4               advance count
+          bra       hm2
+hm1       movem.l   (sp)+,hm_reg
+          tst.w     d4
+          rts                           number in D4.W
+
+; There returns in D0.L the address of the item with value in D7
+; D7.L and in D6.L the previous address. 
+; If not found D0.L = 0, 
+; if list empty D0.L = -1
+; Uses no other registers
+
+th_reg    reg       d4/a0/a2
+there     movem.l   th_reg,-(sp)
+          clr.l     d6                  previous address
+          move.l    fadd(a6),d0         1st address
+          beq       th4                 List Empty
+          bra       th1
+th2       movea.l   d0,a2
+          move.l    d6,d4
+          move.l    d0,d6
+          move.l    (a2),d0             pointer
+          eor.l     d4,d0               next address
+          beq       th3                 not found
+th1       movea.l   d0,a0
+          cmp.l     4(a0),d7            found? . .
+          bne       th2                 . . no
+th3       movem.l   (sp)+,th_reg
+          tst.l     d0                  zero = not found: 
+;                                       + = found: 
+;                                       - = empty
+          rts
+
+th4       moveq     #-1,d0              mark 'empty'
+          bra       th3
+
+; program list
+
+pr_lst    dc.w      afun0_1-pr_lst
+          dc.w      afun0_2-pr_lst
+          dc.w      afun0_4-pr_lst
+          dc.w      afun0_5-pr_lst
+
+; string list
+
+pt_lst    dc.w      pt_1-pt_lst
+          dc.w      pt_2-pt_lst
+          dc.w      pt_4-pt_lst
+          dc.w      pt_5-pt_lst
+
+          hed1      <'Give value to add '>,pt_1
+          hed1      <'Give value to find '>,pt_2
+          hed1      <'Size is '>,pt_4
+          hed1      <'Give value to delete '>,pt_5
+
+; messages
+
+          hed1      <'List Empty'>,te1
+          hed1      <'List Full'>,te2
+          hed1      <'Not There'>,te3
+          hed1      <'Duplicate Item'>,te4
+          hed1      <'Value Added'>,te5
+          hed1      <'Out of Range'>,te6
+          hed1      <'Value Dropped'>,te7
+
+          in        win1_ass_pe_listw_asm
+
+          in        win1_ass_pe_peas_sym_lst
+          lib       win1_ass_pe_peas_bin
+
+
+          in        win1_ass_pe_csprc_sym_lst
+
+          lib       win1_ass_pe_csprc_bin
+\end{lstlisting}   
+
+Thanks George. I appreciate your taking the time to go over some stuff I wrote many years ago, and bringing these ``problems'' to my attention.       

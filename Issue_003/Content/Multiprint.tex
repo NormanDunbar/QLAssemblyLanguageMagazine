@@ -1,0 +1,219 @@
+\chapter{Printing Multiple Strings at Once}
+Have you ever needed to print multiple strings, one after the other, perhaps with a linefeed between each one? Neither have I until recently. So if you ever find yourself needing to do exactly that, then the following short utility might be of some help.
+
+\begin{lstlisting}[firstnumber=1,caption={Multiprint Utility}]
+;--------------------------------------------------------------------
+; MULTIPRINT: Prints numerous strings to the channel in A0.L from a
+; table of strings at A1.L. The table format is as follows:
+;
+; strings  dc.w n              ; How many strings?
+; s1       dc.w s1e-s1-2       ; Size of string 1
+;          dc.b '...'          ; Bytes of string 1
+; s1e      ds.w 0              ; Padding byte if required
+; s2       dc.w s2e-s2-2       ; Size of string 2
+;          dc.b '...'          ; Bytes of string 2
+; s2e      ds.w 0              ; Padding byte if required
+;                              ; And so on.
+;--------------------------------------------------------------------
+; REGISTER USAGE:
+;
+; ENTRY:
+;
+; A0.L = Channel ID to be used for output.
+; A1.L = Start of strings table.
+;
+; EXIT:
+;
+; D0.L = Error code or zero. Z flag set accordingly.
+; A1.L = Corrupted.
+; All other registers preserved.
+;--------------------------------------------------------------------
+; ENTRY POINTS:
+;
+; MULTIPRINT - Enter here to print the table of strings exactly as is
+; with no additional linefeeds etc between strings. If you want any
+; linefeeds, you need to define them in the strings.
+;
+; MULTIPRINT_LF - Enter here to print the strings with a linefeed 
+; printed after each one. There will be a linefeed at the end, after
+; the final string too.
+;--------------------------------------------------------------------
+; WORKING REGISTERS:
+;
+; D7.L = $0A if linefeeds are requested, zero otherwise.
+; D6.W = Strings still to print counter.
+; A0.L = Channel ID being printed to.
+; A1.L = Running pointer to next string to print.
+; A2.L = Used to call QDOSMSQ vector to print a string.
+; Others - As required by QDOSMSQ vectors and trap calls.
+;--------------------------------------------------------------------
+
+timeout   equ -1              ; Timeout for TRAP #3 calls
+linefeed  equ $0A             ; Linefeed character
+
+;--------------------------------------------------------------------
+; MULTIPRINT_LF.
+;--------------------------------------------------------------------
+Multiprint_lf
+    move.l d7,-(a7)           ; Save Linefeed indicator
+    moveq #linefeed,d7        ; We want linefeeds
+    bra.s mp_saveregs         ; And drop in below
+       
+;--------------------------------------------------------------------
+; MULTIPRINT.
+;--------------------------------------------------------------------
+Multiprint 
+    move.l d7,-(a7)           ; See main text
+    clr.l d7                  ; No linefeeds required
+
+mp_saveregs
+    movem.l d1-d3/d6-d7/a2,-(a7)  ; Save working registers + D7 again!
+    move.w (a1)+,d6           ; Fetch counter value
+    bra.s mp_next             ; Skip loop first time
+       
+mp_loop
+    move.l a1,-(a7)           ; Save current string
+    move.w ut_mtext,a2        ; Get  the vector
+    jsr (a2)                  ; Print current string
+    bne.s mp_oops             ; Something bad happened
+    move.l (a7)+,a1           ; Start of current string
+    adda.w (a1),a1            ; Add size word
+    addq.l #3,a1              ; Prepare to make even
+    move.l a1,d5
+    bclr #0,d5                ; D5 now points at next string
+    move.l d5,a1              ; Back into A1
+       
+mp_lf
+    move.b d7,d1              ; Linefeed or zero       
+    beq.s mp_next             ; Not printing linefeeds
+    moveq #io_sbyte,d0        ; Print a byte
+    moveq #timeout,d3
+    trap #3                   ; Print linefeed
+    tst.l d0
+    bne.s mp_done             ; Something bad happened
+       
+mp_next
+    dbf d6,mp_loop            ; Go around again
+    clr.l d0                  ; No errors detected
+    bra.s mp_done             ; Clean up on the way out
+       
+mp_oops
+    adda.l #4,a7              ; Remove saved A1.L
+     
+mp_done
+    movem.l (a7)+,d1-d3/d6-d7/a2  ; Restore working registers
+    move.l (a7)+,d7           ; Restore original D7 again
+
+mp_exit
+    tst.l d0                  ; Set the Z flag as necessary
+    rts
+;--------------------------------------------------------------------
+
+\end{lstlisting}
+
+\subsection{Stacking D7 Twice? Why?}
+
+When I originally wrote this code, I explicitly saved the entry value of register D7, by itself, in \opcode{multiprint\_lf} but not in \opcode{multiprint} where it was the linefeed indicator value that was stacked along with the other working registers. When the code was almost done, it popped the working registers off the stack and checked D7 for zero at \opcode{mp\_done}. If it was not zero, I popped D7 off the stack again - assuming that we had entered at \opcode{multiprint\_lf}. Can you see the ever so slightly insidious bug there?
+
+What happens if I enter the code at \opcode{multiprint} with D7 already set to zero, when the utility was done, it would pop D7 off the stack, and check it and on finding it to be zero, would attempt to pop another D7 off the stack, assuming that we had entered at \opcode{multiprint\_lf}. D7 would be loaded with the \emph{calling code's return address} from the stack as opposed to its original value, and so the final \opcode{RTS} would cause a crash.
+
+The solution is as per the code above, D7 gets stacked by both utility routines and will always be popped off at the end, twice. That helps keep the stack neat and tidy and avoids this particular intermittent bug/crash.
+
+
+\subsection{Testing MultiPrint}
+To test the utility code, all you need is something line the following which I've saved typing time and effort by setting up as yet another filter program which allows me to pass a channel number on the command line, and the output will go to that channel. Lazy? me? ;-)
+
+\begin{lstlisting}[firstnumber=1,caption={Testing the Multiprint Utility}]
+me	   equ -1                 ; This job
+channel_id equ $02            ; Offset(A7) to input file id
+
+start	   
+       bra  start_2
+       dc.l $00
+       dc.w $4afb
+
+name	   
+       dc.w name_end-name-2
+       dc.b 'MultiPrint Test'
+
+name_end   equ	*
+
+version    
+       dc.w vers_end-version-2
+       dc.b 'Version 1.00'
+
+vers_end   equ *
+
+str_table
+       dc.w 4
+
+s1     dc.w s1e-s1-2
+       dc.b 'This is a demo of MultiPrint '
+s1e    equ *
+       ds.w 0
+
+s2     dc.w s2e-s2-2
+       dc.b 'which shows how easy it is to '
+s2e    equ *
+       ds.w 0
+
+s3     dc.w s3e-s3-2
+       dc.b 'print multiple strings in one easy manner. '
+s3e    equ *
+       ds.w 0
+
+s4     dc.w s4e-s4-2
+       dc.b 'Written by Norman Dunbar',$0a
+s4e    equ *
+       ds.w 0
+
+
+start_2
+       move.l channel_id(a7),a0  ; channel id
+       lea str_table,a1       ; Table of strings
+       bsr MultiPrint         ; Print with no linefeeds
+
+       lea str_table,a1       ; Table of strings again
+       bsr MultiPrint_lf      ; Print with linefeeds between
+
+       moveq #0,d3            ; No error code
+       moveq #mt_frjob,d0
+       moveq #me,d1           ; This job is about to die
+       trap #1
+       
+       in "ram1_MultiPrint_lib"
+
+\end{lstlisting}
+
+And finally, the ram1\_MultiPrint\_lib file will look like this. However, if you have changed the code layout above (for MultiPrint\_asm) then you may have to regenerate the lib file using the SYM\_bin utility.
+
+\begin{lstlisting}[firstnumber=1,caption={The Multiprint Library File}]
+MULTIPRINT_LF  EQU    *+$00000000
+MULTIPRINT     EQU    *+$00000006
+
+               lib "ram1_multiprint_bin"
+\end{lstlisting}
+
+You should execute the test harness as follows:
+
+\begin{lstlisting}[frame=none,numbers=none,caption={Executing the Multiprint Test Harness}]
+ex ram1_MultiPrint_test_bin, #1
+\end{lstlisting}
+
+And the output will be something like the following:
+
+\begin{lstlisting}[frame=none,numbers=none,caption={Results of the Multiprint Test Harness}]
+This is a demo of MultiPrint which shows how easy it is to print 
+multiple strings in one easy manner. Written by Norman Dunbar
+This is a demo of MultiPrint 
+which shows how easy it is to 
+print multiple strings in one easy manner. 
+Written by Norman Dunbar
+
+\end{lstlisting}
+
+The first couple of lines shows the data printed ``as is'' without linefeeds. The remainder of the output shows each string printed with a separating linefeed.
+
+Because I had my channel \#1 defined as a quite narrow window, the first line of output wrapped around onto the next line, in the normal manner of printing long strings.
+
+Because there are now two linefeeds after the final string, we get a blank line after the final one. Or, we will when the next print to that channel takes place, it's possible that QDOSMSQ has the final linefeed as pending. I noticed that in testing occasionally.

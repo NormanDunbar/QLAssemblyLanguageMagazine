@@ -1,0 +1,24 @@
+%----------------------------------------------------------------------------------------
+%	INDEXING and Other Macros. NDunbar.
+%----------------------------------------------------------------------------------------
+
+% These need to be used with the text twice, as in:
+% The best text processing system is \latex\program{\latex} ...
+\DeclareRobustCommand{\program}[1]{\index{Programs and applications!#1}}
+\DeclareRobustCommand{\mc6800x}[1]{\index{MC6800x Instructions!#1}}
+\DeclareRobustCommand{\address}[1]{\index{Addressing Modes!#1}}
+
+% These generate the text in the main body in teletype mode as well as 
+% adding them to the index:
+% Use \vector(BP\_INIT} to link new functions to SuperBasic.
+\DeclareRobustCommand{\vector}[1]{\texttt{#1}\index{Vectored Utilities!#1}}
+\DeclareRobustCommand{\trap}[1]{\texttt{#1}\index{Trap Calls!#1}}
+\DeclareRobustCommand{\pe}[1]{\texttt{#1}\index{Pointer Environment Vectors!#1}}
+
+% These generate text in a certain style, see the actual command for details,
+% when used. These do not get indexed.
+\DeclareRobustCommand{\opcode}[1]{\texttt{#1}}
+\DeclareRobustCommand{\register}[1]{\texttt{#1}}
+\DeclareRobustCommand{\asmlabel}[1]{\texttt{#1}}
+
+

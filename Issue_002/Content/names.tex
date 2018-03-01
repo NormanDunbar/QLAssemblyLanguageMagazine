@@ -1,0 +1,209 @@
+\chapter{What's in a Name?}
+
+A thread on the QL Forum, entitled \emph{Command Line Parameters} mentioned at one point, the ability to get a parameter as a name rather than a string. Now in all my years of Assembly programming, writing DJToolkit etc, I've never really bothered with names. The following listing is a small example of how to copy a single name parameter as passed to a procedure or function written in Assembly.
+
+It does not do anything useful, other than take the name passed, run some checks on it, then if valid, copies it to a buffer and prints it to SuperBasic channel \#1 which is \emph{assumed to be open}.
+
+\section{The Code}
+
+
+\begin{lstlisting}[firstnumber=1,caption={GetName - Definition Block}]
+;===============================================================
+; A test routine to fetch a name from the supplied parameters to 
+; a PROCedure in this case, which keeps things simple. The name
+; in question is copied to a buffer, then printed to channel #1. 
+; That is all.
+;===============================================================
+; USAGE:
+;
+; GetName #1, something_not_in_quotes
+;
+; GetName fred_txt
+;===============================================================
+
+
+start      lea        define,a1        Procedure definition block.
+           move.w     bp_init,a2       Initialise Procs/FNs.
+           jmp        (a2)             Do it, exit to SuperBasic.	 
+
+define     dc.w       1                One Procedure.
+           dc.w       getName-*        Starting address offset.
+           dc.b       7,'GetName'      Name of procedure.
+           dc.w       0                End of Procedures.
+
+           dc.w       0                There are zero Functions.
+           dc.w       0                The end of those too.
+
+buffer     ds.w       1+512            Word count and 1024 bytes.
+\end{lstlisting}
+
+We start the code with the standard new procedure and/or function definition block. Following this is a buffer of 1024 bytes and an extra word for the usual QDOSMSQ string length. You will notice I've used \texttt{ds.w} instead of \texttt{ds.b} to ensure that the buffer starts on a word boundary.
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Name Table \& Name List Definition}]
+;===============================================================
+; A name table entry is 8 bytes, as follows:
+;
+; Offset  Size  Description
+;    0    word  Type
+;    2    word  Index of name in name list, or -1 (expression.)
+;    4    long  Offset into variables area for value of this 
+;               name, or SuperBasic line number, (SB Functions &
+;               Procs) or Absolute address in memory (for MC
+;               Functions/Procs).
+;===============================================================
+; A name list entry is 'n' bytes, as follows:
+;
+; Size  Description
+; byte  Length of this name. NOT word aligned.
+; bytes Bytes of name.
+;===============================================================
+\end{lstlisting}
+
+The comment above simply reminds us (me!) of what a name table entry looks like. Each entry is 8 bytes and on entry to a procedure or function, A3 and A5 point, relative to A6, at the first and last of the supplied parameters.
+
+In the parameter list, the byte at offset 1 holds details of the separators used in the parameter list. This is not used in the main name table though.
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Equates}]
+;===============================================================
+; A name list entry is 'n' bytes, as follows:
+;
+; Size  Description
+; byte  Length of this name. NOT word aligned.
+; bytes Bytes of name.
+;===============================================================
+
+err_bp     equ        -15              Bad parameter error code.
+bv_ntbas   equ        $18              Offset to Name Table.
+bv_nlbas   equ        $20              Offset to Name List.
+bv_chbas   equ        $30              Offset to channel table.
+\end{lstlisting}
+
+Another comment reminds us of how each entry in the name list looks, and is followed by a few equates that will be used later.
+
+Now we get to the meat of the code.
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Checking Parameters}]
+getName    tst.b      0(a3,a6.l)       Is the type a NULL?
+           beq.s      nameFound        No, bale out, not a name.
+
+bp_error   moveq      #err_bp,d0       Bad parameter
+           rts                         We are out of here!
+\end{lstlisting}
+
+We begin by testing to see if the type byte of the first parameter passed is unset, which indicates a name. If it isn't a name, we bale out to SuperBasic with a bad parameter error.
+
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - We Have a Name}]
+nameFound  movea.l    bv_ntbas(a6),a0  Name Table start in A0.
+           move.w     2(a3,a6.l),d0    Name list index number.
+           lsl.w      #3,d0            Multiply by 8.
+           adda.w     d0,a0            A0 = Name Table entry.
+\end{lstlisting}
+
+Here we know we have a name, so we begin by getting the offset of the start of the name table into A0. From the passed parameter details, we extract the index number of this parameter's entry in the real name table (the parameter entries are \emph{copies}  and as each entry is 8 bytes, a quick shift three bits left will do the multiplication for us.
+
+Adding D0 to A0 gets us the offset from A6 where we can find this name in the name table.
+
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Find it in the Name List}]
+;===============================================================
+; Now, from A0's position in the Name Table, access the Name 
+; List, relative to A6 of course.
+;===============================================================
+
+           move.w     2(a0,a6.l),d0    Offset into the Name List.
+           ext.l      d0               Make it long.
+           add.l      bv_nlbas(a6),d0  D0 = Name List offset.
+
+;===============================================================
+; We now have the text of the name, in the name list, at the 
+; offset in D0.
+;===============================================================
+\end{lstlisting}
+
+In the name table, we pick up the offset into the name list for this name. The name list holds the actual characters of the name. As ever, everything is relative to A6.
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Copy Name to Buffer}]
+           lea        buffer,a3        Destination buffer.
+           moveq      #0,d1            Clear length WORD.
+           move.b     0(a6,d0.l),d1    Get length BYTE.
+           clr.b      0(a3)            Buffer size word top byte
+;                                      must be zero.           
+
+copy_name  move.b     0(a6,d0.l),1(a3) Copy one byte into buffer.
+           addq.l     #1,a3            Next free space in buffer.
+           addq.l     #1,d0            Next char in Name List.
+           dbra       d1,copy_name     Copy size byte plus name 
+;                                      bytes.
+           move.b     #linefeed,1(a3)  And tag on a linefeed.
+\end{lstlisting}
+
+A3 is set to the address of the destination buffer for the characters in this name and d1.w is cleared as we need a word sized counter. As the name list entry is byte sized, we get the length into D1's lower byte.
+
+Normally, we would decrement D1.w before we start copying bytes, but in this case, we are copying the size byte from the name list, so we keep hold of the extra one byte in the counter to account for that.
+
+The first byte in the buffer is cleared as the length word's high byte can never be anything but zero when copying from the name list.
+
+The loop at \texttt{copy\_name} copies first the size byte and then all the characters of the name into the buffer one by one. When we are done copying, the linefeed character is stored at the end of the name's bytes.
+
+You will note, at this point, that the length word at the start of the buffer has no idea that the linefeed has been added. We are keeping it in the dark for now.
+
+\emph{Looking at the above code, I should really have got rid of all those 1(An) offset instructions and started with a post increment of A3 or similar, but hey, the code works! I'll probably get a telling off from George though! ;-)}
+
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Checking Channel \#1}]
+;===============================================================
+; Now we have the text of the name in our buffer. Find channel 
+; #1 in the channel table. We shouldn't be off the end of the 
+; table, so NOT CHECKED.
+; We assume #1 is open too, so that's NOT CHECKED for either.
+;===============================================================
+findChan   moveq      #40,d1            Offset to entry #1.
+           move.l     bv_chbas(a6),a0   Channel table base offset.
+           adda.l     d1,a0             Required entry for #1.
+           move.l     0(a6,a0.l),a0     A0 is ID of channel #1.
+\end{lstlisting}
+
+The code above deep dives into the SuperBasic channel table. It takes no account of where the end of the table might be, nor even if channel \#1 is closed or not. It assumes much. Production code would never do such a thing!
+
+Each entry is 40 bytes long, and the channels number from zero, so we need the \emph{second} entry in the table.
+
+A0 is set to the start of the channel table, D1 holds the offset to \#1, and is added to A0. The first long word in each entry is the channel id as far as QDOSMSQ is concerned. What SuperBasic knows as \#1 could be anything, but back in the old days, was something like \$00010001. But never assume this to be the case now.
+
+
+\begin{lstlisting}[firstnumber=last,caption={GetName - Printing the Name}]
+;===============================================================
+; Print the text we read from the name list to channel #1.
+;===============================================================
+printName  move.w     UT_MTEXT,a2       Vector to print a string.
+           lea        buffer,a1         The string to print.
+           addi.w     #1,(a1)           Include the linefeed
+           jmp        (a2)              Print it, and exit 
+;                                       to SuperBasic.
+\end{lstlisting}
+
+And finally, with A0 holding the QDOSMSQ channel id, we point A1 at the buffer start and add 1 to the word stored there to account for that linefeed we sneaked in earlier. With the buffer now ready to print, we jump into QDOSMSQ to print the text to \#1 on the screen and never return. If there are any errors in the printing of the name, SuperBasic will handle it.
+
+\section{How to Run the Code}
+
+Type the above into your favourite editor and assemble it. Then simply \texttt{LRESPR} the assembled file and the new routine named \texttt{GetName} is available for use and abuse. To run it, type the following:
+
+\begin{lstlisting}[frame=none,numbers=none]
+GetName This_has_no_quotes
+\end{lstlisting}
+
+This example will simply print what you passed, on screen, wherever channel \#1 happens to be. Remember to run this in a SuperBasic or Sbasic that has at least channel \#1 open. Other examples could be file names:
+
+\begin{lstlisting}[frame=none,numbers=none]
+GetName flp1_boot
+GetName win1_source_qltoday_LibGen
+\end{lstlisting}
+
+And if you try passing a number or a string, then you should get a Bad Parameter error message.
+
+\section{What if There Are More Parameters?}
+
+The code example assumes only one parameter will be passed, but makes no checks. In real code, you might be expecting a number of parameters so you would check the numbers passed and their types before fetching them one by one (for the names) and then getting the others in groups as per normal. 
+
+You don't need to clean the values for names off the stack as they are never on it. You will, for the strings, integers etc. Not so much in procedures, but most definitely in functions.
+

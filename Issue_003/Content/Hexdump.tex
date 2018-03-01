@@ -1,0 +1,334 @@
+\chapter{Hexdump Utility}
+
+I'm a frequent user of the Linux/Unix \opcode{hexdump} utility in my real life, and I miss it on QDOSMSQ. I decided to put that right and as a continuation of the use of filter utilities in a previous issue, I decided to make this utility a filter too.
+
+To execute the utility, you simply:
+
+\begin{lstlisting}[frame=none,numbers=none,caption={Executing the Hexdump Utility}]
+ex win1_hexdump_bin, source_file, dest_location
+\end{lstlisting}
+
+The source file should be obvious, it's the one you want to examine, and the dest\_location can be either a filename or a channel number.
+
+So, without any further ado, here's the code. I'll explain it at the end, but it's fairly simple.
+
+\subsection{Hexdump Listing}
+
+\begin{lstlisting}[firstnumber=1,caption={Hexdump Utility}]
+;--------------------------------------------------------------------
+; HEXDUMP:
+;
+; A filter program using an input and output channel, passed on
+; the stack for it's files.
+; 
+; EX hexdump_bin, binary_file, output_file
+;
+;--------------------------------------------------------------------
+; 21/09/2015 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------------
+; (c) Norman Dunbar, 2015. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------------
+
+me         equ -1                 ; This job
+infinite   equ -1                 ; For timeouts
+err_bp     equ -15                ; Bad parameter error
+linefeed   equ $0A                ; Linefeed character
+eof        equ -10                ; End of file
+buff_size  equ $10                ; Maximum size of read buffer
+out_size   equ 73                 ; Output string length
+space      equ ' '                ; 1 space
+dot        equ '.'                ; 1 dot
+max_char   equ $C0                ; Highest printable ASCII character
+
+source_id  equ $02                ; Offset(A7) to input file id
+dest_id    equ $06                ; Offset(A7) to output file id
+param_size equ $0A                ; Offset(A7) to command string size
+param      equ $0C                ; Offset(A7) to command bytes
+
+start      
+       bra  Hexdump
+       dc.l $00
+       dc.w $4afb
+
+name       
+       dc.w name_end-name-2
+       dc.b 'Hexdump'
+
+name_end   equ  *
+
+version    
+       dc.w vers_end-version-2
+       dc.b 'Version 1.00'
+
+vers_end   equ *
+
+in_buffer  
+       ds.l 4                 ; 16 bytes read at a time
+
+out_buffer 
+       ds.l 20                ; 80 bytes max output
+
+open_bracket equ out_buffer+54    ; Where '[' should be
+close_bracket equ out_buffer+71   ; Where ']' should be
+
+;--------------------------------------------------------------------
+; Stack on entry:
+;
+; $0c(a7) = bytes of parameter + padding, if odd length. (Ignored)
+; $0a(a7) = Parameter size word. (Ignored)
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;--------------------------------------------------------------------
+bad_parameter
+       moveq #err_bp,d0       ; Guess!
+       bra suicide            ; Die horribly
+
+Hexdump
+       cmpi.w #$02,(a7)       ; Two channels is a must
+       bne.s bad_parameter    ; Oops
+
+start_loop
+       moveq #infinite,d3     ; Timeout - preserved throughout
+       clr.l d7               ; Current location in file
+
+read_loop
+       move.l source_id(a7),a0  ; Input channel id
+       lea in_buffer,a1        ; Where to read the data into
+       moveq #buff_size,d2    ; Maximum size of the buffer
+       moveq #io_fstrg,d0     ; Trap utility we want
+       trap #3                ; Read a chunk of source file
+       tst.l d0               ; Did it work?
+       beq.s read_ok          ; Not EOF yet, carry on
+       cmpi.l #eof,d0         ; EOF?
+       bne error_exit         ; Something bad happened
+       tst.w d1               ; Any remaining data?
+       beq all_done           ; No, exit the main loop
+
+read_ok
+       lea in_buffer,a2       ; Source buffer
+       lea out_buffer,a1      ; Output buffer
+       moveq #79,d0           ; 80 bytes to clear
+
+;--------------------------------------------------------------------
+; Space fill the entire output buffer on each pass through the loop.
+;--------------------------------------------------------------------
+ob_clear
+       move.b #space,(a1,d0.w) ; Space fill from the end back
+       dbf d0,ob_clear        ; And do the rest
+       moveq #0,d5            ; Extra linefeed counter
+
+;--------------------------------------------------------------------
+; Add the address to the buffer as 8 hex characters. Then 4 spaces.
+;--------------------------------------------------------------------
+hd_address
+       move.l d7,d4           ; D4 is required here
+       beq.s hd_continue      ; No extra linefeed at start
+       cmpi.b #0,d7           ; On a 256 Byte boundary?
+       bne.s hd_continue      ; Nope.
+       move.b #linefeed,(a1)+ ; Yes, extra linefeed
+       moveq #1,d5            ; Adjust counter
+
+hd_continue
+       ext.l d1               ; Curently only word sized
+       add.l d1,d7            ; Update file offset counter
+       bsr hex_l              ; Store address in buffer at A1
+       adda.l #4,a1           ; Leave 4 spaces
+
+;--------------------------------------------------------------------
+; There might not always be 16 bytes to convert. Adjust the count to
+; add groups of 4 bytes then two spaces to the output buffer, by 
+; counting long words and then the remaining spare bytes.
+;--------------------------------------------------------------------
+hd_data
+       move.l d1,d0           ; Byte counter (long sized)
+       divu #4,d0             ; D0.Low = Long word count
+;                             ; D0.High = Byte count remainder
+       bra.s hdl_next         ; Skip first time
+
+hdl_loop
+       move.l (a2)+,d4        ; Get a long word
+       bsr.s hex_l            ; Add hex to buffer
+       adda.l #2,a1           ; Leave 2 spaces between groups
+
+hdl_next
+       dbf d0,hdl_loop        ; Do next long word            
+
+       swap d0                ; D0.W = remaining bytes (0-3)
+       bra.s hdb_next         ; Skip first byte
+
+hdb_loop
+       move.b (a2)+,d4        ; Get a byte
+       bsr.s hex_b            ; Add to buffer
+
+hdb_next
+       dbf d0,hdb_loop        ; Do next byte
+
+;--------------------------------------------------------------------
+; Because we don't always get 16 bytes, we simply force A1 to the
+; desired location in the output buffer.
+;--------------------------------------------------------------------
+hd_ascii
+       lea open_bracket,a1    ; where to put the '['
+       adda.w d5,a1           ; Adjust for extra linefeeds
+       lea in_buffer,a2       ; Back to the start of data
+       move.w d1,d0           ; Data counter   
+       move.b #'[',(a1)+      ; Opening delimiter added
+
+       bra hda_next           ; Skip first time
+
+hda_loop
+       move.b (a2)+,d2        ; Fetch byte of data
+       cmpi.b #space,d2       ; We can print space or higher only
+       bcs.s hda_dot          ; This character is not ok
+       cmpi.b #max_char,d2    ; Reached the control characters?
+       bcs.s hda_store        ; No, this one is fine
+
+hda_dot
+       moveq #dot,d2          ; Print a dot instead
+
+hda_store
+       move.b d2,(a1)+        ; Save in output buffer
+
+hda_next
+       dbf d0,hda_loop        ; And do the rest
+
+       lea close_bracket,a1   ; Where to put the ']'
+       adda.w d5,a1           ; Adjust for extra linefeeds
+       move.b #']',(a1)+      ; Closing delimiter added
+       move.b #linefeed,(a1)  ; And linefeed at the end
+
+hd_print
+       moveq #io_sstrg,d0     ; Trap call we want
+       moveq #out_size,d2     ; How many bytes?
+       add.w d5,d2            ; Adjust for extra linefeeds
+       lea out_buffer,a1      ; Where our string is
+       move.l dest_id(a7),a0  ; Output channel
+       trap #3                ; Do it
+       tst.l d0               ; Did it work?
+       beq read_loop          ; Yes, continue
+
+error_exit
+       move.l d0,d3           ; Error code we want to return
+       bra.s suicide          ; And die
+
+all_done
+       moveq #0,d3            ; No error code
+
+suicide
+       moveq #mt_frjob,d0
+       moveq #me,d1           ; This job is about to die
+       trap #1
+
+;--------------------------------------------------------------------
+; The hex conversion routines in QDOS are corrupt in some versions so
+; these will work. The take a long, word, byte or nibble in D4 and
+; write the hex byte(s) to a buffer pointed to by A1.
+;
+; The various routines here call a lower level one, then drop into
+; the called code again to process the "other half" of the data to be
+; converted.
+;--------------------------------------------------------------------
+hex_l
+       swap d4                ; We do this in MS word order
+       bsr.s hex_w            ; Do original high word
+       swap d4                ; Get low word back
+
+hex_w
+       ror.w #8,d4            ; We do this in MS byte order
+       bsr.s hex_b            ; Do original high byte
+       rol.w #8,d4            ; Get low byte back
+
+hex_b
+       ror.b #4,d4            ; We do this in MS nibble order
+       bsr.s hex_nibble       ; Do original high nibble
+       rol.b #4,d4            ; Get original low niggle back
+
+hex_nibble
+       move.b d4,-(a7)        ; We need to save the byte
+       andi.b #$0f,d4         ; Mask out low nibble
+       addi.b #'0',d4         ; Assume digit 0-9
+       cmpi.b #'9',d4         ; Digit?
+       bls.s hex_store        ; Yes, digit
+       addi.b #7,d4           ; Offset for an A-F character
+
+hex_store
+       move.b d4,(a1)+        ; Add to the buffer at A1.L
+       move.b (a7)+,d4        ; Retrieve original byte
+       rts
+\end{lstlisting}
+
+\subsection{Hexdump Code Explained}
+
+As ever with my code, the first part is a load of bumff explaining briefly, sometimes, what the program should be doing. This utility is no different! Following on, we have a number of equates defined. The important ones here should be adequately commented - but we set up various offsets onto the A7 stack to extract the source file and destination channel ids and, not \emph{currently} used here, where we should find the command string, if passed.
+
+Then there is the usual standard QDOS header for a job with the job name embedded and a couple of buffers. The input buffer is where we read the source file into, 16 bytes at a time. The output buffer is big enough to hold a printed output line of up to 80 characters. You may note that a program version has been defined, but is only for my own documentation, it is never display or used. Feel free to leave it out.
+
+The next couple of equates define the locations in the output buffer where the '[' and ']' surrounding the ASCII representation of the hex codes will be.
+
+Just before the main Hexdump code itself, we have the \opcode{bad\_parameter} code which is, as you might expect, used to handle bad parameters - these are when we get less than or more than two channels on the stack at execution time. The utility simply exits with an error code back to the caller. 
+
+Be aware that you will not see this error code if you \opcode{EX} the utility, only if you call it with \opcode{EW} will errors be reported back to SuperBasic. This is normal.
+
+\opcode{Hexdump} starts by checking the word on the stack to ensure that we only received two channel ids on the stack. If this is not the case, we exit via \opcode{bad\_parameter} as explained above. Assuming this is not the case, we preload D3 with an infinite timeout. This is preserved through all trap calls, so only needs to be done once.
+
+We use D7 as the current offset counter, so we initialise it to zero, as we are still at the start of the source file.
+
+\opcode{Read\_loop} is the start of the main loop. In here, we load the source file's channel id into A0 and read the next 16 bytes, maximum, into the input buffer. When we hit end of file, we need to ensure that the last few remaining bytes are converted to hex - if there was not exactly 16 bytes read when we hit EOF, they are still valid. We test D1 to be sure that we do have some data to process, if not, we are truly at EOF and we bale out of the utility passing a zero error code back to the caller.
+
+If there was some other error in the read, ie, not EOF, then we simply bale out and return the error code to the caller. 
+
+Assuming all went well, we enter the code at \opcode{read\_ok} where we set up A2 and A1 with the input and output buffer addresses respectively. As we want spaces in between each section of data in the output buffer, we fill all 80 bytes with spaces, prior to each conversion, at \opcode{ob\_clear}. D5 is cleared here as well, on each pass, as it counts the number of extra linefeeds that have been injected into the output buffer - zero or one - and is used to adjust various pointers and counts as necessary.
+
+The code at \opcode{hd\_address} copies the current offset from D7 into D4 and if this is the start of the file - the offset is zero - skips over the next bit. Assuming that this is not the start of the file, we wish to insert an extra linefeed after every 256 bytes of the input file. This is easy to accomplish as we simply need to check the lowest byte of the offset. If it is zero, then we add a linefeed to the buffer and set D5 to 1 to show the extra byte. This happens at offsets \$0100, \$0200, \$0300 and so on.
+
+Prior to updating D7 with the count of the bytes just read. For most of the file, this will be 16 but there may be less at EOF. As the offset in D7 is long sized - we could be dumping large files - we have to extent D1 from a word to a long prior to the addition. D4 is converted from an offset to 8 hex characters in a call to \opcode{hex\_l} which adds the converted characters to the output buffer and updates A1.
+
+After the address has been added, we wish to have 4 spaces after it, so A1 is incremented by 4 to account for this. We are now ready to convert the data.
+
+\opcode{Hd\_data} is where this happens. The bytes read is copied to D0 as a long word and then divided by 4 to get the number of long words read in. In most cases this will be 4, at least until we get to EOF. After the division, the low word of D0 holds the number of long words to convert and the high word holds the remaining bytes to convert afterwards. Each long word is converted by copying it to D4.L and calling out to the \opcode{hex\_l} code again to convert and add it to the buffer as 8 hex characters. Two spaces are then `added' by incrementing A1 accordingly.
+
+After all the long words are converted, we process the remaining bytes by swapping D0 around so that the remaining bytes are in the low word, and we loop around those converting them one byte at a time at \opcode{hdb\_loop}.
+
+After all the bytes are processed and added to the buffer, we need to add in the ASCII characters. Only printable ones will be considered - those between `space' and the down arrow character, inclusive. Anything less than a space or any of the control characters from \$C0 upwards are represented by a dot.
+
+The first part of the code at \opcode{hd\_ascii} adds an opening bracket to the buffer, then the individual ASCII characters are added, all 16 (usually) of them, then a closing bracket is added to the buffer followed by a linefeed. If we injected an extra linefeed previously, then D5 is added to the offsets for the opening and closing brackets to ensure that they are inserted into the buffer at the correct location.
+
+We then drop into \opcode{hd\_print} where we send the completed buffer, to the destination file or channel before looping around and back to \opcode{read\_loop} to do it all again. Once again, the counter in D2 which determines the size of the string to print has to be adjusted to account for any extra linefeeds, so D5 is added to D2 before the \opcode{TRAP \#3}.
+
+In the unlikely event of an error during the conversion to hex, the code at \opcode{error\_exit} will be executed to copy the error code from D0 into D3 prior to returning to the caller. If there were no errors, then \opcode{all\_done} will cause a zero to be returned. The job then kills itself which will cleanly close the input and output files, flushing any buffers as appropriate.
+
+\subsection{Hex Conversion}
+
+As noted in the comments, certain versions of QDOS, prior to 1.03 I believe, have hex conversion routines in the ROM, but they are somewhat broken. To this end, I have supplied my own. To use them, D4 should contain the value to be converted and A1 should point to a location in a buffer, somewhere, for the results. After conversion, A1 is updated to the next free location in the buffer.
+
+The following is a sample of the output from the utility when used to hexdump an earlier incarnation\footnote{A \emph{much} earlier version!} of itself.
+
+\begin{lstlisting}[frame=none,numbers=none,caption={Example Hexdump Output}]
+00000000    60000078  00000000  4AFB0007  48657864    [`..x....J...Hexd]
+00000010    756D7000  61736D00  00000000  00000000    [ump.asm.........]
+00000020    00000000  00000000  00000000  00000000    [................]
+00000030    66EDE055  00010002  00000000  00000000    [f..U............]
+00000040    00000000  00000000  00000000  00000000    [................]
+00000050    00000000  00000000  00000000  00000000    [................]
+00000060    00000000  00000000  00000000  00000000    [................]
+00000070    00000000  70F16000  00C00C57  000266F4    [....p.`....W..f.]
+00000080    76FF4287  206F0002  43FAFF8A  74107003    [v.B. o..C...t.p.]
+00000090    4E434A80  67100C80  FFFFFFF6  66000094    [NCJ.g.......f...]
+000000A0    4A416700  009245FA  FF6C43FA  FF78704F    [JAg...E..lC..xpO]
+000000B0    13BC0020  000051C8  FFF82807  48C1DE81    [... ..Q...(.H...]
+000000C0    617CD3FC  00000004  200180FC  0004600A    [a|...... .....`.]
+000000D0    281A616A  D3FC0000  000251C8  FFF44840    [(.aj......Q...H@]
+000000E0    6004181A  616451C8  FFFA43FA  FF6E45FA    [`...adQ...C..nE.]
+000000F0    FF243001  12FC005B  60000014  141A0C02    [.$0....[`.......]
+
+00000100    00206506  0C0200C0  6502742E  12C251C8    [. e.....e.t...Q.]
+00000110    FFEC43FA  FF5712FC  005D12BC  000A7007    [..C..W...]....p.]
+00000120    744943FA  FF00206F  00064E43  4A806700    [tIC... o..NCJ.g.]
+00000130    FF542600  60027600  700572FF  4E414844    [.T&.`.v.p.r.NAHD]
+00000140    61024844  E05C6102  E15CE81C  6102E91C    [a.HD.\a..\..a...]
+00000150    1F040204  000F0604  00300C04  00396304    [.........0...9c.]
+00000160    06040007  12C4181F  4E75                  [........Nu      ]
+\end{lstlisting}
+

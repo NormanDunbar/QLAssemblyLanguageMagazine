@@ -1,0 +1,333 @@
+\chapter{Bubble Sorts}
+Part of a little program that I'm working on requires the characters of a word to be sorted into order, ascending in this case, and as there's no trap or vector in QDOSMSQ to allow this to be easily done, I've had to work out my own. The bubble sort is one of the simplest sorting algorithms that there is, however, it is pretty inefficient as much of the work it does is checking over data that it has already sorted in any previous pass. Also, the more data there are to sort, the longer it takes to sort. Much longer in fact.
+
+Looking on Wikipedia for some slightly improved versions, I found the one below. It doesn't reduce the number of swaps that take place, but it does `know' that when it has made a pass through the array of bytes, in this case, the last item that it swapped is the lowest possible value for this pass, and anything from that point on in the array is already sorted. By `knowing' it does at least reduce the number of  comparisons that have to be made on each pass, which reduces the run time of the sort.
+
+The data is sorted by moving  the higher values - in this version - down the array, one place at a time, until the array's bottom end contains all the sorted data, while the top end contains the data that are yet to be sorted. Hopefully, the following will make things a bit clearer, the pseudo code was obtained from Wikipedia.
+
+
+\begin{lstlisting}[frame=none,numbers=none,caption={Bubblesort Algorithm}]
+;--------------------------------------------------------------------
+ Blatantly stolen from Wikipedia! 
+ Very slightly modified by Norman Dunbar.
+
+ An improved BubbleSort which `knows' that after each pass, the lowest 
+ item(s) must be already sorted.
+
+ For example:
+
+ 9 1 5 3 4, after pass 0, becomes:
+ 1 5 3 4 9 so we stop at `4' next time, not at `9'.
+;--------------------------------------------------------------------
+bubbleSort( A : list of sortable items )
+    n = length(A)
+    repeat
+      newn = 0
+      for i = 1 to n-1 
+         Temp = A[i-1]
+         if Temp > A[i] then
+        A[i-1] = A[i]
+        A[i] = Temp
+        newn = i
+         end if
+      end for
+      n = newn
+    until n = 0
+end procedure
+;--------------------------------------------------------------------
+\end{lstlisting}
+
+From the above algorithm, we can see that a byte of data will be looked at and using comparisons and swaps, will `bubble' its way to the lower end of the array - that's the bit furthest from the word count in a QDOSMSQ string, for example.
+
+An example is called for, we start with the test harness which sets up a tiny array of 4 upper case letters, with a leading word count, and sorts it. 
+
+
+\begin{lstlisting}[firstnumber=1,caption={Bubblesort Test Harness}]
+start
+        lea stuff,a1          ; Where the data are
+        bsr.s print_it        ; Print data to #1 unsorted
+        bsr.s bubblesort      ; D0.L will be zero
+        bsr.s print_it        ; Print sorted data to #1 
+        rts
+
+stuff   dc.w stuff_end-stuff-2
+        dc.b 'C','A','D','B'
+stuff_end   equ *
+\end{lstlisting}
+
+The code above needs to call a helper routine to print the before and after data, that code follows and is a slightly modified version of the code to find channel \#1 and print a string, from the last issue where we were printing the name list.
+
+\begin{lstlisting}[firstnumber=last,caption={Bubblesort Test Harness}]
+;--------------------------------------------------------------------
+; Some hopefully familiar code from last issue, to print some data
+; to channel #1 which MUST BE OPEN.
+;--------------------------------------------------------------------
+bv_chbas   equ $30            ; Offset to channel table.
+
+;--------------------------------------------------------------------
+; Find #1 in the channel table. We shouldn't be off the end of the 
+; table, so NOT CHECKED.
+; We assume #1 is open too, so that's NOT CHECKED for either.
+;--------------------------------------------------------------------
+print_it   
+       move.l a1,-(a7)        ; A1 is in use, preserve it
+
+findChan   
+       moveq #40,d1           ; Offset to entry #1
+       move.l bv_chbas(a6),a0 ; Channel table base offset
+       adda.l d1,a0           ; Required entry for #1
+       move.l 0(a6,a0.l),a0   ; A0 is ID of channel #1
+
+;--------------------------------------------------------------------
+; Print the text we read from the name list to channel #1.
+; Corrupts D1-D3/A1. Preserves A0/A2-A3. D0 = error code.
+;--------------------------------------------------------------------
+printText
+       move.w ut_mtext,a2     ; Vector to print a string
+       jsr (a2)               ; Print it
+
+;--------------------------------------------------------------------
+; Print a linefeed to channel #1.
+; Corrupts D1/A1. Preserves D2-D3/A0/A2-A3. D0 = error code.
+;--------------------------------------------------------------------
+linefeed
+       moveq #io_sbyte,d0     ; Print a byte trap
+       moveq #10,d1           ; Linefeed character
+       moveq #-1,d3           ; Timeout
+       trap #3                ; Do it
+  
+       move.l     (a7)+,a1    ; Retrieve A1
+       rts
+\end{lstlisting}
+
+
+So far so simple, the following is my version of the pseudo code from Wikipedia, converted into assembly language. The labels are named in such a way as, hopefully, to give you an idea of where we are in the pseudo code as converted. Some bits don't convert exactly, the FOR loop, for example, starts with D2=0 and gets incremented by 1 before the loop, not at the end as per a normal FOR loop. But you get the idea, I hope!
+
+The working registers are listed in the comments so that you can, if you wish, follow what's going on.
+
+\begin{lstlisting}[firstnumber=last,caption={Bubblesort}]
+;--------------------------------------------------------------------
+; ENTRY:
+;
+; A1.L = Start address of bytes to be sorted. Word count first.
+;
+;--------------------------------------------------------------------
+; WORKING:
+;
+; A1.L = Start Address of bytes to be sorted, word count first.
+; A2.L = Bytes being compared right now. (-1(a2) and (a2)).
+; D0.W = `n' = end of unsorted data.
+; D1.B = Temp for swapping.
+; D2.W = `i' = loop counter.
+; D3.W = `newn' = last item sorted.
+;--------------------------------------------------------------------
+; EXIT:
+;
+; D0.L = 0.
+; A1.L = Preserved - Start address of sorted bytes' word count.
+; All other registers preserved.
+;--------------------------------------------------------------------
+bubblesort
+        movem.l d1-d3/a1-a2,-(a7)
+        move.w (a1)+,d0       ; N = length(a)
+        beq.s bs_done
+        subq.w #1,d0          ; We need n-1 when testing
+
+bs_repeat   equ *             ; Repeat
+        movea.l a1,a2         ;   A2 = First unsorted byte
+        moveq #0,d3           ;   Newn = 0
+
+bs_for_loop
+        moveq #0,d2           ;   For i = 1 to n-1
+
+bs_next
+        addq.b #1,d2
+        move.b (a2)+,d1       ;      Temp = A[i-1]
+        cmp.b (a2),d1         ;      If Temp > A[i] then
+        bls.s bs_end_if       ;       Skip swap if A[i-1] <= A[i]
+
+bs_swap
+        move.b (a2),-1(a2)    ;       A[i-1] = A[i]
+        move.b d1,(a2)        ;       A[i] = Temp
+        move.w d2,d3          ;       Newn = i
+
+bs_end_if   equ *             ;     end if
+        cmp.w d2,d0           ;     I = n-1 yet?
+        bne.s bs_next         ;   End for
+        move.w d3,d0          ;   N = newn
+        tst.w d0              ;   N = 0 yet?
+
+bs_until
+        bne.s bs_repeat       ; Until n = 0
+
+bs_done
+        movem.l (a7)+,d1-d3/a1-a2
+        clr.l d0
+        rts
+\end{lstlisting}
+
+So, type the above into a file, save it, assemble it in the usual manner with Gwasl and then load it into a reserved area of memory (mine is 98 bytes long) and simply CALL it. You should see two lines of text on channel \#1. The second line being the sorted version of the first.
+
+\subsection{Useful Improvements}
+
+The above is fine for sorting the characters in a QDOSMSQ string, and that's the only sorting I actually \emph{need} for my current little project, however, with a couple of minor changes, we can make it even more useful and allow us to sort words, longs and even arrays of strings, if we wish. One way to do this would be to duplicate the code above as many times as we need and edit it accordingly, but that is wasteful even in these days of QPC and other emulators allowing multi-megabytes of RAM. We need a little redesign.
+
+If we extract the compare and swap code to a separate subroutine, we can call it from the main loop, but rather than using a \opcode{BSR} instruction, we can use an address register to hold the compare and swap code's address, and use \opcode{JSR (An)} instead. That way, we only need to set up the address register once, with the desired compare and swap code's address, and we can reuse most of the above code.
+
+Here's the slightly more useful version of the above code - which can replace the above, from line 51 onwards.
+
+\begin{lstlisting}[firstnumber=51,caption={Better Bubblesort}]
+;--------------------------------------------------------------------
+; ENTRY:
+; For entry at label bubblesort:
+;
+; A1.L = Start address of data to be sorted. Word count first.
+;
+;--------------------------------------------------------------------
+; WORKING:
+;
+; A1.L = Start Address of data to be sorted, word count first.
+; A2.L = Data being compared right now. (-1(a2) and (a2)).
+; A3.L = Address of the Compare and swap routine.
+; D0.W = `n' = end of unsorted data.
+; D1.B = Temp for swapping.
+; D2.W = `i' = loop counter.
+; D3.W = `newn' = last item sorted.
+;--------------------------------------------------------------------
+; EXIT:
+;
+; D0.L = 0.
+; A1.L = Preserved - Start address of sorted bytes' word count.
+; All other registers preserved.
+;--------------------------------------------------------------------
+bubblesort
+        movem.l d1-d3/a1-a2,-(a7)
+        move.w (a1)+,d0       ; N = length(a)
+        beq.s bs_done
+        subq.w #1,d0          ; We need n-1 when testing
+
+bs_repeat   equ *             ; Repeat
+        movea.l a1,a2         ;   A2 = First unsorted byte
+        moveq #0,d3           ;   Newn = 0
+
+bs_for_loop 
+        moveq #0,d2           ;   For i = 1 to n-1
+
+bs_next
+        addq.b #1,d2
+        jsr (a3)              ;      Compare and swap if necessary
+
+bs_end_if   equ *             ;     end if
+        cmp.w d2,d0           ;     I = n-1 yet?
+        bne.s bs_next         ;   End for
+        move.w d3,d0          ;   N = newn
+        tst.w d0              ;   N = 0 yet?
+
+bs_until
+        bne.s bs_repeat       ; Until n = 0
+
+bs_done
+        movem.l (a7)+,d1-d3/a1-a2
+        clr.l d0
+        rts
+\end{lstlisting}
+
+In the three example compare and swap routines, see \lstlistingname~\ref{lst:casBytes}, \ref{lst:casWords} and \ref{lst:casLongs}, the usage of the working registers is described in \tablename{~\ref{tab:BubblesortCompareAndSwapRegisters}}.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{c p{0.8\textwidth}}
+\toprule
+\textbf{Register} &\textbf{Description}  \\
+\midrule
+%
+A1.L & Start Address of data to be sorted.\\
+A2.L & Data being compared right now.\\
+A3.L & Address of the Compare and swap routine.\\
+D0.W & `n' = end of unsorted data.\\
+D1.B & Temp for swapping\\
+D2.W & `i' = loop counter\\
+D3.W & `newn' = last item sorted\\
+%
+\bottomrule
+\end{tabular}
+\caption{Working Registers for Bubblesort Compare and Swap Code}
+\label{tab:BubblesortCompareAndSwapRegisters}
+\end{table}
+
+\begin{lstlisting}[firstnumber=last,caption={Bubblesort - Compare and Swap - Bytes},label={lst:casBytes}]
+cas_b
+        move.b (a2)+,d1       ; Temp = A[i-1]
+        cmp.b (a2),d1         ; If Temp > A[i] then
+        bls.s casb_exit       ;   Skip swap if A[i-1] <= A[i]
+
+casb_swap
+        move.b (a2),-1(a2)    ; A[i-1] = A[i]
+        move.b d1,(a2)        ; A[i] = Temp
+        move.w d2,d3          ; Newn = i
+
+casb_exit   rts
+\end{lstlisting}
+
+The first action required by the code is to grab the current value to be compared. This is pointed to by A2 on entry and is incremented to point at the next entry. In the above, this is byte sized, but see \lstlistingname~\ref{lst:casBytes}, \ref{lst:casWords} and \ref{lst:casLongs} for subroutines that compare and swap word and long word sized data. The data from the table is loaded into the `temp' variable, also known as D1.size, where size is .B, .W or .L appropriately depending on which compare and swap code we are running.
+
+The comparison between table entries A[i-1] and A[i], from the pseudo code description, actually compares `temp' with `A[i]', or D1.size with (A2), but it's the same comparison. 
+
+In the event that the data in D1 is larger (in this case) than the data in the table pointed to by A2, a swap is made and we set `newn' to the index of the last swap made. We only swap when D1 is larger, that way we don't end up swapping data that are the same. We are running an inefficient algorithm after all, there's no need to make it any more inefficient than we have to.
+
+The `newn' variable tells the main loop of the code to stop comparing because whatever index into the table was last swapped, is where the sorted part of the table begins. We don't need to compare our current value (in D1) with any entries in the table from `newn' onwards. 
+
+The following two subroutines can be used to sort arrays of word and/or long words. All that was changed was the size of the data loaded into D1, the \opcode{CMP} instruction and the data that are swapped around.
+
+\begin{lstlisting}[firstnumber=last,caption={Bubblesort - Compare and Swap - Words},label={lst:casWords}]
+cas_w
+        move.w (a2)+,d1       ; Temp = A[i-1]
+        cmp.w (a2),d1         ; If Temp > A[i] then
+        bls.s casw_exit       ;   Skip swap if A[i-1] <= A[i]
+
+casw_swap
+        move.w (a2),-2(a2)    ; A[i-1] = A[i]
+        move.w d1,(a2)        ; A[i] = Temp
+        move.w d2,d3          ; Newn = i
+
+casw_exit   rts
+\end{lstlisting}
+
+
+\begin{lstlisting}[firstnumber=last,caption={Bubblesort - Compare and Swap - Long Words},label={lst:casLongs}]
+cas_l
+        move.l (a2)+,d1       ; Temp = A[i-1]
+        cmp.l (a2),d1         ; If Temp > A[i] then
+        bls.s casl_exit       ;   Skip swap if A[i-1] <= A[i]
+
+casl_swap
+        move.l (a2),-4(a2)    ; A[i-1] = A[i]
+        move.l d1,(a2)        ; A[i] = Temp
+        move.w d2,d3          ; Newn = i
+
+casl_exit   rts
+\end{lstlisting}
+
+In our test harness, the code requires to be modified to add a pointer to the desired compare and swap routine in register A3, as follows:
+
+\begin{lstlisting}[firstnumber=1,caption={Bubblesort Test Harness Revisited}]
+start
+        lea stuff,a1          ; Where the data are
+        lea cas_b,a3          ; Compare and swap bytes
+        bsr.s print_it        ; Print data to #1 unsorted
+        bsr.s bubblesort      ; D0.L will be zero
+        bsr.s print_it        ; Print sorted data to #1 
+        rts
+
+stuff
+        dc.w stuff_end-stuff-2
+        dc.b 'C','A','D','B'
+
+stuff_end   equ *
+\end{lstlisting}
+
+If we were sorting an array of word or long word data, we would simply point A3 at the appropriate subroutine, and that's the only difference.
+
+So far, so good, we have the ability to sort bytes, word and long word based data. What about strings? Well, they are a little different and comparing strings is slightly more complicated than a simple \opcode{cmp.l (a2),d1} instruction, for example. I'll continue with string sorting in the next issue, for now, we can be satisfied with bytes, words and long words. 
+
+There, I think that's all sorted now!

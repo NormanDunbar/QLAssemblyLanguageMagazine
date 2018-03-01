@@ -1,0 +1,16 @@
+\chapter{LibGen News}
+
+And it's good news, of a sort!
+
+As my wife was away for the weekend recently, I took the opportunity to spend some time going through the problems I  have been having with LibGen. 
+
+If you remember, I had managed to reach a stage where the program would assemble and execute, but on exiting, QPC would be trashed in as much as the cursor passed \emph{behind} the window for QPC and therefore I was unable to get any further work done within QPC and I had to kill it.
+
+This problem could be reproduced at will, and was apparent even if all I did was \texttt{ex LibGen\_exe} and then, when it was running, pressed ESC to escape. QPC was hosed at this point.
+
+It turned out that some modifications I had made to the window definition, in order to allow me the ability to create a new application sub-window menu dynamically, had caused the problem. One problem that I did notice was that I had set the pointer to the \emph{menu items} status bytes to be zero, which meant that it used the status bytes for the \emph{main window's} loose items instead. 
+
+There were probably other errors as well, but in the end, I recreated the Window using SETW as per the original article in QL Today, and everything is fine again.
+
+So, the good news is, I've got a working starting point for the rest of the development. The bad news? Time is never on my side!
+

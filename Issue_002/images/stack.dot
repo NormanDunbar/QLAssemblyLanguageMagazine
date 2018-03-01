@@ -1,0 +1,58 @@
+// dot -T svg -o stack.svg stack.dot
+// dot -T png -o stack.png stack.dot
+
+
+digraph structs {
+    rankdir=LR
+    //label="Stack showing Frame Pointer";
+    pad="0.3";
+    //bgcolor=grey77;
+    
+
+    // Structure defaults, unless specified otherwise.
+    node [shape=record style=filled];
+
+// Structures...
+    // If you want to split structures over multiple lines, then
+    // put the | on the next line. 
+    structFPSP [label="<fp> Frame Pointer in A6.L 
+                     | <sp> Stack pointer in A7.L" 
+                fillcolor=thistle
+               ];
+
+    structTemp [label="<temp> Space reserved for temp." 
+                fillcolor=thistle
+               ];
+
+    structStack  [label="<a>          $1B.W 
+                       | <b>          $21.W 
+                       | <answer>     Answer (.L) 
+                       | <stack_tidy> Stack_tidy (.L) 
+                       | <a6>         Old A6.L 
+                       | <temp>       Temp (.L) 
+                       | <a7>         Old A0.L"
+                  fillcolor=yellowgreen 
+                 ];
+
+    structP  [label="<a>          Copy of a's value. 
+                   | <b>          Copy of b's value. 
+                   | <answer>     Address of answer. 
+                   | <stack_tidy> Return address." 
+              fillcolor=thistle
+             ];
+
+
+// Connecting lines...
+    edge [style="dashed"];
+    structFPSP:fp -> structStack:a6;
+    structFPSP:sp -> structStack:a7;
+
+    edge [style="dashed" dir=back];
+    structStack:a -> structP:a;
+    structStack:b -> structP:b;
+    structStack:answer -> structP:answer;
+    structStack:stack_tidy -> structP:stack_tidy;
+
+    structStack:temp -> structTemp:temp;
+}
+

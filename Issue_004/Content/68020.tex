@@ -1,0 +1,276 @@
+\chapter{Using the MC68020}
+As mentioned in the last issue, I am planning on upgrading the eComic to use the 68020 instructions available in \program{QPC}QPC and in George's \program{Gwass}Gwass assembler. This currently means that unless you have a Q40 or Q60 to hand, you will need to run the programs and assembler on \program{QPC}QPC. Is this a problem I wonder?
+
+\section{Overview}
+Here are a few brief details of what a proper 68020 has to offer:
+
+\begin{itemize}
+\item Full support for 32 bit operations.
+\item A full 32 bit external data bus which can also cope with 16 or 8 bit peripherals.
+\item 32 bit offsets in branch instructions.
+\item 32 bit displacements in indexed addressing modes.
+\item Two new addressing modes are provided, which allow indexed address with \emph{two} levels of indirection. 
+\item Word and Long memory accessing need no longer be on an even address.
+\item New bit field instructions.
+\item Instructions to convert between character and decimal numbers.
+\item And lots, lots more!
+\end{itemize}
+
+
+\section{Addressing Modes}
+The addressing modes of the 68008 are mostly familiar, or should be by now, however, here is a reminder of those modes, plus the new modes available in the 68020. The mode number given is that coded into the mode bits of the effective address in the various instructions. (But you don't really \emph{need} to know this!) 
+
+In the following descriptions, I've taken the wording as is from the Motorola Programmers' Manual - hence the strangeness of some of the wording. The examples, however, are mine.
+
+\subsection{Data Register Direct}
+Mode zero. The effective address specifies the data register that the contains the operand. For example \opcode{move.w \#1,d0} the destination address is Data Register Direct.
+
+\subsection{Address Register Direct}
+Mode 1. The effective address specifies the address register that the contains the operand. For example \opcode{move.l \$c0ffee,a3}. The destination effective address is \register{A3} and is indeed Address Register Direct.
+
+\subsection{Address Register Indirect}
+Mode 2. The effective address specifies the address register that the contains the operand in memory. For example \opcode{move.w (a3),d7} where \register{A3} holds the address where the operand, a word of data, is to be found.
+
+\subsection{Address Register Indirect with Post-Increment}
+Mode 3. In the address register indirect with postincrement mode, the operand is in memory. The effective address field specifies the address register containing the address of the operand in memory. 
+
+After the operand address is used, it is incremented by one, two, or four
+depending on the size of the operand: byte, word, or long word, respectively. 
+
+For example \opcode{move.w (a0)+,d0} will read the word value from the address held in \register{A0} into \register{D0} and then will add two - the size of a word - to A3.
+
+If the address register is \register{a7}, the stack pointer, then byte sized operations cause \register{a7} to be incremented by 2, rather than by 1. For example \opcode{move.b d0, (a7)+} will cause \register{A7} to be incremented by two to keep it even.
+
+The address register in question retains the new incremented value after the instruction.
+
+\subsection{Address Register Indirect with Pre-Decrement}
+Mode 4. In the address register indirect with predecrement mode, the operand is in memory. The effective address field specifies the address register containing the address of the operand in memory. 
+
+Before the operand address is used, it is decremented by one, two, or four depending on the operand size: byte, word, or long word, respectively. 
+
+For example \opcode{move.l -(a0),d0} causes \register{A0} to be decremented by 4 and the long word found at the new address will be moved into \register{D0}.
+
+If the register is \register{A7}, the stack pointer, then byte sized operations cause \register{A7} to be incremented by 2, rather than by 1. For example \opcode{move.b d0,-(a7)}.
+
+The address register in question retains the new decremented value after the instruction.
+
+\subsection{Address Register Indirect with Displacement}
+Mode 5. In the address register indirect with displacement mode, the operand is in memory. 
+
+The sum of the address in the address register, which the effective address specifies, plus the sign-extended 16-bit displacement integer in the extension word is the operand’s address in memory. 
+
+Displacements are always sign-extended to 32 bits prior to being used in effective address calculations.
+
+For example \opcode{move.l d0,\$10(a1)} will sign-extend the 16 bit displacement word ($10_{hex}$) to a full 32 bit signed value, add it to the address held currently in \register{A1} - without affecting the actual address held in the register - and the long value in \register{D0} will then be stored there.
+
+The displacement can of course, be negative, \opcode{move.l d0,-\$14(a1)}.
+
+The displacement word is 16 bits, however, it will always be sign extended to 32 bits prior to the addition to the address register.
+
+The address register in question retains its \emph{current} value after the instruction - it is not adjusted in any way.
+
+
+\subsection{Address Register Indirect with Index (8 bit Displacement)}\label{sub-ARegII8}
+Mode 6. This addressing mode requires one extension word that contains an index register indicator and an 8-bit displacement. The index register indicator includes size and scale information.
+
+In this mode, the operand is in memory. The operand’s address is the sum of the address
+register’s contents; the sign-extended displacement value in the extension word’s low-order eight bits; and the index register’s sign-extended contents (possibly scaled). 
+
+The user \emph{must} specify the address register, the displacement, and the index register in this mode - none of these are optional, only the scaling factor is optional and will default to 1 if omitted.
+
+For example \opcode{move.w 4(a6,d7.W),d3}. In this example, the 8 bit displacement value, 4, is sign extended to 32 bits and added to the address held in \register{A6}. The value in \register{D7} is also sign extended to 32 bits and added to the above calculation. The word value at this calculated address is copied into \register{D3}.
+
+The calculated address is not stored anywhere, it is used and discarded. The value in the address register, \register{A6} in this case, is not affected.
+
+The index register, \register{D7} may, optionally, have its value scaled - which the example code shown below attempts to explain.
+
+It seems,according to the Programmers' manual, that we \emph{should} be writing the above example as \opcode{move.w (4,a6,d7.W),d3} instead. Luckily \program{Gwass}GWASS is happy with the old style\footnote{My preferred style!} as well as the new.
+
+As mentioned, both the 8 bit displacement and the index register, if word sized, will be sign extended to 32 bits before being used in effective address calculations.
+
+As for the scaling mode mentioned above, do you remember last issue's jump tables article? Well, here's a reminder\footnote{Corrected as per George's comments!}:
+
+\begin{lstlisting}[firstnumber=1,caption={Jump Table - Old Style}]
+got_good_option
+       subq.b #'0',d0         ; D0.B = 0 to 9 as a number
+       ext.w d0               ; Now extend to a word
+       lsl.w #1,d0            ; Convert to a table offset
+       lea JumpTable,a2       ; Where the jump table lives
+       move.w 0(a2,d0.w),d0   ; Fetch the offset word
+       jsr (a2,d0.w)          ; Jump to the correct subroutine
+\end{lstlisting}       
+       
+Now, with the 68020 and scaling, there's no need to do the separate doubling of the table's index (\opcode{lsl.w \#1,d0}) to calculate the correct offset into the table as the scaling does this automatically and \emph{without changing \register{d0}}. The above extract would be as written as follows:
+
+\begin{lstlisting}[firstnumber=1,caption={Jump Table - New Style}]
+got_good_option
+       subq.b #'0',d0         ; D0.B = 0 to 9 as a number
+       lea JumpTable,a2       ; Where the jump table lives
+       move.w 0(a2,d0.w*2),d0 ; Fetch the offset word
+       jsr (a2,d0.w)          ; Jump to the correct subroutine
+\end{lstlisting}       
+       
+You will notice that I have specified the displacement (0) and both the address (\register{A2}) and index register (\register{D0.W}) as required.
+
+
+\subsection{Address Register Indirect with Index (Base Displacement)}\label{sub-ARegIIbd}
+Also mode 6. This addressing mode requires an index register indicator and an optional 16- or 32-bit sign-extended base displacement. The index register indicator includes size and scaling information. The operand is in memory. 
+
+The operand’s address is the sum of the contents of the address register, the base displacement, signed extended if necessary, and the scaled contents of the sign-extended index register.
+
+In this mode, the address register, the index register, and the displacement are \emph{all optional}.
+
+The effective address is zero if there is no specification. This mode can provide a data register indirect address when there is no specific address register and the index register is a data register.
+
+The example for this addressing mode is similar to the one above, however you don't need to specify all of the fields and scaling. For example we can change our addressing mode from \opcode{move.w 0(a2,d0.w*2),d0} to \opcode{move.w (a2,d0.w*2),d0} where the displacement is optional.
+
+As mentioned, this mode can give you a pseudo \emph{Data register Indirect} addressing mode, simply by leaving off most of the optional fields. For example, under the 68020, the following is valid \opcode{move.w (d0.l),d0} - assuming that \register{D0.L} contains a valid `address' of course.
+
+\subsection{Memory Indirect Postindexed}\label{sub-MIPostI}
+Also mode 6. In this mode, both the operand and its address are in memory. The processor calculates an intermediate indirect memory address using a base address register and base
+displacement. 
+
+The processor accesses a long word at this address and adds the index operand (Xn.SIZE*SCALE) and the outer displacement to yield the effective address. 
+
+Both displacements and the index register contents are sign-extended to 32 bits.
+
+In the syntax for this mode, square brackets [] enclose the values used to calculate the intermediate memory address.
+
+All four user-specified values are optional. 
+
+Both the base and outer displacements may be null, word, or long word. When omitting a displacement or suppressing an element, its value is zero in the effective address calculation.
+
+For example \opcode{move.l ([8,a6],d4.w*4,96),d0} will calculate a temporary address in memory by adding the sign-extended base displacement (8) and the address register (\register{A6}). This address will contain a long word which is read, added to the sign-extended index register (\register{D4.W*4}), plus the outer displacement (96). Phew!
+
+The immediate question that comes to my mind is ``why?'' However, there must have been a reason for this addressing mode to be built in silicon.
+
+\subsection{Memory Indirect Preindexed}\label{sub-MIPreI}
+Mode 6 again. In this mode, both the operand and its address are in memory. The processor calculates an intermediate indirect memory address using a base address register, a base displacement, and the index operand (Xn.SIZE*SCALE). 
+
+The processor accesses a long word at this address and then adds the outer displacement to yield the effective address. 
+
+Both displacements and the index register contents are sign-extended to 32 bits.
+
+In the syntax for this mode, brackets enclose the values used to calculate the intermediate memory address. 
+
+All four user-specified values are optional. 
+
+Both the base and outer displacements may be null, word, or long word. When omitting a displacement or suppressing an element, its value is zero in the effective address calculation.
+
+For example \opcode{move.l ([18,a5,d4.w*4],200),d0} will calculate a temporary address in memory by adding the sign-extended base displacement (18), the address register (\register{A5}) and the sign-extended index register (\register{D4.W*4}). The long word at that address will then be read and added to the outer displacement (200) and whatever long word is found at that address will be copied into \register{D0}. Phew!
+
+The immediate question that again comes to my mind is ``why?''
+
+\subsection{Absolute Short}
+Mode 7 Submode 0. In this addressing mode, the operand is in memory, and the address of the operand is in the extension word. The 16-bit address is sign-extended to 32 bits before it is used.
+
+For example \opcode{move.w \$1234,d4} takes 2 words of memory. The first defines the opcode and the second word defines the short address. The second word is read, sign-extended to 32 bits and the word, in this example, at that address is copied into \register{D4}.
+
+Note that addresses between \$0000 and \$7fff sign-extend to the same values, but addresses from \$8000 to \$ffff sign-extend to actual addresses of \$ffff8000 to \$ffffffff. So, effectively, you can only use this addressing mode on the lowest 32KB of memory and, if you have enough RAM, the upper 32KB of memory.
+
+\subsection{Absolute Long}
+Mode 7 Submode 1. In this addressing mode, the operand is in memory, and the operand’s address occupies the two extension words following the instruction word in memory. 
+
+The first extension word contains the high-order part of the address; the second contains the low-order part of the address.
+
+For example \opcode{move.b \$12345678,d4} takes 3 words of memory. The first defines the opcode, the second word defines the high half of the address \$1234 and, finally, the third word defines the low half of the address \$5678. The two words are read, and the byte, in this example, at that address is copied into \register{D4}.
+
+\subsection{Program Counter Indirect with Displacement}
+Mode 7 Submode 2. In this mode, the operand is in memory. The address of the operand is the sum of the address in the program counter (PC) and the sign-extended 16-bit displacement integer in the extension word. The `(PC)' part of the opcode can be left off as it is optional.
+
+The value in the PC is the address of the extension word defining the offset. 
+
+This is a program reference allowed only for reads.
+
+For example, \opcode{lea jumptable(pc),a2} will set \register{A2} to the position independent location of the label \opcode{jumptable} no matter which address in RAM the code is running at. In memory, there are two words. The first defines the opcode, the second, which is where the Program Counter is pointing, is the displacement to the given label from the current address of the PC.
+
+The example could also have been written as \opcode{lea jumptable,a2}
+
+\subsection{Program Counter Indirect with Index (8-Bit Displacement)}
+Mode 7 Submode 3. This mode is similar to the mode described in \emph{\nameref{sub-ARegII8}} on page~\pageref{sub-ARegII8} , except the PC is the base register. 
+
+The operand is in memory.
+
+The operand’s address is the sum of the address in the PC, the sign-extended displacement
+integer in the extension word’s lower eight bits, and the sized, scaled, and sign-extended index operand. 
+
+The value in the PC is the address of the extension word. 
+
+This is a program reference allowed only for reads. 
+
+The user \emph{must} include the displacement, the PC, and the index register when specifying this addressing mode.
+
+For example \opcode{move.w jumptable(pc,d0.w*2),d0} could have been used in our jump table example above as it does not require the use of a base register to access the table to fetch the offset.
+
+\subsection{Program Counter Indirect with Index (Base Displacement)}
+Mode 7 Submode 3 again. This mode is similar to the mode described in \emph{\nameref{sub-ARegIIbd}} on page~\pageref{sub-ARegIIbd}, except the PC is used as the base register. 
+
+It requires an index register indicator and an optional 16 or 32 bit sign-extended base displacement. 
+
+The operand is in memory. 
+
+The operand’s address is the sum of the contents of the PC, the base displacement, and the scaled contents of the sign-extended index register. 
+
+The value of the PC is the address of the first extension word.
+
+This is a program reference allowed only for reads.
+
+For example \opcode{lea jumptable(PC,d0.w*2),a3} will work out the address of the \register{D0}th word in the table at label \opcode{jumptable} and copy it into \register{A3}.
+
+In this mode, the PC, the displacement, and the index register are optional. The user must supply the assembler notation ZPC (a zero value PC) to show that the PC is not used. This allows the user to access the program space without using the PC in calculating the effective address. 
+
+The user can access the program space with a data register indirect access by placing ZPC in the instruction and specifying a data register as the index register.
+
+I have to admit that I'm not convinced that a PC or zero is going to be useful, certainly not in program independent code.
+
+\subsection{Program Counter Memory Indirect Postindexed Mode}
+Mode 7 Submode 3 also. This mode is similar to the mode described in \emph{\nameref{sub-MIPostI}} on page~\pageref{sub-MIPostI}, but the PC is the base register. 
+
+Both the operand and operand address are in memory. 
+
+The processor calculates an intermediate indirect memory address by adding a base
+displacement to the PC contents. The processor accesses a long word at that address and
+adds the scaled contents of the index register and the optional outer displacement to yield the effective address. 
+
+The value of the PC used in the calculation is the address of the first
+extension word. 
+
+This is a program reference allowed only for reads.
+
+In the syntax for this mode, brackets enclose the values used to calculate the intermediate memory address. All four user-specified values are optional. 
+
+The user must supply the assembler notation ZPC (a zero value PC) to show the PC is not used. This allows the user to access the program space without using the PC in calculating the effective address. 
+
+Both the base and outer displacements may be null, word, or long word. When omitting a
+displacement or suppressing an element, its value is zero in the effective address
+calculation.
+
+For an example, see \emph{\nameref{sub-MIPostI}} on page~\pageref{sub-MIPostI} and replace the address register with `PC'.
+
+\subsection{Program Counter Memory Indirect Preindexed Mode}
+Mode 7 Submode 3 also again! This mode is similar to the mode described in \emph{\nameref{sub-MIPreI}} on \pageref{sub-MIPreI}, but the PC is the base register. 
+
+Both the operand and operand address are in memory. 
+
+The processor calculates an intermediate indirect memory address by adding the PC contents, a base displacement, and the scaled contents of an index register. The processor accesses a long word at immediate indirect memory address and adds the optional outer displacement to yield the effective address. 
+
+The value of the PC is the address of the first extension word. 
+
+This is a program reference allowed only for reads.
+
+In the syntax for this mode, brackets enclose the values used to calculate the intermediate memory address. All four user-specified values are optional. The user must supply the assembler notation ZPC showing that the PC is not used. 
+
+This allows the user to access the program space without using the PC in calculating the effective address. 
+
+Both the base and outer displacements may be null, word, or long word. When omitting a displacement or suppressing an element, its value is zero in the effective address calculation.
+
+For an example, see \emph{\nameref{sub-MIPreI}} on page~\pageref{sub-MIPreI} above and replace the address register with `PC'.
+
+
+\subsection{Immediate Data}
+Mode 7 Submode 4. In this addressing mode, the operand is in one or two extension words. 
+
+For example, \opcode{move.l \#100,d0}. After this instruction has executed, \register{D0} will contain the value $100_{decimal}$ in all 32 bits.
+
+That's it for the complete set of addressing modes. Next time, our exploration of the 68020 instructions will take a good look at the various Bit Field Instructions.
+

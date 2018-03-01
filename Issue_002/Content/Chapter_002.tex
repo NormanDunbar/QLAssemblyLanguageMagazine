@@ -1,0 +1,87 @@
+\chapter{Comments on Issue 1}
+This chapter is dedicated to George Gwilt's feedback on some of the content of the first issue of the eMagazine.
+
+\section{Special Programs}
+
+As Norman says, Special Programs are signalled by an extra word, \$4AFB, after the program's name. In such a program there follows a set of instructions ending with RTS. These instructions are called as a subroutine inside the keywords EX, EW and ET (EX..) before they get around to creating and activating the job. That is why the instructions are obeyed ``in the context of SuperBASIC'', as are all keywords.
+
+[ND] \emph{Now that small explanation makes it all clear, which is more than the official docs have been able to do! (For me, anyway.)}
+
+A description of how to write such a subroutine is given in section 3.5 of Jochen Merz's QDOS Reference Manual.
+
+An example of the use of a special program is to be found in the SMSQ/E source code, in the program \url{extras_exe_source_cct_asm}. This program aims to concatenate a set of files and write them to an output file. All these files, including the output one, are to be named as channels to the program when it is executed. EX.. would happily try to open these, putting their IDs on the stack. If the output file does not exist, an error would be signalled by EX... It is to avoid this that the special program is invoked.
+
+Having dealt with pipes and the parameter string, EX.. will go through the list of channels appearing, separated by commas, after the program name. But, just before this is done the special routine is called. This allows the program \url{..._cct_asm} to process the channels itself. It is thus able to open the output file as a new one, as well as processing the set of files to be concatenated. When it has finished doing this it amends the pointers to the parameters, set in A3 and A5, so that EX.. find that there are no channels to deal with before activating the job.
+
+\section{The Extra 12 bytes}
+The program in SMSQ/E which contains the code for EX.. is \url{sbsext_ext_exsbas_asm} which also contains the code for Special Programs. The program calculates how much data space to set for the
+Trap \#1 call to MT\_CJOB, which creates the job. If $r$ is the number of channels and $p$ the length of the parameter list, the addition made to the program's data space is:
+
+\begin{center}
+$4(r + 3) + p$
+\end{center}
+
+rounded up to even.
+
+The reasoning is this. For each channel we need 4 bytes; for the parameter string we need $p$ bytes, rounded up; for the two counts we need 4 bytes; and, just in case there are two pipes, we need a further 8 bytes. If both $r$ and $p$ are zero you can see that indeed 12 bytes are added. Also, if there are no pipes then 8 bytes have been added unnecessarily.
+
+\section{The EX Files - Page 6}
+When a job is activated the registers A4 to A7 are set as Norman describes apart from two details.
+
+\begin{itemize}
+	\item The size of data space is $A5 - A4$ not A5.
+	\item A6 certainly points to the end of the internal job header, but not necessarily to the start of code. This is because, when a job is created by MT\_CJOB, A1 either points to the absolute address of the start of code or is zero. Only when A1 is zero does A6 point to the start of code, which in this case does follow the internal header.
+\end{itemize}
+
+[ND] \emph{Ugh! A silly mistake to make in the case of A5. I had also forgotten that a job can be created with the code immediately following the job header or with just a pointer to existing code elsewhere in memory.}
+
+The facility to choose the address of the start of code allows the setting up of several programs, which have to be re-entrant, each with the same copy of code in ram, but, of course, with different data
+spaces and internal job headers
+
+[ND] \emph{A perfect example of this is Adrian Dickens' Self-cloning Program in chapter 4.4.2 of The QL Advanced User Guide, page 55. Unfortunately, as written, it uses an absolute address to fetch the SV\_RAND word from the system variables, so probably will not work on many modern machines.}
+
+\section{LibGen Lite Errors}
+The program as it stands will not run on an unexpanded QL, though it should work on QPC2, for example. The reason is that 'buffer' is set up at an odd boundary. Oddly enough this is quite obvious from the example of the use of the program. This contains the line:
+
+\begin{lstlisting}[frame=none,numbers=none]
+BUFFER EQU *+$000000017
+\end{lstlisting}
+
+This is an error I found myself committing again and again. It is caused by having an odd number of characters in the preceding string. Now, I always set strings using code which ends with:
+
+\begin{lstlisting}[frame=none,numbers=none]
+DS.W 0
+\end{lstlisting}
+
+This sets the PC to the next even boundary from the end of the string.
+QPC2 has the 680020+ instruction set which allows word and long word accesses to an odd boundary which the 68000/8 does not.
+
+[ND] \emph{Another silly mistake. I could have sworn I used DS.W to ensure that storage was reserved and was on a word boundary, it turns out I used DS.B which gives rise to the problem George has pointed out above.}
+
+\section{ET Phone Home}
+I have never been able to use JMON. On the other hand I use QMON regularly. Indeed I did use it to go through the (working) version of LibGen\_Lite I typed up. However, to call QMON I had to put a commma between QMON\#6 and 23.
+
+I should explain that I always use QMON in a daughter basic set up with \#6 opened to a CON channel with window 512,204,0,0 and name 'x', for easy access. Also I had more programs running than Norman when I ET'd LibGen\_Lite.
+
+I'm afraid I used NET\_PEEK to find LibGen\_Lite's program number after ETing it. I also sometimes used NET\_PEEK instead of QMON to see what was on the stack after ETing.
+
+\section{Actual Use of LibGen\_Lite}
+Norman's program helps to solve a real problem. This is when you want to include an assembled program using the command LIB, which brings in the binary.
+
+This has no symbols, so, if you want to access the program at some intermediate points you need to set up an appropriate set of equates.
+
+This of course is what LibGen\_Lite does. It will arrange for an appropriate SYM\_LST file to be added just before the LIB which brings in the program itself.
+
+A real example is the program PEAS\_BIN, which is part of EasyPEasy. This program, will, on assembly, give rise to a SYM\_LST file with over 50 entries. In fact only six of these are required to access the set of subroutines.
+
+It would not matter too much if all the entries were included in the SYM\_LST file, were it not that many of the unwanted equates referred to nondescript labels such as "l1" and "l2" which could well be used in the main program thus causing an error in assembly.
+
+In fact I did find just that which made it impossible to use the complete SYM\_LST file. Hence the abbreviated SYM\_LST file published with PEAS\_BIN.
+
+So, the question is, how might one amend LibGen\_Lite to produce a required subset of equates?
+
+[ND] \emph{One suggestion that comes rather quickly to mind, is to have a well documented format for the \_SYM file which would allow the program to simply scan through looking for the ``record type'' that determines when a symbol is an offset to some code, or a simple EQU.}
+
+\emph{I did originally write a small SuperBasic routine to extract the code offsets symbols and their values from a raw \_SYM file, but was advised by George that the \_SYM files created by GWASL and GWASS are different and that it would be best to use the textual SYM\_LST files instead.}
+
+\emph{Another method would be for me to iron the bugs out of the full sized LibGen and get it working!}
