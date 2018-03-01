@@ -1,0 +1,737 @@
+\chapter{Using the MC68020 - Part 2}
+
+In the last issue, we took a long look at the addressing modes that are now available when using an MC68020 processor as found in \program{QPC}QPC - and possibly, but I don't yet know - in other emulators too. The old BBQL\footnote{Black Box QL} uses an MC68008 and cannot cope with the new stuff.
+
+To assemble these 62020 instructions, you need a copy of \program{Gwass}Gwass available from \href{http://gwiltprogs.info/page2.htm}{George's web site}.\footnote{\url{http://gwiltprogs.info/page2.htm}}
+
+One problem I have noticed when using the 68020 instructions, when debugging with \program{QMON}QMON, it sometimes gets a tad confused as to exactly which instruction it is executing! Given the age of \program{QMON}QMON (and other monitor programs \& debuggers) it's hardly surprising that it knows nothing about the 68020, it was current when the 68008 was still \emph{de-rigeur}!
+
+Here are the subjects I will cover in this issue, in relation to the 68020:
+
+\begin{itemize}
+	\item Word and Long memory accessing need no longer be on an even address.
+	\item New bit field instructions.
+	\item Instructions to convert between character and decimal numbers.
+	\item Upgrades to existing instructions.
+	\item New instructions - those not already covered above.
+\end{itemize}
+
+\section{Word and Long Memory Access Need Not Be Even!}
+
+This is something that I've been quietly using and never noticed for a while, at least since \program{QPC}QPC was upgraded, with George's help and input, to use a 68020 processor.
+
+Once that happened, any time that I inadvertently accessed a word or long sized memory access, \emph{nothing happened}! In the old days, and on the BBQL itself, the 68008 would have died horribly when that happened.
+
+For example:
+
+\begin{lstlisting}[firstnumber=1,caption={How to Blow Up an MC68008}]
+start
+           lea     oddAddress,a1
+           move.w  (a1),d0
+           ...
+           
+dc.b       0                         ; This should cause an odd address 
+
+oddAddress
+           equ     *           
+\end{lstlisting}
+
+Of course, it doesn't really cause the processor a problem, it simply follows its programming and raises an Address Error Exception. Unfortunately, the QL's handling of such an exception is somewhat flawed and this will cause either a complete and utter lock up, or something far worse.
+
+On \program{QPC}QPC  and on other computers or emulators with an MC68020 processor, the address exception no longer happens.
+
+\section{Bit Field Instructions}
+
+The M68000 family architecture supports variable-length bit field operations on fields of up to 32 bits. These instructions can be quite handy, as will be shown later, but first, what exactly is a bit field?
+
+\subsection{Bit Fields}\label{chp-mc68020-bitfields}
+
+A bit field is simply a number of consecutive bits in an effective address. A bit field is always specified in curly brackets `\{' and `\}' and there are two parts, the offset and the width, separated by a colon:
+
+\opcode{\{offset:width\}}
+
+The offset is the first bit \emph{numbering starts at zero for bit 31 and ends up at 31 for bit zero - beware!}\footnote{This \emph{really} does my head in! All those years of counting from the right, now I have to start counting from the left \emph{as well}.} 
+	
+You can calculate the desired starting bit number by subtracting the highest bit you want from 31. So, for example, if you want bits 15, 14, 13, 12 and 11 of a register, subtract 15 from 31 to get 16. 16 would be the offset and there are 5 bits, so the bit field specification for the appropriate opcode, would be:
+
+\opcode{\{16:5\}}
+
+For example, in many opcodes, the size of the operand - .B, .W or .L - is specified in bits 5 and 6 of the opcode instruction word in memory.This is therefore a 2 bit wide bit field, starting at bit $31-5=26$ and would be represented as follows:
+
+	\opcode{\{26:2\}}
+
+This would be tagged onto the end of one of the new bit field instructions. 
+
+You should note that although the bits number from the left, bit 0 is the \emph{most} significant bit and bit 32 the \emph{least} significant bit, the bit fields start at the given offset and continue \emph{towards the least significant bit} for the defined width. This is the complete reverse of the bit numbering in the registers normally.
+
+Table~\ref{tab-RBFCT} is a handy conversion table. Just look for the bit number in a register that you want to start from and find the bit field offset value in the row above (or below) it.
+
+\begin{table}[h]
+   \centering
+   \begin{tabular}{r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r}
+   31 & 30 & 29 & 28 & 27 & 26 & 25 & 24 & 23 & 22 & 21 & 20 & 19 & 18 & 17 & 16 \\
+    0 &  1 &  2 &  3 &  4 &  5 &  6 &  7 &  8 &  9 & 10 & 11 & 12 & 13 & 14 & 15 \\
+	\end{tabular}
+   \caption{Register Bit Field Conversion Table}
+   \label{tab-RBFCT}
+\end{table}
+
+For example, to start a bit field in register bit 7, we find 7 on the bottom row with 24 above it. So the offset part of our bit field will be 24. Equally, if we wanted to start from register bit 20, we find that on the top row with 11 below it, so 11 is our desired offset. Easy?
+
+\subsubsection{Offsets}
+
+The offset can be specified as a number from 0 to 31, no other numeric literals are permitted. However, the offset can also be a register name and in that case, all 32 bits can be used, giving an offset of anything from $-2^{31}$ to $2^{32}-1)$. 
+
+These rather large offsets are \emph{only} for instructions acting on memory locations. It is rather difficult to imagine what a negative offset on a data register, for example, would resolve to!
+
+If an address register, for example, holds a value that is used as the effective address in the instructions, then that is known as the base address. The most significant bit, bit 7, of the base address is offset zero in any bit field. All bit fields are relative to this particular bit.
+
+Negative offsets are fairly simple to use. Assume you have the following code:
+
+\begin{lstlisting}[firstnumber=1,caption={Bit Field Negative Offsets Example}]
+start
+           lea     baseAddress,a1      ; Base address
+           bfextu  (a1){0:8},d1        ; D1 gets $12
+;;;;       bfextu  (a1){-32:8},d2      ; WILL NOT ASSEMBLE!
+           move.l  #-32,d2             ; Try again, offset
+           bfextu  (a1){d2:8},d2       ; D2 gets $9A      
+           move.l  #24,d7              ; Offset
+           move.l  #4,d6               ; Width
+           bfextu  (a1){d7:d6},d3      ; D3 gets $07
+           ...
+
+negAddress
+           dc.l    $9abcdeff		   ; Negative offset here
+baseAddress
+           dc.l    $12345678           ; Base address here
+\end{lstlisting}
+
+So the first thing to note is that attempting to use an numeric literals for the offsets will cause assembly errors is they are outside the range 0 to 31 inclusive. This is why we had to use \opcode{D2} as the offset and the receiving register for one of the instructions.
+
+The data read into \opcode{D1} is the 8 bits from \opcode{baseAddress} which is the value \$$12_{hex}$. 
+
+The value loaded into register \opcode{D2} is from 32 bits \emph{prior} to the address in \opcode{A1}, which corresponds to the address of \opcode{negAddress}. We therefore get 8 bits from that location loaded into \opcode{D2} and that works out at \$$9A_{hex}$.
+
+Finally, \opcode{D6} and \opcode{D7} are set up to give a 4 bit width at offset 24 and the 4 bits at that offset from \opcode{A1} is the nibble \$$7_{hex}$. That value is loaded into \opcode{D3}.
+
+All the values loaded replace the full 32 bit width of the receiving registers.
+
+\subsubsection{Widths}
+
+Widths are a lot easier than offsets, especially when working with data in RAM. When specified as a number, the width is always between 1 and 32. Any other value results in assembly errors.
+
+When a data register is used to specify the width, the actual width value is taken from the bottom 5 bits of the register and will thus be limited to values between 0 and 31. Hang on! Widths are supposed to be from 1 to 32 bits, not zero to 31. If the register value is zero, then the width is taken to be 32!
+
+When dealing with memory bit fields, the offset and width can cause the bit field to span over 5 separate consecutive bytes in RAM. The processor can cope happily with this. For example:
+
+\opcode{bfextu  (a1)\{6:32\},d1} spans the 5 bytes from the address in \opcode{A1} starting at offset 6 of that address (bit 1), passing through the next three bytes, and ending up in the 5th byte at its bit 2 (inclusive).
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r|r}
+		\multicolumn{8}{c|}{Byte 1} & Byte 2 & Byte 3 & Byte 4 & \multicolumn{8}{|c}{Byte 5}\\
+		\midrule
+        7&6&5&4&3&2&1&0 & 7-0 & 7-0   & 7-0   & 7&6 &5 &4 &3 &2 &1&0\\
+        -&-&-&-&-&-&1&2 & 3-10 & 11-18 & 19-26&27&28&29&30&31&32&-&-\\
+	\end{tabular}
+	\caption{5 Byte Bit Field Example}
+	\label{tab-5BBFE}
+\end{table}
+
+In table~\ref{tab-5BBFE}, the top row is the bit numbers in the memory bytes at \opcode{(A1)} onwards. The bottom row is the bit numbers in the bit field \opcode{\{6:32\}}. For space reasons the three full bytes in the middle are shortened.
+
+Lets examine the new instructions.
+
+\subsection{\opcode{BFCHG} - Test Bit Field and Change}
+
+The \opcode{BFCHG} instruction sets the condition codes according to the \emph{current} value in a bit field at the specified
+effective address, then ones-complements the bit field.
+
+For example, a bit field referencing 5 bits starting at bit 5 of \opcode{D5}, would resemble \opcode{BFCHG D5\{26:5\}}.
+
+The instruction tests the bit field first, then sets the flags as follows before changing the bit field:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if all bits of the field are zero; cleared otherwise.
+    \item V - Always cleared.
+    \item C - Always cleared.
+\end{itemize}
+
+
+\subsection{\opcode{BFCLR} - Test Bit Field and Clear}
+
+The \opcode{BFCLR} instruction Sets condition codes according to the value in a bit field at the specified effective address and finally clears the specified bit field.
+
+The instruction tests the bit field and sets the flags as follows:
+
+\begin{itemize}
+	\item X - Not affected.
+	\item N - Set if the most significant bit of the field is set; cleared otherwise.
+	\item Z - Set if all bits of the field are zero; cleared otherwise.
+	\item V - Always cleared.
+	\item C - Always cleared.
+\end{itemize}
+
+An example to clear the three bits 6, 5 and 4 of the memory address that \opcode{A1} points to, would be:
+
+\opcode{BFCLR (A1)\{1:3\}}
+
+\subsection{\opcode{BFEXTS} - Extract Bit Field Signed}
+
+The \opcode{BFEXTS} instruction extracts a bit field from the specified effective address location, sign extends it to 32 bits, and loads the result into the destination data register.
+
+The instruction sets the flags as follows:
+
+\begin{itemize}
+\item X - Not affected.
+\item N - Set if the most significant bit of the field is set; cleared otherwise.
+\item Z - Set if all bits of the field are zero; cleared otherwise.
+\item V - Always cleared.
+\item C - Always cleared.
+\end{itemize}
+
+For example, to extract the three bits 6, 5 and 4 of the memory address that \opcode{A1} points to, into register \opcode{D0}, with bit 6 indicating the sign, would be:
+
+\opcode{BFEXTS (A1)\{1:3\},D0}
+
+The flags are set according to the value in the bit field moved into \opcode{D0}, in this case. Bit 4 of the byte would end up in bit zero of \opcode{D0}, bit 5 in bit 1 and bit 6 would be sign extended into all bits from bit 2 to bit 31 (in the normal manner of numbering bits).
+
+\subsection{\opcode{BFEXTU} - Extract Bit Field Unsigned}
+
+The \opcode{BFEXTU} instruction is similar to the \opcode{BFEXTS} instruction above, but is unsigned. It extracts a bit field from the specified effective address location, zero extends it to 32 bits, and loads the results into the destination data register.
+
+The instruction sets the flags as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if all bits of the field are zero; cleared otherwise.
+    \item V - Always cleared.
+    \item C - Always cleared.
+\end{itemize}
+
+For example, to extract the three bits 6, 5 and 4 of the memory address that A1 points to, into register \opcode{D0}, would be:
+
+\opcode{BFEXTU (A1)\{1:3\},D0}
+
+The flags are set according to the value in the bit field moved into \opcode{D0}, in this case. Bit 4 of the byte would end up in bit zero of \opcode{D0}, bit 5 in bit 1 etc.
+
+\subsection{\opcode{BFFFO} - Find First One in Bit Field}
+
+The \opcode{BFFFO} instruction searches the source operand for the most significant bit that is set to a value of one. 
+
+The bit offset of that bit (the bit field \emph{offset} in the instruction plus the \emph{offset} of the first one bit in the bit field) is placed in the specified data register. 
+
+If no bits in the bit field are set, the result is the field offset plus the field width.
+
+The instruction sets the flags as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if all bits of the field are zero; cleared otherwise.
+    \item V - Always cleared.
+    \item C - Always cleared.
+\end{itemize}
+
+An example to find the first set bit within the 9 bits of register \opcode{D0}, starting at bit 15 and extending down to bit 6, setting the result in register \opcode{D1}, would be:
+
+\opcode{BFFFO D0\{16:9\},D1}.
+
+If there were no set bits in the bit field, the result in D0 would be $16 + 9$ or $25$, otherwise it would be $16 + <\text{bit number of set bit}>$. Bear in mind, the first one bit is the bit number \emph{in the bit field} and not the bit number in the register or memory location. The bit numbers in the bit field start from zero and increase up to the field width minus 1.
+
+This example should help:
+
+\begin{lstlisting}[firstnumber=1,caption={Example of the BFFFO Instruction}]
+start
+           clr.l   d0                  ; No bits set in D0
+           bfffo   d0{16:9},d1         ; No bits set, so D1=16+9=25
+
+;                                        {16:9} ---- ---- - (Bit Field)
+;                                               0123 4567 8 (BF Offset)
+           move.l  #$300,d0            ; $0000  0000 0011 0000 0000 
+           bfffo   d0,{16:9},d1        ; Bit 6 of BF set so D1=16+6=22
+\end{lstlisting}
+
+The result is the bit field start plus the offset into the bit field where the most significant set bit is found. In our bit field, the starting offset is 16. The first set bit in the 9 bits making up the width of the bit field, is bit number 6 - starting at zero - \emph{in the bit field}, so the result is $16 + 6$ or $22$.
+
+A valid range of values in \opcode{D1} would be $16+0$ through $16+8$ if a single bit in any position of the bit field was set, or $16+9$ if no bits in the bit field were set.
+
+If you need to find out exactly which bit in the register that relates to, subtract the result from 31. In this example, $31-22$ gives $9$ and indeed, it is bit 9 in the register which is the most significant set bit.
+
+\subsection{\opcode{BFINS} - Insert Bit Field}
+
+The \opcode{BFINS} instruction inserts a bit field taken from the low-order bits of the specified data register into a bit field at the effective address location. This means that if you have a 3 bit wide bit field in the effective address, then the lowest three bits of the specified data register will be copied to that bit field.
+
+The instruction sets the flags as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if all bits of the field are zero; cleared otherwise.
+    \item V - Always cleared.
+    \item C - Always cleared.
+\end{itemize}
+
+Continuing the example from above, to move the three bits of \opcode{D0} into a three bit wide bit field of register \opcode{D4} in bits 6, 5 and 4, we would use the instruction:
+
+\opcode{BFINS D0,D4\{25:3\}}
+
+Bit 0 of \opcode{D0} would end up in bit 4 of \opcode{D4}, bit 1 would be in bit 5 and bit 2 would end up in bit 6.
+
+\subsection{\opcode{BFSET} - Test Bit Field and Set}
+
+The \opcode{BFSET} instruction tests the bit field and sets the flags as follows and then sets all the bits in the field to 1.
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if all bits of the field are zero; cleared otherwise.
+    \item V - Always cleared.
+    \item C - Always cleared.
+\end{itemize}
+
+For example, to set all the bits in bits 6 to 9 (a total of 4 bits) of register \opcode{D0}, we would use the instruction:
+
+\opcode{BFSET D0\{25:4\}}
+
+\subsection{\opcode{BFTST} - Test Bit Field}\label{chp-mc68020-bftst}
+
+The \opcode{BFTST} instruction tests the specified bit field and sets the flags as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if all bits of the field are zero; cleared otherwise.
+    \item V - Always cleared.
+    \item C - Always cleared.
+\end{itemize}
+
+For example, to test the bits in the 3 bit wide bit field beginning at bit 13 of D4 (that's bit 13 numbering in the normal manner) we need to specify the following instruction:
+
+\opcode{BFTST D4\{18:3\}}
+
+
+
+\section{Converting Character and Decimal Numbers}
+
+The BBQL and the MC68008 has always had the ability to addm subtract and negate Binary Coded Decimal numbers. However, it was never easy to create such things as there was no instructions that would convert an ASCII (or EBCDIC) string of digits, for example, into a BCD format, and vice versa.
+
+With the MC68020 we have the \opcode{PACK} and \opcode{UNPK} instructions to help us do exactly that.
+
+For other character code sets, the instructions take an immediate data portion, which is added to the characters when encoding, and subtracted when decoding. For ASCII or EBCDIC, this immediate data must be zero.
+
+The \opcode{PACK} instruction has the two following formats:
+
+\opcode{PACK Ds,Dd,\#data}
+\opcode{PACK -(As),-(Ad),\#data}
+
+The \opcode{Ds} or \opcode{(As)} registers point at the source text, while the \opcode{Dd} or \opcode{(Ad)} registers point at the destination.
+
+The instruction will only convert 2 bytes of the source into a single byte in the destination.
+
+For example, if using the data register version, \opcode(D0.L) contains \$$31323334_{hex}$, which is the ASCII character representation of 1234, it takes up the entire 32 bits of the register. All those '3' nibbles are effectively wasted space.
+
+The instruction \opcode{PACK D0,D1,\#0} will convert the ASCII in D0 into the BCD value \$$34_{hex}$ in \opcode{D1.B}. 
+
+To convert a string of digits, you need to use the in memory version, or do a few shifts along the way.
+
+\begin{lstlisting}[firstnumber=1,caption={Example of the PACK instruction}]
+start
+           lea     asciiDigits+8,a1    ; Source ASCII string
+           lea     bcdDigits+4,a2      ; Destination BCD buffer
+           moveq   #3,d2               ; 4 pairs of digits to convert
+           
+loop
+           pack    -(a1),-(a2),#0      ; Convert two bytes
+           dbra    d2,loop             ; Loop for more
+           ...                         ; Done, bcdDigits = $12345678
+           
+asciiDigits
+           dc.b    '12345678'          ; = $3132333435363738
+           
+bcdDigits
+           ds.l    1                   ; Space for result
+\end{lstlisting}
+
+This code converts the 8 ASCII digits at \opcode{asciiDigits} - in reverse order - from \$$3132333435363738_{hex}$ into a long word at \opcode{bcdDigits} which will end up containing the value \$$12345678_{hex}$ thus, packing 64 bits of ASCII data into 32 bits of BCD data.
+
+The \opcode{UNPK} instruction has two formats:
+
+\opcode{UNPK Ds,Dd,\#data}
+\opcode{UNPK -(As),-(Ad),\#data}
+
+And is simply the reverse of the \opcode{PACK} instruction. It converts a single byte into two separate ASCII (or EBCDIC) characters.
+
+\begin{lstlisting}[firstnumber=1,caption={Example of the UNPK instruction}]
+start
+           lea     bcdDigits+4,a1      ; Source BCD buffer
+           lea     asciiDigits+8,a2    ; Destination ASCII string
+           moveq   #3,d2               ; 4 BCD digits to convert
+
+loop
+           unpk    -(a1),-(a2),#0      ; Convert two bytes
+           dbra    d2,loop             ; Loop for more
+           ...                         ; Done, asciiDigits = 12345678
+
+asciiDigits
+           ds.b    8                   ; Space for ASCII result
+
+bcdDigits
+           dc.l    $12345678           ; Source BCD number
+\end{lstlisting}
+
+Once again, the data are converted in reverse so the initial buffer pointers have to be one past the end of the buffers' last character.
+
+The long word at \opcode{bcdDigits}, \$$12345678_{hex}$ is converted back into the  string \$$3132333435363738_{hex}$ or ASCII '12345678' by the above code.
+
+\section{Existing Instruction Upgrades}
+
+Some instructions have changed since their usage in the good old MC68008 installed in the original BBQL. These are discussed below.
+
+\subsection{Branching and Linking}
+
+Currently, on the BBQL, we can have short (8 bit) or word branches in the \opcode{Bcc}, \opcode{BRA} and \opcode{BSR} instructions. These are two's compliment (aka signed) displacements allowing for forward and backward branching. In the MC68020 we now have a long sized branch as well with all 32 bits being permitted.
+
+Using \opcode{BSR} as an example, we now have the following:
+
+\opcode{BSR.S} and \opcode{BSR.B} - this form always assembles to an 8 bit displacement branch which requires two bytes in the binary code.
+
+\opcode{BSR.W} - this form always assembles to a 16 bit displacement branch which requires four bytes in the binary code.
+
+\opcode{BSR.L} - this form always assembles to a 32 bit displacement branch which requires six bytes in the binary code.
+
+If you don't specify a size for the branch instruction, then it depends on whether your assembler has been configured to always use a 16 bit displacement or if you, like me, have configured it to try an 8 bit displacement and error out if the displacement is too far.
+
+Note, the various \emph{Decrement and Branch Unless Condition} (\opcode{DBcc}) instructions have \emph{not} changed, they are restricted to a word sized, 16 bit displacement as before.
+
+The \opcode{LINK} instruction now also has a 32 bit displacement. If you use the old instruction \opcode{LINK An,\#displacement}, you continue to get the 16 bit displacement version. You can now. however, also specify a size of .W to force a 16 bit displacement. \opcode{LINK.W An,\#displacement}.
+
+To force a 32 bit displacement, specify a size of .L as in \opcode{LINK.L An,\#displacement}.
+
+\subsection{Division}
+
+On the BBQL we have played around with the \opcode{DIVU} and \opcode{DIVS} instructions which are word sized in that they return a pair of 16 bit values one for the quotient and one for the remainder. Effectively, a 32 bit value is divided by a 16 bit value to return a pair of 16 bit values in a single data register. The top word is the remainder and the low word is the quotient.
+
+The format of these instructions was always like \opcode{DIVS \#1234,D0} and there was no need to specify a size - .B, .W or .L - because it was always .W.
+
+On the MC68020 we now have the ability to divide 32 and 64 bit numbers by 32 bit ones, resulting in a 32 bit number for the quotient and another for the remainder. We still have the existing word sized divides, but now you need to specify a size of '.W' to indicate your wish to use the old style. Assemblers will still accept the old style of missing out the size specifier and act accordingly to assemble the old word sized instructions.
+
+There are a further three assembly formats for the divide instructions:
+
+\opcode{DIVS <EA>,Dn} - This form divides a 32 bit long word by another 32 bit long word. The result is a 32 bit quotient in the specified register, with the remainder being discarded. A handy integer division instruction.
+
+\opcode{DIVS <EA>,Dr:Dq} - This form divides a 64 bit quad word (in any two data registers) by a 32 bit word taken from the effective addresss. The result is a long-word quotient in the \opcode{Dq} register, and a long-word remainder in the \opcode{Dr} register.
+
+\opcode{DIVSL.L <EA>,Dr:Dq} - This form divides a 32 bit long word by another 32 bit long word. The result is a 32 bit quotient  in the \opcode{Dq} register, and a 32 bit remainder in the \opcode{Dr} register. You should note that this instructions has an 'L' tagged on as well as the '.L' for the size. \opcode{DIVSL}.
+
+Although I've used \opcode{DIVS} in the above examples, the \opcode{DIVU} instructions are identical.
+
+Two special conditions may arise during division:
+
+\begin{itemize}
+    \item Division by zero causes a trap.
+    \item Overflow may be detected and set \emph{before} the instruction completes. If the instruction detects an overflow, it sets the overflow condition code, and the operands are unaffected.
+\end{itemize}
+
+The flags are set as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the quotient is negative; cleared otherwise; undefined if overflow or divide by zero occurs.
+    \item Z - Set if the quotient is zero; cleared otherwise; undefined if overflow or divide by zero occurs.
+    \item V - Set if division overflow occurs; undefined if divide by zero occurs; cleared otherwise.
+    \item C - Always cleared.
+\end{itemize}
+
+\subsection{Multiplication}
+
+Upgrades to the \opcode{MULU} and \opcode{MULS} instructions are similar to those of the division instructions above. Whereas up until now we have been limited to multiplying two 16 bit words to get a 32 bit result, we now have the ability to multiply two 32 bit long words together to give either a 32 bit long word result, or a 64 bit quad word result.
+
+\opcode{MULS.L <EA>,Dn} - this form multiplies the 32 bit effective address value by the data register and stores the lowest 32 bits of the result in the data register. The upper 32 bits of the result are discarded.
+
+\opcode{MULS.L <EA>,Dh-Dl} - this form multiplies the 32 bit effective address value by the data register and stores the highest 32 bits of theb result in the \opcode{Dh} register and the lowest 32 bits of the result in the \opcode{Dl} register. Nothing is discared.
+
+The multiplication instructions set the flags as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the result is negative; cleared otherwise.
+    \item Z - Set if the result is zero; cleared otherwise.
+    \item V - Set if overflow; cleared otherwise.
+    \item C - Always cleared.
+\end{itemize}
+
+For \opcode{MULS}, overflow, setting V = 1, can occur only when multiplying 32-bit
+operands to yield a 32-bit result. Overflow occurs if the highest 32 bits of the quad-word product are not the sign extension of the lowest 32 bits.
+
+For \opcode{MULU}, overflow, setting V = 1, can occur only when multiplying 32-bit
+operands to yield a 32-bit result. Overflow occurs if any of the high-order 32 bits of the quad-word product are not equal to zero.
+
+Overflow cannot occur when the product is a 64 bit quad word.
+
+\subsection{\opcode{MOVEC} - Move To/From Control Register}
+
+This instruction is only available on the has two separate formats:
+
+\opcode{MOVEC Rc,Rn}
+\opcode{MOVEC Rn,Rc}
+
+The instruction is privileged, so must be run in supervisor mode.
+
+Register \opcode{Rc} is a \emph{control} register, see table~\ref{tab-MCCR}, while register \opcode{Rn} is a normal register.
+
+Moves the contents of the specified control register (Rc) to the specified general register (Rn) or copies the contents of the specified general register to the specified control register. 
+
+This is always a 32-bit transfer, even though the control register may be implemented with fewer bits. Unimplemented bits are read as zeros.
+
+What is a control register? On the MC68020 we have the following control registers:
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{c|l}
+		\textbf{Control Register} & \textbf{Description}\\
+		\toprule
+		SFC  & Source Function Code\\
+		DFC  & Destination Function Code\\
+		USP  & User Stack Pointer\\
+		VBR  & Vector Base Register\\
+		CACR & Cache Control Register\\
+		CAAR & Cache Address Register\\
+		MSP  & Master Stack Pointer\\
+		ISP  & Interrupt Stack Pointer\\
+	\end{tabular}
+	\caption{MC68020 Control Registers}
+	\label{tab-MCCR}
+\end{table}
+
+The flags are not affected by these instructions.
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Not affected.
+    \item Z - Not affected.
+    \item V - Not affected.
+    \item C - Not affected.
+\end{itemize}
+
+\section{Other New Instructions}
+
+\subsection{\opcode{BKPT} - Hardware Breakpoint Support}
+
+This is a new instruction (from the MC68010 onwards) which is useful for hardware debuggers and is unlikely to be of any use in QL programs. However, I have been wrong in the past!
+
+The manual has this to say about the instruction:
+
+\emph{For the MC68010, a breakpoint acknowledge bus cycle is run with function codes driven high and zeros on all address lines. Whether the breakpoint acknowledge bus cycle is terminated with $\overline{DTACK}$, $\overline{BERR}$, or $\overline{VPA}$, the processor always takes an illegal instruction exception. During exception processing, a debug monitor can distinguish different software breakpoints by decoding the field in the \opcode{BKPT} instruction.}
+
+\emph{For the MC68000 and MC68008\footnote{Excuse me? My 68008 manual, a Motorola official one, makes no mention of this instruction for either the MC68008 or the MC68010!}, the breakpoint cycle is not run, but an illegal instruction exception is taken.}
+
+\emph{For the MC68020, MC68030, and CPU32, a breakpoint acknowledge bus cycle is executed with the immediate data (value 0 – 7) on bits 2 – 4 of the address bus and zeros on bits 0 and 1 of the address bus. The breakpoint acknowledge bus cycle accesses the CPU space, addressing type 0, and provides the breakpoint number specified by the instruction on address lines A2 – A4. If the external hardware terminates the cycle
+with $\overline{DSACKx}$ or $\overline{STERM}$, the data on the bus (an instruction word) is inserted into the instruction pipe and is executed after the breakpoint instruction. The breakpoint instruction requires a word to be transferred so, if the first bus cycle accesses an 8 bit port,
+a second bus cycle is required. If the external logic terminates the breakpoint acknowledge bus cycle with $\overline{BERR}$ (i.e. no instruction word available), the processor takes an illegal instruction exception.}
+
+\emph{For the MC68040, this instruction executes a breakpoint acknowledge bus cycle. Regardless of the cycle termination, the MC68040 takes an illegal instruction exception.}
+
+\emph{For more information on the breakpoint instruction refer to the appropriate user’s manual on bus operation.}
+
+\emph{This instruction supports breakpoints for debug monitors and real-time hardware emulators.}
+
+So that's clear then? It's hardware, only Dave and Nasta (and a few others) will understand any of the above!
+
+The flags are not affected.
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Not affected.
+    \item Z - Not affected.
+    \item V - Not affected.
+    \item C - Not affected.
+\end{itemize}
+
+
+\subsection{\opcode{CALLM} - Call Module}
+
+The \opcode{CALLM} instruction saves the \emph{Current Module State} on the stack and loads a new module state from the destination.
+
+The format of the instruction is:
+
+\opcode{CALLM \#data,<EA>}
+
+This instruction, and \opcode{RTM} require external hardware to be effective. 
+
+The effective address of the instruction is the location of an external module
+descriptor. 
+
+A module frame is created on the top of the stack, and the current module
+state is saved in the frame. (Program counter etc.)
+
+The immediate operand specifies the number of bytes of arguments to be passed to the called module and allows \opcode{RTM} to tidy the stack afterwards.
+
+A new module state is loaded from the descriptor addressed by the effective address.
+
+The flags are not affected.
+
+\begin{itemize}
+	\item X - Not affected.
+	\item N - Not affected.
+	\item Z - Not affected.
+	\item V - Not affected.
+	\item C - Not affected.
+\end{itemize}
+
+See also \opcode{RTM} which is used to return from a \opcode{CALLM}. Also note that these two instructions have been removed from the MC68040 onwards.
+
+
+\subsection{\opcode{CAS} and \opcode{CAS2} - Compare and Swap}
+
+The format of the \opcode{CAS} instruction is:
+
+\opcode{CAS.size Dc,Du,<EA>}
+
+The size can be .B, .W or .L.
+
+The \opcode{CAS}, Compare and Swap, instruction subtracts the value in the `compare' register (\opcode{Dc}) from the effective address which is the destination also, and sets the condition codes accordingly. 
+
+If the Z flag gets set, the value in the `update' register (\opcode{Du}) is moved to the destination.
+
+If the Z flag was not set by the instruction, the contents of the effective address are moved to the \opcode{Dc} register.
+
+The \opcode{CAS} instruction sets the flags as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Set if the most significant bit of the field is set; cleared otherwise.
+    \item Z - Set if the result is zero; cleared otherwise.
+    \item V - Set if the compare generates an overflow; cleared otherwise.
+    \item C - Set if the compare generates a carry; cleared otherwise.
+\end{itemize}
+
+An example of the \opcode{CAS} instruction is as follows. I admit it's a little contrived, but it shows what happens.
+
+\begin{lstlisting}[firstnumber=1,caption={Example of the \opcode{CAS} Instruction}]
+start
+           lea      label,a1           ; Where the compared data lives
+           moveq    #2,d2              ; Dc = compare register
+           move.l   #$87654321,d3      ; Du = update register
+           cas.l    d2,d3,(a1)         ; Compare (A1) with D2
+;                                      ; IF (A1) = D2 THEN
+;                                      ;    LET (A1) = D3
+;                                      ; ELSE
+;                                      ;    LET D2 = (A1)
+;                                      ; END IF           
+           cas.l    d2,d3,(a1)         ; Compare (A1) with D2 again
+           ...		 
+label
+		   dc.l     $1234                    
+\end{lstlisting}
+
+So, in the above, the first \opcode{CAS} compares the value at  \opcode{(A1)} which is \$$00001234_{hex}$ with the value in \opcode{D2} which is \$$00000002_{hex}$ and they are not equal, so \opcode{D2} gets loaded with the value at \opcode{(A1)} and becomes \$$00001234_{hex}$.
+
+The second \opcode{CAS} compares the value at \opcode{(A1)} which is still \$$00001234_{hex}$ with the value in \opcode{D2} which is now also \$$00001234_{hex}$ and they are obviously equal, so the long word at \opcode{(A1)} gets set to the value in \opcode{D3} which happens to be \$$87654321_{hex}$.
+
+The \opcode{CAS2} instruction is similar, except that it uses two `compare' registers and two `update' registers. The format is:
+
+\opcode{CAS2.size Dc1:Dc2,Du1:Du2,(Rn1):(Rn2)}
+
+This instruction compares memory operand 1 (Rn1) to compare operand 1 (Dc1). If the operands are equal, the instruction compares memory operand 2 (Rn2) to compare operand 2 (Dc2). If these operands are also equal, the instruction writes the update
+operands (Du1 and Du2) to the memory operands (Rn1 and Rn2). 
+
+If either comparison fails, the instruction writes the memory operands (Rn1 and Rn2) to the compare operands (Dc1 and Dc2).
+
+The size can be .W or .L.
+
+The \opcode{CAS2} instruction sets the flags as follows:
+
+\begin{itemize}
+	\item X - Not affected.
+	\item N - Set if the most significant bit of the field is set; cleared otherwise.
+	\item Z - Set if the result is zero; cleared otherwise.
+	\item V - Set if the compare generates an overflow; cleared otherwise.
+	\item C - Set if the compare generates a carry; cleared otherwise.
+\end{itemize}
+
+Both \opcode{CAS} and \opcode{CAS2} instructions access memory using locked or read-modify-write transfer sequences, providing a means of synchronizing several processors in a multi-processor system.
+
+\subsection{\opcode{CHK2} and \opcode{CMP2} - Check/Compare Register Against Bounds}
+
+The \opcode{CHK2} and \opcode{CMP2} are similar instructions except that while the latter simply sets the condition codes in the status register depending on the results of the comparison, the former traps out through an exception vector. A tad excessive if you ask me! ;-)
+
+The \opcode{CHK2} instruction has the format:
+
+\opcode{CHK2.size  <EA>,Rn}
+
+It looks in memory at the effective address specified for two bytes, words or long words and compares the specified register, which can be a data or address register, with the two values.
+
+The two values are the (signed) lower and upper bounds for the comparison. The data at the address specified in the effective address is the lower bound. The data at that address plus 1, 2 or 4, depending on the size, is the upper bound.
+
+The flags are set as follows:
+
+\begin{itemize}
+    \item X - Not affected.
+    \item N - Undefined.
+    \item Z - Set if Rn equals either boundary value; cleared otherwise.
+    \item V - Undefined.
+    \item C - Set is Rn is out of range; cleared otherwise.
+\end{itemize}
+
+In operation, if the register value is equal to, or falls between the two bounds, then execution continues as normal and the C flag is cleared. If the register value happens to equal one of the bounds, then the Z flag will be set.
+
+If the register value is out of bounds, then the exception is raised. A tad harsh, so let's look at a gentler approach. The \opcode{CMP2} instruction.
+
+This instruction takes the format:
+
+\opcode{CMP2.size  <EA>,Rn}
+
+It sets the flags exactly as the \opcode{CHK2} instruction does.
+
+It operates exactly as the \opcode{CHK2} instruction just described, but does not raise an exception if the value is out of bounds. This can be useful when comparing a value in a register to determine if it is a digit, for example, as per the following snippet:
+
+\begin{lstlisting}[firstnumber=1,caption={Example of the \opcode{CMP2} Instruction}]
+start
+           lea     inputBuffer,a1      ; Where we find user input
+           
+checkLoop           
+           move.b  (a1)+,d0            ; Grab one character
+           cmp2.b  digitBounds,d0      ; Got a digit?
+           bcc.s   gotDigit            ; Yes, handle it
+           cmpi.b  #10,d0              ; No, check for a linefeed?
+           beq.s   allDone             ; End of input
+           ...                         ; Not a digit, do something else
+           bra.s   checkLoop           ; Keep going
+           
+allDone
+           moveq   #0,d0               ; Signal done
+           rts                         ; Back to caller           
+           
+gotDigits
+           ...                         ; Handle digit input here
+           bra.s   checkLoop           ; Loop around
+
+digitBounds
+           dc.b    '0','9'             ; Range of valid digits           
+\end{lstlisting}
+
+This is much less hassle than checking the character in \opcode{D0} with a '0' and skipping out if the flags show that \opcode{D0} was lower than a '0' then doing something similar for a '9'. I also happen to think that it's a lot easier to read the code done in this way.
+
+\subsection{\opcode{RTM} - Return From Module}
+
+This instruction, and \opcode{CALLM} require external hardware to be effective. 
+
+This instruction, is used to terminate a \opcode{CALLM} instruction. It reloads the module state from the stack. The instruction format is:
+
+\opcode{RTM Rn}
+
+The register can be a data or address register.
+
+A previously saved module state is reloaded from the top of stack. After the module state consisting of program counter, status word etc, is retrieved from the top of the stack, the caller’s stack pointer is incremented by the argument count value in the module state.
+
+Given that this instruction has been removed from the MC68040 onwards, there's probably not much use for it in QL programs. See also \opcode{CALLM}.
+
+The flags are set according to the word on the stack.
+
+\subsection{Coprocessor Instructions}
+
+There are numerous floating point co-processor instructions which, for now at least, are beyond the scope of the eComic!\footnote{I don't have a genuine MC680020 to play with, only QPC.} I'm pretty certain that George Gwilt, my faithful reader, has written a document on these instructions. The document can be found on the \href{http://www.dilwyn.me.uk/docs/asm/fpu.zip}{Sinclair QL Homepage}.\footnote{\url{http://www.dilwyn.me.uk/docs/asm/fpu.zip}}

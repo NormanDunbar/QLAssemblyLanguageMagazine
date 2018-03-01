@@ -1,0 +1,164 @@
+\chapter{Improving Langton's Ant}
+
+So, given that we now fully understand these new fangled 680020 instructions, can we improve \nameref{chp-langtons-ant}?
+
+
+\section{A 68020 Improvement, Perhaps?}
+
+As presented earlier in this issue, the code will actually assemble using the \program{GWASL}GWASL assembler that we have been using up until now in this series\footnote{And indeed, since I first started writing for \emph{QL Today}, more years ago than I care to even begin to attempt to remember!}.
+
+Given how short the code above is, relative to some of the stuff in the last issue for example, can it be improved using the 68020 processor?
+
+In a word, yes. We have to work out a number of things each time through the loop:
+
+\begin{itemize}
+	\item The address of the start of the row of bytes where the current cell can be found;
+	\item The Address of the byte, within the row, representing the current cell;
+	\item The Address of the bit, within the byte, representing the current cell;
+\end{itemize}
+
+We need this to enable us to determine the current cell's colour and from that where the next cell will be, plus we also need to change the colour to black or white according to whichever rule we activated.
+
+The following code extract is where we work out the bit we need to set or clear in the ant's bitmap.
+
+\begin{lstlisting}[firstnumber=255,caption={Langtons Ant - Existing Bitmap Calculation}]
+;--------------------------------------------------------------------
+; First work out the bit number in the cell's byte. This is simply
+; the 7 - (across coordinate MOD 8).
+;--------------------------------------------------------------------
+bitNumber
+           move.l  d2,d6               ; Copy Across | Down coords
+           swap    d6                  ; Down | Across
+           move.w  d6,d4               ; Copy Across coordinate to D4
+           andi.w  #7,d4               ; Mod 8 = 0 to 7
+           neg.w   d4                  ; -7 to 0
+           addq.w  #7,d4               ; D4.W = bit number
+
+;--------------------------------------------------------------------
+; The byte within the row, which we calculate soon, is calculated as
+; (across coordinate DIV 8). Easy.
+;--------------------------------------------------------------------
+byteNumber
+           lsr.w   #3,d6               ; Across div 8
+
+;--------------------------------------------------------------------
+; The correct row number in the cells bitmap is the Down coordinate
+; multipled by (size_x DIV 8). This shouldn't exceed a word size. The
+; result is added to A3 which is the start address of the cells
+; bitmap and loaded into A4 as the byte address that we want.
+;--------------------------------------------------------------------
+doRow
+           move.w  #size_x,d7          ; Pixels across
+           lsr.w   #3,d7               ; Now bytes across
+           mulu    d2,d7               ; Times down coordinate
+           lea     0(a3,d7.w),a4       ; Address of correct row
+           adda.w  d6,a4               ; Correct byte in row
+
+;--------------------------------------------------------------------
+; Given the byte address in A4 and the bit number in D4, we can now
+; test that individual bit. A zero is white while a 1 is black.
+;--------------------------------------------------------------------
+           btst    d4,(a4)             ; 0 = white, 1 = black
+\end{lstlisting}
+
+We can, should we wish to, replace all of the above using a bit field test instruction, or \opcode{BFTST} as described in \nameref{chp-mc68020-bftst} on page~\pageref{chp-mc68020-bftst}.
+
+Once you have read the introduction to bit fields - \nameref{chp-mc68020-bitfields} on page~\pageref{chp-mc68020-bitfields} you will realise that we no longer need to effectively reverse the bit numbering, as bit fields number from 0 upwards, but bit zero is the most significant bit!
+
+Equally, we only need to calculate the bit number within the \emph{entire} bitfield, we don't need to work out a bit number, a byte number and a row number first.
+
+\subsection{Bit Field Calculations}
+
+To calculate the bit number we need, is now quite simple - given that bit fields start numbering at the most significant bit. The calculation is:
+
+$\text{across} + (\text{down} * \text{x\_size})$
+
+That's it. If, for example we are on the very first bit, that would be bit zero in a bit field, the coordinates would both be 0, 0 for across and down, so this is $0 + (0 * 256)$ which is still zero, and is correct.
+
+If we were at the far right of the very first line, we are on the $512^{th}$ bit in the bitmap, and that comes from the coordinates being 511, 0, giving $511 + (0 * 512)$ which is 511, and that is indeed the bit number of the $512^{th}$ bit.
+
+And so on down and across the bitmap. In our ant's world, there are 512 by 256 cells, so we need that many bits, which works out at 131,072 bits. (16,384 bytes) 
+
+This means that for the very bottom right coordinate, 511, 255, the bit will be $511 + (255 * 512)$ which works out at 131,071 and yes, that's the bit number of the $131,072^{nd}$ bit in the bitmap.
+
+Currently we calculate a bit number in \opcode{D4} of the byte at the address held in \opcode{A4} for the current cell. Using the 68020 we can change all of the above code to the following.
+
+\begin{lstlisting}[firstnumber=255,caption={Langtons Ant - 68020 Bitmap Calculation}]
+;--------------------------------------------------------------------
+; Calculate the bit number within the cells bit field. This is simply
+; across + (down * width).
+;--------------------------------------------------------------------
+bitNumber
+           moveq   #x_size,d4          ; Width
+           mulu    d2,d4               ; Width * Down
+           swap    d2                  ; Low word = Across
+           add.w   d2,d4               ; Across + (Down * Width)
+           swap    d2                  ; Restore
+           bftst   (a3){d4:1}          ; Test bit
+\end{lstlisting}
+
+As you can see, this chops a whole pile of code out and reduces the number of instructions required to calculate which bit we need to be looking at and setting, or clearing, as part of the rules for the ant. It also frees up \opcode{D6} and \opcode{A4} too, which might come in handy elsewhere - for saving D5 perhaps!
+
+Obviously I now need to update the Register Usage comments - but I'm not showing that here.
+
+After  this, we also need to update the code for the two rules as we must set or clear the bit representing the current cell. The existing code for the two rules is as follows.
+
+Register \opcode{A3}, if you remember, was initially set to point at the \opcode{Cells} bitmap. So the \opcode{bftst (a3)\{d4:1\}} instruction says to \emph{start at the address held in register \opcode{A3} and count from the most significant bit at that address, \opcode{D4} bits - then test the bit that you arrive at.}
+
+
+\begin{lstlisting}[firstnumber=293,caption={Langtons Ant - Existing Rule 1}]
+;--------------------------------------------------------------------
+; Rule 1: If the cell is white, turn it black, right turn, walk on.
+;--------------------------------------------------------------------
+ruleOne
+           bne.s   ruleTwo
+           bset    d4,(a4)             ; Turn it black in the bitmap
+           moveq   #black,d1           ; Colour for BLOCK command
+           subq.b  #1,d5               ; Direction - 1 = right
+           bra.s   doDirection         ; Prepare to walk on
+
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[firstnumber=303,caption={Langtons Ant - Existing Rule 2}]
+;--------------------------------------------------------------------
+; Rule 2: If the cell is black, turn it white, left turn, walk on.
+;--------------------------------------------------------------------
+ruleTwo
+           bclr    d4,(a4)             ; Turn it white in the bitmap
+           moveq   #white,d1           ; Colour for BLOCK command
+           addq.b  #1,d5               ; Direction + 1 = left
+\end{lstlisting}
+
+These would be changed to allow them to use the \opcode{BFSET} and \opcode{BFCLR} instructions, as follows:
+
+\begin{lstlisting}[firstnumber=293,caption={Langtons Ant - 68020 Rule 1}]
+;--------------------------------------------------------------------
+; Rule 1: If the cell is white, turn it black, right turn, walk on.
+;--------------------------------------------------------------------
+ruleOne
+           bne.s   ruleTwo
+           bfset   (a3){d4:1}          ; Turn it black in the bitmap
+           moveq   #black,d1           ; Colour for BLOCK command
+           subq.b  #1,d5               ; Direction - 1 = right
+           bra.s   doDirection         ; Prepare to walk on
+
+\end{lstlisting}
+
+
+
+\begin{lstlisting}[firstnumber=303,caption={Langtons Ant - 68020 Rule 2}]
+;--------------------------------------------------------------------
+; Rule 2: If the cell is black, turn it white, left turn, walk on.
+;--------------------------------------------------------------------
+ruleTwo
+           bfclr   (a3){d4:1}          ; Turn it white in the bitmap
+           moveq   #white,d1           ; Colour for BLOCK command
+           addq.b  #1,d5               ; Direction + 1 = left
+
+\end{lstlisting}
+
+So a couple of easy changes and we have a smaller source program to type in, a smaller executable program - in my case, by a whole 34 bytes - because we took advantage of the 68020's new instructions.
+
+Happy anting.
