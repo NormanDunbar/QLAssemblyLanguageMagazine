@@ -345,7 +345,7 @@ plotAnt
 
 This is the code that runs our ant's world. Because we made the width and height of the world a power of two, we can subtract 1 to get a mask that will ensure that it will remain in range and this also helps in wrapping the ant's world around, top and bottom as well as left and right. 
 
-Given that width, for example, is 512, then anding the across coordinate with 511 will cause it to be in range 0 to 511 always. If it becomes 512 then and will reset it to 0.If it goes to minus 1, the and will reset it to 511 - and so, we have a simple way of wrapping the coordinates.
+Given that width, for example, is 512, then \opcode{AND}ing the across coordinate with 511 will cause it to be in range 0 to 511 always. If it becomes 512 then and will reset it to 0. If it goes to minus 1, the and will reset it to 511 - and so, we have a simple way of wrapping the coordinates.
 
 \begin{lstlisting}[firstnumber=last,caption={Langtons Ant - Pixel Calculations}]
 ;--------------------------------------------------------------------
@@ -360,7 +360,7 @@ Given that width, for example, is 512, then anding the across coordinate with 51
 
 ;--------------------------------------------------------------------
 ; First work out the bit number in the cell's byte. This is simply
-; the 7 - (across coordinate MOD 8).
+; 7 - (across coordinate MOD 8).
 ;--------------------------------------------------------------------
 bitNumber
            move.l  d2,d6               ; Copy Across | Down coords

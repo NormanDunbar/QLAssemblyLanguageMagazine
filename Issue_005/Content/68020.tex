@@ -42,7 +42,7 @@ On \program{QPC}QPC  and on other computers or emulators with an MC68020 process
 
 \section{Bit Field Instructions}
 
-The M68000 family architecture supports variable-length bit field operations on fields of up to 32 bits. These instructions can be quite handy, as will be shown later, but first, what exactly is a bit field?
+The M68000 family architecture supports variable-length bit field operations on fields of up to 32 bits - in a register - and almost unlimited width in memory. These instructions can be quite handy, as will be shown later, but first, what exactly is a bit field?
 
 \subsection{Bit Fields}\label{chp-mc68020-bitfields}
 
@@ -106,7 +106,7 @@ baseAddress
            dc.l    $12345678           ; Base address here
 \end{lstlisting}
 
-So the first thing to note is that attempting to use an numeric literals for the offsets will cause assembly errors is they are outside the range 0 to 31 inclusive. This is why we had to use \opcode{D2} as the offset and the receiving register for one of the instructions.
+So the first thing to note is that attempting to use any numeric literals for the offsets will cause assembly errors as they are outside the range 0 to 31 inclusive. This is why we had to use \opcode{D2} as the offset and the receiving register for one of the instructions.
 
 The data read into \opcode{D1} is the 8 bits from \opcode{baseAddress} which is the value \$$12_{hex}$. 
 
@@ -317,7 +317,7 @@ For example, to test the bits in the 3 bit wide bit field beginning at bit 13 of
 
 \section{Converting Character and Decimal Numbers}
 
-The BBQL and the MC68008 has always had the ability to addm subtract and negate Binary Coded Decimal numbers. However, it was never easy to create such things as there was no instructions that would convert an ASCII (or EBCDIC) string of digits, for example, into a BCD format, and vice versa.
+The BBQL and the MC68008 has always had the ability to add, subtract and negate Binary Coded Decimal numbers. However, it was never easy to create such things as there were no instructions that would convert an ASCII (or EBCDIC) string of digits, for example, into a BCD format, and vice versa.
 
 With the MC68020 we have the \opcode{PACK} and \opcode{UNPK} instructions to help us do exactly that.
 
@@ -325,14 +325,14 @@ For other character code sets, the instructions take an immediate data portion, 
 
 The \opcode{PACK} instruction has the two following formats:
 
-\opcode{PACK Ds,Dd,\#data}
+\opcode{PACK Ds,Dd,\#data}\\
 \opcode{PACK -(As),-(Ad),\#data}
 
 The \opcode{Ds} or \opcode{(As)} registers point at the source text, while the \opcode{Dd} or \opcode{(Ad)} registers point at the destination.
 
 The instruction will only convert 2 bytes of the source into a single byte in the destination.
 
-For example, if using the data register version, \opcode(D0.L) contains \$$31323334_{hex}$, which is the ASCII character representation of 1234, it takes up the entire 32 bits of the register. All those '3' nibbles are effectively wasted space.
+For example, if using the data register version, \opcode(D0.L) contains \$$31323334_{hex}$, which is the ASCII character representation of 1234, it takes up the entire 32 bits of the register. All those `3' nibbles are effectively wasted space.
 
 The instruction \opcode{PACK D0,D1,\#0} will convert the ASCII in D0 into the BCD value \$$34_{hex}$ in \opcode{D1.B}. 
 
@@ -360,7 +360,7 @@ This code converts the 8 ASCII digits at \opcode{asciiDigits} - in reverse order
 
 The \opcode{UNPK} instruction has two formats:
 
-\opcode{UNPK Ds,Dd,\#data}
+\opcode{UNPK Ds,Dd,\#data}\\
 \opcode{UNPK -(As),-(Ad),\#data}
 
 And is simply the reverse of the \opcode{PACK} instruction. It converts a single byte into two separate ASCII (or EBCDIC) characters.
@@ -385,7 +385,7 @@ bcdDigits
 
 Once again, the data are converted in reverse so the initial buffer pointers have to be one past the end of the buffers' last character.
 
-The long word at \opcode{bcdDigits}, \$$12345678_{hex}$ is converted back into the  string \$$3132333435363738_{hex}$ or ASCII '12345678' by the above code.
+The long word at \opcode{bcdDigits}, \$$12345678_{hex}$ is converted back into the  string \$$3132333435363738_{hex}$ or ASCII `12345678' by the above code.
 
 \section{Existing Instruction Upgrades}
 
@@ -417,7 +417,7 @@ On the BBQL we have played around with the \opcode{DIVU} and \opcode{DIVS} instr
 
 The format of these instructions was always like \opcode{DIVS \#1234,D0} and there was no need to specify a size - .B, .W or .L - because it was always .W.
 
-On the MC68020 we now have the ability to divide 32 and 64 bit numbers by 32 bit ones, resulting in a 32 bit number for the quotient and another for the remainder. We still have the existing word sized divides, but now you need to specify a size of '.W' to indicate your wish to use the old style. Assemblers will still accept the old style of missing out the size specifier and act accordingly to assemble the old word sized instructions.
+On the MC68020 we now have the ability to divide 32 and 64 bit numbers by 32 bit ones, resulting in a 32 bit number for the quotient and another for the remainder. We still have the existing word sized divides, but now you need to specify a size of `.W' to indicate your wish to use the old style. Assemblers will still accept the old style of missing out the size specifier and act accordingly to assemble the old word sized instructions.
 
 There are a further three assembly formats for the divide instructions:
 
@@ -425,7 +425,7 @@ There are a further three assembly formats for the divide instructions:
 
 \opcode{DIVS <EA>,Dr:Dq} - This form divides a 64 bit quad word (in any two data registers) by a 32 bit word taken from the effective addresss. The result is a long-word quotient in the \opcode{Dq} register, and a long-word remainder in the \opcode{Dr} register.
 
-\opcode{DIVSL.L <EA>,Dr:Dq} - This form divides a 32 bit long word by another 32 bit long word. The result is a 32 bit quotient  in the \opcode{Dq} register, and a 32 bit remainder in the \opcode{Dr} register. You should note that this instructions has an 'L' tagged on as well as the '.L' for the size. \opcode{DIVSL}.
+\opcode{DIVSL.L <EA>,Dr:Dq} - This form divides a 32 bit long word by another 32 bit long word. The result is a 32 bit quotient  in the \opcode{Dq} register, and a 32 bit remainder in the \opcode{Dr} register. You should note that this instructions has an `L' tagged on as well as the `.L' for the size. \opcode{DIVSL}.
 
 Although I've used \opcode{DIVS} in the above examples, the \opcode{DIVU} instructions are identical.
 
@@ -714,7 +714,7 @@ digitBounds
            dc.b    '0','9'             ; Range of valid digits           
 \end{lstlisting}
 
-This is much less hassle than checking the character in \opcode{D0} with a '0' and skipping out if the flags show that \opcode{D0} was lower than a '0' then doing something similar for a '9'. I also happen to think that it's a lot easier to read the code done in this way.
+This is much less hassle than checking the character in \opcode{D0} with a `0' and skipping out if the flags show that \opcode{D0} was lower than a `0' then doing something similar for a `9'. I also happen to think that it's a lot easier to read the code done in this way.
 
 \subsection{\opcode{RTM} - Return From Module}
 
