@@ -101,9 +101,10 @@ As you can see, this chops a whole pile of code out and reduces the number of in
 
 Obviously I now need to update the Register Usage comments - but I'm not showing that here.
 
+Register \opcode{A3}, if you remember, was initially set to point at the \opcode{Cells} bitmap. So the \opcode{bftst (a3)\{d4:1\}} instruction says to \emph{start at the address held in register \opcode{A3} and count from the most significant bit at that address, \opcode{D4} bits along, then test the single bit that you arrive at.}
+
 After  this, we also need to update the code for the two rules as we must set or clear the bit representing the current cell. The existing code for the two rules is as follows.
 
-Register \opcode{A3}, if you remember, was initially set to point at the \opcode{Cells} bitmap. So the \opcode{bftst (a3)\{d4:1\}} instruction says to \emph{start at the address held in register \opcode{A3} and count from the most significant bit at that address, \opcode{D4} bits - then test the bit that you arrive at.}
 
 
 \begin{lstlisting}[firstnumber=293,caption={Langtons Ant - Existing Rule 1}]

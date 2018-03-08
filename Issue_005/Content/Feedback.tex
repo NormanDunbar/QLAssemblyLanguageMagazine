@@ -1,2 +1,44 @@
 \chapter{Feedback on Issue 4}
-\section{No Feedback so far!}
+\section{ASMReformat Comments}
+Not long after I published \href{http://qdosmsq.dunbar-it.co.uk/downloads/AssemblyLanguage/Issue\_004/Assembly\_Language\_004.pdf}{Issue 4} I received some feedback from Wolfgang Lenerz regarding the code for the \program{ASMReformat}ASMReformat program listing, well, to be precise, the listing as published \emph{and} the output when run against a source file.
+
+\textbf{WL:} Four traps aren't defined in the code (\opcode{io\_fline}, \opcode{io\_sbyte}, \opcode{io\_sstrg}, \opcode{mt\_frjob}) you might want to include the \opcode{equ} for these.
+
+\textbf{ND:} I did wonder about this when I was writing the utility. \program{GWASS}GWASS includes a definitions file automatically so when I had those equates in the source, I got errors that they were duplicated, so I had to remove them. I was sure that \program{QMAC}QMAC did the same thing - but I haven't had to use that assembler since I started writing in QL Today all those years ago.
+
+For anyone who needs them, here are the QDOS versions, from Pennell\footnote{\emph{The Sinclair QDOS Companion} A Guide to the QL Operating System.  \copyright{}~Andrew Pennell, 1985}:
+
+\begin{verbatim}
+io_fline    equ 2
+io_sbyte    equ 5
+io_sstrg    equ 7
+mt_frjob    equ 5
+\end{verbatim}
+
+
+\textbf{WL:} I don't know about \program{GWasl}Gwasl, but \program{Qmac}Qmac doesn't allow, for the \opcode{equ} directive, the label and the content to be on different lines:
+
+\begin{verbatim}
+label equ something
+\end{verbatim}
+
+is ok
+
+\begin{verbatim}
+label 
+      equ something
+\end{verbatim}
+
+is not ok....
+
+\textbf{ND:} Hmm. I wasn't aware of this, but as mentioned above, it's been a long time! Perhaps, in a forthcoming issue, I could amend the utility to accept a parameter string that prevents this line split occurring. I'll look into it and see what I can come up with.
+
+
+\textbf{WL:} Finally, for Qmac, you need simple "section x" at the start. 
+
+\textbf{ND:} This is true, and I \emph{think} you also need an \opcode{END} at the end as well, if I remember correctly?
+
+Anyway, I was assuming when I wrote the code that you would be passing your own code through the utility to get proper/my/standard/whatever formatting. so I would assume that you already have a \opcode{SECTION x} at the start (and an \opcode{END} at the end?) so they should be already there. Unless, of course, you mean that it doesn't work for those lines in a source file?
+
+I've tested it on my own DJToolkit source, which was originally QMAC based, and it works fine.
+
