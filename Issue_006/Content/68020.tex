@@ -1,0 +1,124 @@
+\chapter{Using the MC68020 - Part 3}
+
+In the last issue, we took a very long look at the new and upgraded instructions that are now available when using an MC68020 processor as found in \program{QPC}QPC - and possibly, in other emulators too. The old BBQL\footnote{Black Box QL} uses an MC68008 and cannot cope with the new stuff.
+
+To assemble these 62020 instructions, you need a copy of \program{Gwass}Gwass available from \href{http://gwiltprogs.info/page2.htm}{George's web site}.\footnote{\url{http://gwiltprogs.info/page2.htm}}
+
+This article continues our look at new features of the MC68020.
+
+Here are the subjects I will cover in this issue, in relation to the 68020:
+
+\begin{itemize}
+	\item The new format Status Register
+	\item The various Control Registers used by the \opcode{MOVEC} instruction.
+	\item New exception handlers.
+\end{itemize}
+
+\section{Status Register}
+
+The status register looks like the following in the MV68020:
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|c|}
+		\toprule
+		\multicolumn{16}{|c|}{Bit}\\
+		\midrule
+		15     &14     &13&12&11&10     &9      &8      &7&6&5&4&3&2&1&0\\
+		\midrule
+		T$_{1}$&T$_{0}$&S &M &- &I$_{2}$&I$_{1}$&I$_{0}$&-&-&-&X&N&Z&V&C\\
+		\bottomrule
+	\end{tabular}
+	\caption{MC68020 Status Register}
+	\label{tab-MCCR}
+\end{table}
+
+\subsection{Trace Bits $T_{1}$ and $T_{0}$}
+In the status register for the MC68020 we have now got an extra Trace bit - bit 14 - known as T$_{0}$. The original (MC68008) Trace bit, bit 15, is now known as the T$_{1}$ bit. Between the two Trace bits, better tracing can take place, as follows:
+
+\begin{itemize}
+	\item 00 - When both Trace bits are zero, no tracing takes place.
+	\item 01 - When T$_{1}$ is clear and T$_{0}$ is set, tracing takes place on a change of program flow - a branch, jump or subroutine call.
+	\item 10 - When T$_{1}$ is set and T$_{0}$ is clear, tracing happens after every instruction. This is the tracing mode we are used to on the MC68008.
+	\item 11 - Undefined. Probably best avoided!
+\end{itemize}
+
+\subsection{Supervisor Master and Interrupt Modes}
+
+In addition to the extra Trace bit, there is a new Master bit as well. Bit 12 is the new Master bit.
+
+On the MC68020, Supervisor mode is now split into two sub modes - master and interrupt. When the S and M bits are set then the processor is running in Master mode and uses the new Master Stack with the Master Stack Pointer in A7. (MSP(A7''))
+
+When the S bit is set, and the M bit is clear, then the processor is running in Interrupt mode and uses another new stack, the Interrupt Stack, with A7 being the Interrupt Stack Pointer. (ISP(A7'))
+
+The only difference between the two modes is the different stack pointer in use in register \opcode{A7}.
+
+
+\section{Control Registers and \opcode{MOVEC}}
+
+On the MC68020 we have the following control registers:
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{c|l}
+		\textbf{Control Register} & \textbf{Description}\\
+		\toprule
+		SFC  & Source Function Code\\
+		DFC  & Destination Function Code\\
+		USP  & User Stack Pointer\\
+		VBR  & Vector Base Register\\
+		CACR & Cache Control Register\\
+		CAAR & Cache Address Register\\
+		MSP  & Master Stack Pointer\\
+		ISP  & Interrupt Stack Pointer\\
+	\end{tabular}
+	\caption{MC68020 Control Registers}
+	\label{tab-MCCR}
+\end{table}
+
+\subsection{SFC and DFC- Source and Destination Function Code}
+
+The alternate function code registers contain 3-bit function codes. Function codes can be considered extensions of the 32-bit logical address that optionally provides as many as eight 4-Gbyte address spaces - potentially increasing the 32 bit address bus to 35 bits.
+
+The processor automatically generates function codes to select address spaces for data and programs at the user and supervisor modes. 
+
+Certain instructions use SFC and DFC to specify the function codes for operations.
+
+The processor has three pins named FC0, FC1 and FC2. When the processor reads or writes from memory, these pins reflect information about the state of the processor. 
+
+They show the state of the processor - is it running in user or supervisor mode - and whether it is accessing data or instructions in memory.
+
+The function codes are often used by external Memory Management Units (MMU) to protect various sections of memory. To the best of my knowledge, the QL doesn't have an MMU.
+
+\subsection{VBR - vector Base Register}
+
+The VBR is a 32 bit register which contains the base address of the exception vector table in memory. The displacement of an exception vector adds to the value in this register, which accesses the vector table.
+
+On the MC68008, the exception table always lived at address 0, however, from the MC68010 onwards, the vector table still lives at address 0, but after a processor reset, the VBR can be adjusted to any desired location - provided that it can be addressed by a single 32 bit register.
+
+\subsection{CACR and CAAR - Cache Control}
+
+Many programs spend a lot of time executing loops. While within these loops, they execute the same (small) set of instructions over and over again. Each time the processor needs to execute an instruction, it must read it from memory.
+
+There is a 256 byte instruction cache built in to the MC68020 (but probably not built in to the virtual MC68020 using in QPC, for example) which contains the most recently executed instructions.
+
+In the case of a loop, the processor doesn't need to access memory to read the instructions more than once, in theory. When an instruction is read, it is stored in the cache and if executed again, will be read from cache which is much much quicker than reading from memory.
+
+This is not always appropriate though, so the processor has the ability to enable, disable and otherwise manipulate the cache through the use of the CACR and CAAR control registers. These registers are 32 bits wide.
+
+The use of these registers is beyond the scope of this series. They are unlikely to be mentioned ever again - except in passing, maybe!
+
+\subsection{USP, MSP and ISP - Stack Pointers}
+
+In normal user programs, the processor runs in user mode and the stack pointer in \opcode{A7} is the USP or User Stack Pointer.
+
+In Supervisor mode, a different stack is in use, usually limited in size, and on the BBQL, \opcode{A7} was then known as the SSP or Supervisor Stack Pointer.
+
+On the MC68020 we have two submodes for Supervisor mode, and each one can have a different stack area and \opcode{A7} will be set accordingly to the Master Stack Pointer (MSP) or the Interrupt Stack Pointer (ISP) depending on the settings of the S and M bits in the Status Register.
+
+If S is set and M is clear, the ISP is in \opcode{A7}, while the MSP is in \opcode{A7} if both bits are set.
+
+
+\section{Exception Handlers}
+
+???????????????????????
