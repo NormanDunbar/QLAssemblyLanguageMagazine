@@ -1,0 +1,342 @@
+\chapter{Cross Compiled Programs}\label{chp-cross-compiled-programs}
+
+Recently, I've been playing about with the \program{xtc68} C compiler - which is basically C68 for Linux (or Windows, if you must!) and allows me to have fun writing C68 programs on my Linux laptop, which will be eventually copied over to the QL, and executed there.
+
+As ever, any computer that is \emph{not} a QL (or an emulator) has a problem when executable files are involved - there's no file header present, so there's no easy way to make the file executable on the QL - other than making up some number for the data space, allocating a chunk of RAM equal to the file size, loading it into that RAM area with LBYTES and then SEXECing the file back to the device. There has to be an easier way, surely?
+
+Step forward my \program{XTcc} utility, described later. This utility does all the needful to get a file on the QL from its unusable state to a executable - very handy for files compiled with the \program{xtc68} compiler or anything else that writes an XTcc trailer to the compiled file. I only know of the \program{xtc68} compiler which does this, but there may be others.
+
+
+\subsection{The XTcc Trailer Record}
+
+The trailer record produced by the compiler, and any other applications that create it, is a simpel addition of 8 bytes to the very end of the file in question. These 8 bytes are split into two 4 byte chunks:
+
+\begin{itemize}
+	\item The text ``XTcc'' in exactly that letter case.
+	\item The required data space for the QL file, in big endian, long word format.
+\end{itemize}
+
+
+\subsection{Program Description}
+
+The program, \program{XTcc}, is quite simple and carries out the following steps after being executed as a filter:
+
+\begin{itemize}
+	\item Checks that only one filename was supplied, exits with a Bad Parameter error if not.
+	\item Reads the file's header.
+	\item If the file is already an executable file, then exits quietly as there is nothing more to do.
+	\item Reads the file's length from the header, and sets the file pointer to that position minus 8 bytes. If the file cannot be positions at the required place, exit with an Out of Range error.
+	\item Reads the last 8 bytes of the file. Exits with a File Error if 8 bytes couldn't be read.
+	\item Checks that the first 4 bytes read are "XTcc", if not, exits with a Not Found error.
+	\item Copies the data space from the last 4 bytes of the file into the file header.
+	\item Sets the file's type, in the header, to be executable.
+	\item Writes the file header back to the medium.
+	\item The job then exits as if nothing had happened.
+\end{itemize}
+
+
+\subsection{The Program Listing}
+
+
+\begin{lstlisting}[firstnumber=1,caption={XTcc - Comments}]
+;--------------------------------------------------------------------
+; XTcc:
+;
+; This utility reads a cross-compiled executable for QDOSMSQ and will
+; attempt to correctly set the file's data space according to the
+; 'XTcc' setting stored at the end of the file.
+;
+;
+; EX XTcc_bin, input_file
+;
+;--------------------------------------------------------------------
+; 13/12/2018 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------------
+; (c) Norman Dunbar, 2018. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------------
+\end{lstlisting}
+
+Nothing to see here except some blurb explaining what the code is for and how to execute the utility.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Equates}]
+; How many channels do I want?
+NUMCHANS
+           equ     1                   ; How many channels required?
+
+
+; Stack stuff.
+sourceId
+           equ     $02                 ; Offset(A7) to input file id
+
+; Other stuff.
+err_nc
+           equ     -1                  ; Not complete.
+err_or
+           equ     -4                  ; Out of range.
+err_nf
+           equ     -7                  ; Not found.
+err_bp
+           equ     -15                 ; Bad parameter.
+err_fe
+           equ     -16                 ; File error.
+timeout
+           equ     -1                  ; Trap call timeouts.
+me
+           equ     -1                  ; Job id for this job.
+exeType
+           equ     $01                 ; File Type for executable.
+fileType
+           equ     $05                 ; Offset in header to file type.
+fileSize
+           equ     $00                 ; Offset to file length.
+fileData
+           equ     $06                 ; Offset to dataspace in header
+dataSpace
+           equ     $04                 ; Offset to XTcc datspace value
+\end{lstlisting}
+
+The code above simply initialises various equates that will be required elsewhere.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Initialisation}]
+;====================================================================
+; Here begins the code.
+;--------------------------------------------------------------------
+; Stack on entry:
+;
+; $0c(a7) = bytes of parameter + padding, if odd length.
+; $0a(a7) = Parameter size word.
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;====================================================================
+start
+           bra.s   checkStack
+
+           dc.l    $00
+           dc.w    $4afb
+name
+           dc.w    name_end-name-2
+           dc.b    'XTcc'
+name_end
+           equ     *
+
+version
+           dc.w    vers_end-version-2
+           dc.b    'Version 1.00 - 13/Dec/2018'
+vers_end
+           equ     *
+
+
+bad_parameter
+           moveq   #err_bp,d0          ; Guess!
+           bra     errorExit           ; Die horribly
+
+rh_buffer
+           ds.w    32                  ; Storage for file header
+xtcc_buffer
+           ds.l    2                   ; Storage for XTcc flag * dataspace
+\end{lstlisting}
+
+Now we are getting interesting. The start of the code is as above, and it consists of the standard QDOSMSQ job header followed by a version number for the utility, a bad parameter error exit and sets up the required two buffers. One is 64 bytes long for the file headers and the other is 8 for the XTcc Trailer Record's data.
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Channel Checking}]
+;--------------------------------------------------------------------
+; Check the stack on entry. We only require NUMCHAN channels - any
+; thing other than NUMCHANS will result in a BAD PARAMETER error on
+; exit from EW (but sadly, not from EX).
+;--------------------------------------------------------------------
+checkStack
+           cmpi.w  #NUMCHANS,(a7)      ; Two channels is a must
+           bne.s   bad_parameter       ; Oops
+\end{lstlisting}
+
+The first check made by the code is to ensure that it was called with a single file channel on the stack. The utility wil exit with a bad parameter error if this is not the case.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Read the File Header}]
+;--------------------------------------------------------------------
+; READ_HEADER = read the file header for the given channel.
+;
+; A0.L = Channel Id.        (Preserved)
+; A1.L = Buffer address.    (1 past end of buffer on return)
+; D1   = Not used.          (Size of buffer read)
+; D2.W = Buffer length.     (Preserved)
+; D3.W = Timeout.           (Preserved)
+;--------------------------------------------------------------------
+readHeader
+           moveq   #fs_headr,d0        ; Reading the header
+           moveq   #64,d2              ; Buffer maximum size
+           moveq   #timeout,d3         ; Infinity is preserved throughout
+           move.l  sourceId(a7),a0     ; Input channel ID - preserved
+           lea     rh_buffer,a1        ; Header buffer address
+           move.l  a1,a3               ; Preserve buffer address
+           move.w  #64,d2              ; Buffer maximum length
+           trap    #3                  ; Do it
+           tst.l   d0                  ; Check errors
+           bne     errorExit           ; Oh dear!
+           cmp.w   d1,d2               ; Successful read?
+           beq.s   checkExecutableType ; Yes
+           moveq   #err_nc,d0          ; Not Complete
+           bra     errorExit           ; Depart
+\end{lstlisting}
+
+Reading the passed file's header is next. There should be 64 bytes to be read and this is checked on return form the trap. If we didn't get exactly 6 4 bytes, we bale out with a not complete error.
+
+Interestingly, I noticed that in QPC version 4.0.5, if the file was ever renamed, the file header appears to retain the original name. It caused me no end of confusion that did when I was debugging.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Is the File Executable?}]
+;--------------------------------------------------------------------
+; Check if the file is already executable. If so, quietly exit as we
+; have nothing to do. Cross compiled files do not come set to be
+; executable.
+;--------------------------------------------------------------------
+checkExecutableType
+           cmpi.b  #exeType,fileType(a3)  ; Buffer start is in a3 now
+           beq     allDone             ; Executable - nothing to do
+\end{lstlisting}
+
+If the header was happily read, the code above makes sure that the file's type is not already executable. If it is, the utility will simply exit as there is nothing more to do. Cross compiled files don't come with the header set to executable.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Locating the XTcc Trailer}]
+;--------------------------------------------------------------------
+; In a cross compiled file, there is a pair of long words at the very
+; end of the file. These are 'XTcc' followed by the data space for
+; QDOSMSQ.
+;--------------------------------------------------------------------
+; FS_POSAB:
+;
+; A0.L = Channel Id.        (Preserved)
+; A1.L = Not used.          (Corrupted!)
+; D1.L = File position.     (New file position on return)
+; D3.W = Timeout.           (Preserved)
+;--------------------------------------------------------------------
+setFileToXTcc
+           moveq   #fs_posab,d0        ; Position absolutely
+           move.l  fileSize(a3),d1     ; Get file size
+           subq.l  #8,d1               ; Point at XTcc location in file
+           move.l  d1,d2               ; Save required position
+           trap    #3                  ; Do it
+           tst.l   d0                  ; Ok?
+           bne     errorExit           ; Oops!
+           cmp.l   d1,d2               ; Actual = requested position?
+           beq.s   readXTccData        ; Yes
+           moveq   #err_or,d0          ; Out of range
+           bra     errorExit           ; Bale out
+\end{lstlisting}
+
+The header was read and the file isn't executable. The next step is to position the file's read pointer at 8 bytes back from the very end of the file. This is where we expect to find the XTcc Trailer Record that we need. If we fail to set the position exactly as requested, we bale out with an out of range error.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Read the XTcc Trailer Record}]
+;--------------------------------------------------------------------
+; Read the final 2 words from the input file.
+;--------------------------------------------------------------------
+; IO_FSTRG:
+;
+; A0.L = Channel Id.        (Preserved)
+; A1.L = Buffer address.    (Old A1 + returned D1.W)
+; D1.L = Not Used.          (Number of bytes read)
+; D2.W = Buffer size.       (Preserved)
+; D3.W = Timeout.           (Preserved)
+;--------------------------------------------------------------------
+readXTccData
+           moveq   #io_fstrg,d0        ; Fetch bytes
+           moveq   #8,d2               ; Bytes we want
+           lea     xtcc_buffer,a1      ; Buffer address
+           move.l  a1,a2               ; Save buffer address
+           trap    #3                  ; Do it
+           tst.l   d0
+           bne     errorExit           ; Oops!
+           cmp.w   d2,d1               ; Did we get 8 bytes?
+           beq.s   checkXTccFound      ; Yes
+           moveq   #err_fe,d0          ; -16 bad or changed medium
+           bra     errorExit           ; Bale out
+\end{lstlisting}
+
+Next up, we read the 8 bytes that make up the XTcc Trailer Record. If this fails, or we do not read exactly 8 bytes, bale out with a file error message.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Setting the Header Data}]
+;--------------------------------------------------------------------
+; We should have 'XTcc' in the buffer plus the dataspace required.
+;--------------------------------------------------------------------
+checkXTccFound
+           cmpi.l  #"XTcc",(a2)        ; Got the flag?
+           bne.s   noXTccFound         ; Nope
+
+;--------------------------------------------------------------------
+; We have the data we want, copy the dataspace into the file header
+; and then make the file executable.
+;--------------------------------------------------------------------
+extractDataSpace
+           move.l  dataSpace(a2),fileData(a3)  ; Copy the value over
+           move.b  #exeType,fileType(a3)       ; Make executable
+           bra.s   writeHeader         ; Write the header back
+
+;--------------------------------------------------------------------
+; We didn't find the "XTcc" flag at the end of the file.
+;--------------------------------------------------------------------
+noXTccFound
+           moveq   #err_nf,d0          ; Not found
+           bra.s   errorExit           ; Bale out
+\end{lstlisting}
+
+Assuming that we managed to read it, does the XTcc Trailer start with the XTcc flag, which happens to be the string "XTcc" in that letter case. In the event that we didn't find that flag, we will exit with a not found error.
+
+If the flag is found, copy the last 4 bytes of the XTcc Trailer into the file's header to set the data space, and set the file's type to be an executable file.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Writing the Header}]
+;--------------------------------------------------------------------
+; Write the file header for the given channel.
+;
+; A0.L = Channel Id.        (Preserved)
+; A1.L = Buffer address.    (Corrupted)
+; D1   = Not used.          (Length of set header)
+; D2   = Not used.          (Preserved)
+; D3.W = Timeout.           (Preserved)
+;--------------------------------------------------------------------
+writeHeader
+           moveq   #fs_heads,d0        ; Write the header
+           move.l  a3,a1               ; Header buffer
+           trap    #3                  ; Do it
+           tst.l   d0                  ; Ok?
+           bne.s   errorExit           ; Sadly, not!
+\end{lstlisting}
+
+We can now write the file header back to the medium. This will set the data space and make the file executable.
+
+
+\begin{lstlisting}[firstnumber=last,caption={XTcc - Termination}]
+;--------------------------------------------------------------------
+; No errors, exit quietly back to SuperBASIC.
+;--------------------------------------------------------------------
+allDone
+           moveq   #0,d0
+
+;--------------------------------------------------------------------
+; We have hit an error so we copy the code to D3 then exit via a
+; forcible removal of this job. EXEC_W/EW will display the error in
+; SuperBASIC, but EXEC/EX will not.
+;--------------------------------------------------------------------
+errorExit
+           move.l  d0,d3               ; Error code we want to return
+
+;--------------------------------------------------------------------
+; Kill myself when an error was detected, or at EOF.
+;--------------------------------------------------------------------
+suicide
+           moveq   #mt_frjob,d0        ; This job will die soon
+           moveq   #me,d1
+           trap    #1
+\end{lstlisting}
+
+The end. This is where we exite from the utility either with an error code or not.
+
+Be aware that you will only ever see the error code or message, when you call the utility with EW as EX will not hang around to find out what the error, if any, was - it creates the job, activates it, and bales out. Only EW hangs around to the bitter end!
+
