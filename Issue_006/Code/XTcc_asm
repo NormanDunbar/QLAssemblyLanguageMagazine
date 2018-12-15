@@ -47,10 +47,6 @@ fileSize
            equ     $00                 ; Offset to file length.
 fileData
            equ     $06                 ; Offset to dataspace in header
-dataSpace
-           equ     $04                 ; Offset to XTcc datspace value
-
-
 
 ;====================================================================
 ; Here begins the code.
@@ -80,11 +76,6 @@ version
 vers_end
            equ     *
 
-
-bad_parameter
-           moveq   #err_bp,d0          ; Guess!
-           bra     errorExit           ; Die horribly
-
 rh_buffer
            ds.w    32                  ; Storage for file header
 xtcc_buffer
@@ -97,8 +88,11 @@ xtcc_buffer
 ; exit from EW (but sadly, not from EX).
 ;--------------------------------------------------------------------
 checkStack
-           cmpi.w  #NUMCHANS,(a7)      ; Two channels is a must
-           bne.s   bad_parameter       ; Oops
+           cmpi.w  #NUMCHANS,(a7)      ; One channels is a must
+           beq.s   readHeader          ; Ok
+           moveq   #err_bp,d0          ; Oops
+           bra.s   errorExit           ; Bale out
+
 
 ;--------------------------------------------------------------------
 ; READ_HEADER = read the file header for the given channel.
@@ -119,11 +113,11 @@ readHeader
            move.w  #64,d2              ; Buffer maximum length
            trap    #3                  ; Do it
            tst.l   d0                  ; Check errors
-           bne     errorExit           ; Oh dear!
+           bne.s   errorExit           ; Oh dear!
            cmp.w   d1,d2               ; Successful read?
            beq.s   checkExecutableType ; Yes
            moveq   #err_nc,d0          ; Not Complete
-           bra     errorExit           ; Depart
+           bra.s   errorExit           ; Depart
 
 
 ;--------------------------------------------------------------------
@@ -133,7 +127,7 @@ readHeader
 ;--------------------------------------------------------------------
 checkExecutableType
            cmpi.b  #exeType,fileType(a3)  ; Buffer start is in a3 now
-           beq     allDone             ; Executable - nothing to do
+           beq.s   allDone             ; Executable - nothing to do
 
 
 ;--------------------------------------------------------------------
@@ -155,11 +149,11 @@ setFileToXTcc
            move.l  d1,d2               ; Save required position
            trap    #3                  ; Do it
            tst.l   d0                  ; Ok?
-           bne     errorExit           ; Oops!
+           bne.s   errorExit           ; Oops!
            cmp.l   d1,d2               ; Actual = requested position?
            beq.s   readXTccData        ; Yes
            moveq   #err_or,d0          ; Out of range
-           bra     errorExit           ; Bale out
+           bra.s   errorExit           ; Bale out
 
 ;--------------------------------------------------------------------
 ; Read the final 2 words from the input file.
@@ -179,17 +173,17 @@ readXTccData
            move.l  a1,a2               ; Save buffer address
            trap    #3                  ; Do it
            tst.l   d0
-           bne     errorExit           ; Oops!
+           bne.s   errorExit           ; Oops!
            cmp.w   d2,d1               ; Did we get 8 bytes?
            beq.s   checkXTccFound      ; Yes
            moveq   #err_fe,d0          ; -16 bad or changed medium
-           bra     errorExit           ; Bale out
+           bra.s   errorExit           ; Bale out
 
 ;--------------------------------------------------------------------
 ; We should have 'XTcc' in the buffer plus the dataspace required.
 ;--------------------------------------------------------------------
 checkXTccFound
-           cmpi.l  #"XTcc",(a2)        ; Got the flag?
+           cmpi.l  #"XTcc",(a2)+       ; Got the flag?
            bne.s   noXTccFound         ; Nope
 
 ;--------------------------------------------------------------------
@@ -197,7 +191,7 @@ checkXTccFound
 ; and then make the file executable.
 ;--------------------------------------------------------------------
 extractDataSpace
-           move.l  dataSpace(a2),fileData(a3)  ; Copy the value over
+           move.l  (a2),fileData(a3)   ; Copy the value over
            move.b  #exeType,fileType(a3)       ; Make executable
            bra.s   writeHeader         ; Write the header back
 
