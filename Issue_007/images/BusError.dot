@@ -1,0 +1,38 @@
+// dot -T png -o exception_1_2.png exception_1_2.dot
+
+
+digraph structs {
+    rankdir=LR
+    
+    // Captions are commented because we supply one in the LaTeX source.
+    //label="MC68020 Bus Error Stack Frame";
+    pad="0.3";
+    
+
+    // Structure defaults, unless specified otherwise.
+    node [shape=record style=filled];
+
+// Structures...
+    // If you want to split structures over multiple lines, then
+    // put the | on the next line. 
+
+    structSP    [label="<sp> Stack pointer in A7.L" 
+                    fillcolor=thistle
+                ];
+
+    structStack  [label="<intreg>   Internal Registers. (4 words)
+                    | <insadd>      Address of failed instruction. (Long)
+                    | <1001>        1001 \| Vector Offset (Word)
+                    | <pc>          Program Counter (Long)
+                    | <sr>          Status Register (Word)" 
+                    fillcolor=yellowgreen
+                 ];
+
+
+// Connecting lines...
+    edge [style="dashed"];
+      structSP:sp -> structStack:sr;
+}
+
+
+
