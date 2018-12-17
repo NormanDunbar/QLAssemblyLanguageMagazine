@@ -1,10 +1,12 @@
 *.aux
 *.bcf
 *.idx
+*.ilg
+*.ind
 *.log
 *.lol
 *.lot
 *.run.xml
 *.synctex.gz
 *.toc
-
+M68000PM.pdf
