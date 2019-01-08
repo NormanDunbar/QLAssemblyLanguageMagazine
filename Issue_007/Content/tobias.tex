@@ -1,0 +1,238 @@
+\chapter{The Fastest Scrolling in the West}
+
+\textbf{Messing Around with the Q68}
+
+While Norman tends to write his stuff in GWASS, my favourite assembler is
+QMac. The choice is mainly a matter of taste -- GWASS overall has
+similar features to QMac. So bear with me, the code examples here will
+be in QMac lingo.
+
+In the passing time between Christmas and back to work called ``between
+years'' in Germany, there was a bit of time to mess around with the Q68
+and the trusty QMac Assembler. I was always a bit concerned how the Q68
+can handle the massive amounts of memory that need to be shoved around
+in order to handle a high-colour screen.
+
+My favourite resolution on the Q68 is the high colour mode with 512 by 384
+pixels. One pixel takes 16 bits in this resolution, a 68000 word. That
+makes 1kBytes per scan-line, all in all 384kBytes for the whole screen.
+Scrolling this screen to the left by one pixel, for example, requires
+moving 384 x (1024 - 2) bytes of memory, scrolling the whole screen to
+the left by 512 pixels with a one-pixel increment to create smooth
+animation requires 384kBytes * 512 times to be moved -- a whooping
+192Mbytes of memory shoved around. (In a game, for example, you would,
+however, scroll in larger increments to speed up things, normally.)
+
+All the below experiments will work on the Q68 or on QPC2 (provided you
+set the screen resolution to 512 x 384 and 16-bit colour.). The screen
+start address will be different, though. (You can find out with the
+SCR\_BASE S*BASIC command).
+
+To put things in perspective: This action results in roughly 12 times
+more memory to shove around than an original Black Box would need to do
+for the same action. Granted, on the Q68 we don't need to shift the
+screen words themselves to scroll horizontally, which makes matters a
+bit simpler (thus faster), but it is still a huge task. I just wanted to
+see how the Q68 would cope with this.
+
+\section{The Straight-Forward Approach}
+
+Let's start simple (or, should I call that naïve?): Two nested loops,
+the innermost moves one scan-line one pixel to the left using two address
+registers, the outermost iterates over all scan-lines. Call that routine
+512 times and we're done:
+
+\begin{lstlisting}[firstnumber=1,caption={Scrolling one pixel leftwards}]
+; Scrolls the screen one pixel to the left
+Lscroll
+    movem.l a0-a1,-(sp)
+    lea     screen_start,a0
+    lea     2(a0),a1
+    move.w  #384-1,d1         ; 384 scan-lines
+
+lineLoop
+    move.w  #512-1,d0         ; 512 pixels to move
+    
+cpy_loop
+    move.w  (a1)+,(a0)+
+    dbf     d0,cpy_loop
+    dbf     d1,lineLoop
+\end{lstlisting}
+
+We're at 90 seconds now to scroll a screen across the whole screen width
+and the scrolling looks, admittedly, pretty lame (remember, that is
+moving 192 megabytes of memory\ldots{}). The first improvement that
+comes to mind is a long-word move in cpy\_loop which would allow us to
+save half of the inner loop iterations. Should be like 30-50\% faster on
+a real 68000. On a Q68, it unfortunately isn't for some reason. In fact,
+it is only a few seconds faster and not really a significant
+improvement. Time to look for some more drastic means to speed things
+up:
+
+\section{Unrolling loops (or: How to waste Precious Amounts of Memory)}
+
+What slows the straightforward approach down quite a bit are the two
+nested loops (one per width of screen, one per height of the screen). If
+we could get rid of these, or at least one of them, we should achieve a
+significant improvement. And, in fact, we can. The Q68 has so much
+memory that we can put that to good use: Instead of looping around one
+single longword move, we can write all the 256 iterations in a row into
+our source code, voilà, the inner loop is gone. Because programmers are
+lazy and writing 256 identical statements is a bit boring, it is now
+time to show the interested (?) reader what the ``Mac'' in QMac is good
+for: Time for some macro trickery.
+
+\begin{lstlisting}[firstnumber=1,caption={The REPT Macro}]
+REPT    MACRO num,args
+        LOCAL count,pIndex,pCount
+Count   SETNUM 1
+Lp      MACLAB
+pCount  SETNUM [.NPARAMS] - 1
+pIndex  SETNUM 2
+pLoop:  MACLAB
+        EXPAND
+        [.PARAM([pIndex])]
+        NOEXPAND
+pCount  SETNUM [pCount]-1
+pIndex  SETNUM [pIndex]+1
+        IFNUM  [pCount] >= 0 GOTO pLoop
+Count   SETNUM [count] + 1
+        IFNUM  [count] <= [num] GOTO lp
+        ENDM
+\end{lstlisting}
+
+If this is all Chinese for you, the whole macro simply repeats the text
+you give it as second to last argument(s) the amount of times you give
+as the first, like
+
+\begin{lstlisting}[firstnumber=1,caption={A simple REPT example}]
+NotUseful
+    REPT    256,{   nop},{   clr.l d0}
+\end{lstlisting}
+
+Will expand to 256 NOP and CLR.L D0 instructions in your code. The GOTO
+directives don't do anything in your finished program, but rather have
+the assembler running in circles producing source code for you (nice,
+isn't it?). The outer loop starting at \emph{Lp} iterates over the
+parameter list the amount of times you give as first parameter, the
+inner loop at \emph{pLoop} over the parameter list. Ideal stuff for lazy
+programmers. 
+
+\begin{note}
+The macro would look a bit different when written in
+GWASS which uses a similar, but slightly different macro syntax (That I
+don't happen to be familiar with, unfortunately (and I should really
+work on my writing style -- That looks like a programmer's))).
+\end{note}
+
+Now back to our screen scrolling problem: We wanted to unroll the inner
+loop which iterates over the pixels in one single scan-line to get rid of
+the inner loop. So, let's place that macro invocation (incantation?) in
+place of that inner loop, replacing it with 256 long word move
+instructions:
+
+\begin{lstlisting}[firstnumber=1,caption={Unrolling the innner loop}]
+; Scrolls the screen one pixel to the left
+Lscroll
+    movem.l a0-a1,-(sp)
+    lea     screen_start,a0
+    lea     2(a0),a1
+    move.w  #384-1,d1         ; 384 scan-lines
+
+lineLoop
+    REPT    256,{    move.l (a1)+,(a0)+}
+    dbf     d1,lineLoop
+\end{lstlisting}
+
+The REPT invocation looks unremarkable, but if you have a look at the
+produced assembly listing, you will find that the assembler has just
+expanded the macro to 256 lines of code, effectively replacing that
+inner loop (this also blew our code for that loop from xxx to yyy bytes.
+But after all, we are on a Q68 or QPC and have plenty of memory to trade
+for).
+
+If you run the above code, you will find it runs about three times
+faster than the previous version, so we have bought execution speed for
+memory. Want to drive this a bit further by unrolling the outer loop as
+well? Try something like
+
+\begin{lstlisting}[firstnumber=1,caption={Unrolling the outer loop}]
+screenLongs EQU 512*384*2/4
+    REPT    [screenLongs],{    move.l (a1)+,(a0)+}
+\end{lstlisting}
+
+But that might be a little ridiculous, so I have left this as exercise
+to the reader (Ha! I always wanted to use this sentence somewhere).
+
+Can we still do better? Sure.
+
+\section{MOVEM.L Can Work in Other Places Other Than the Stack}
+
+There is one instruction in the 68k instruction set that can shove
+memory about in large chunks -- The MOVEM instruction. You would
+normally use it to save and restore registers to and from the stack in
+subroutines, but its use is not restricted to that. In cases where you
+have many registers to spare, you can also use it to implement large
+block moves.
+
+There's just one single caveat: The MOVEM instruction does not work with
+a ``post-increment'' we would need to do a block move, so a simple
+
+\begin{lstlisting}[firstnumber=1,caption={MOVEM restrictions}]
+    movem.l (a0)+,REGSET
+    movem.l REGSET,(a1)+      ; this instruction does not exist
+\end{lstlisting}
+
+will unfortunately not work, so, in order to repair this, we need to
+increment the target register with a separate instruction.
+
+So, let's assume you can spare (or free up) registers d3-d7 and address
+registers a2-a6 in our scrolling routine, we can move a whoopy 40 bytes
+per instruction like in (note the backslash in a macro invocation is
+understood as a line continuation character in QMac)
+
+\begin{lstlisting}[firstnumber=1,caption={Improving the REPT macro}]
+    REPT     25,{   movem.l (a1)+,d3-d7/a2-a7},\
+                {   movem.l d3-d7,a2-a6,(a0)},\
+                {   adda.l \#40,a0}
+\end{lstlisting}
+
+This time our macro receives 4 arguments, the repetition count and the
+three lines to repeat. The macro magic will repeat these three lines 25
+times in an unrolled loop, creating copy commands for 250 longwords.
+Oops, 6 missing to a complete scan-line, so add a
+
+\begin{lstlisting}[firstnumber=1,caption={Scrolling one pixel leftwards}]
+    REPT     6,{   move.l (a1)+,(a0)+}
+\end{lstlisting}
+
+after it to create code to move the last 6 long words of a scan-line.
+
+This is only marginally faster as the above unrolled loop on a Q68, but
+saves a significant amount of code space with an even (slightly) better
+runtime speed. I was actually expecting a bit more speedup, but Q68
+instruction timings seem to differ from the original 68k.
+
+The MOVEM block move is the fastest way to move large chunks of memory
+around using a 68000 CPU (In case you happen to know anything faster,
+I'd like to hear from you), so, we're at the end here. Really? No, not
+quite:
+
+\section{If Software Can't Cope, Use Hardware}
+
+If you want to speed up the scrolling even further, you can use the SD
+memory in the Q68. This is a small (read: scarce, about 12k) amount of
+very fast memory that can be used for time-critical routines.
+
+Code like the above (that mainly accesses ``slow'' memory) can be
+expected to run about three to four times faster in Q68 SD RAM than in
+the normal DRAM areas. As the amount of space available in fast memory
+is limited (some of it is already used by SMSQ/E as well), you might
+want to keep the usage of fast memory as low as possible. Also note
+that, just like the RESPR area, it is not possible to release space in
+fast memory once it has been allocated. A game, for example, could however
+easily argue that you would reset the computer anyway after finishing.
+
+My tests resulted in about a three-fold speed increase once the above
+routines were copied to fast memory and executed from there.
+
