@@ -1,0 +1,805 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[GNU]C++}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Lookup Tables
+\end_layout
+
+\begin_layout Standard
+Lookup tables are useful.
+ Remember when you were at school and had to find the logarithm of a number?
+ You didn't have to calculate it every time it was needed, someone else
+ did it for you and put the details in a booklet.
+ When writing code it's sometimes useful to use lookup tables rather than
+ doing a possibly resource intensive calculation each and every time.
+\end_layout
+
+\begin_layout Standard
+The rest of this section shows a couple of uses for lookup tables.
+ 
+\end_layout
+
+\begin_layout Section
+Bits and Bobs
+\end_layout
+
+\begin_layout Standard
+Here's a sequence of numbers, they are all integers:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+0, 1, 1, 2, 1, 2, 2, 3, 1, 2 ...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Q1: Do you know what the next value in the sequence will be?
+\end_layout
+
+\begin_layout Standard
+Q2: Do you know what the above sequence represents?
+\end_layout
+
+\begin_layout Standard
+Would it help if I told you that the value for number 'n' in the sequence
+ is given by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Value(n) = (value(int(n/2)) + (n and 1)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+For example, to find the value of the number 10, the 11th number in the
+ sequence as we start from 0, and which just happens to be the answer to
+ Q1 above, we must take value(5) and add on bit 0 of 10.
+ Of course, we need then to find the answer to Value(2) and add on bit 0
+ of 5 and so on.
+ Recursion anyone? This works out as the following sequence of calculations:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Value(10) = (value(5) + (10 and 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(5)  = (value(2) + (5 and 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(2)  = (value(1) + (2 and 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(1)  = (value(0) + (1 and 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(0)  = 0
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This gives us, working backwards up the above sequence of calculations:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Value(0)  = 0
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(1)  = 0 + 1 = 1
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(2)  = 1 + 0 = 1
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(5)  = 1 + 1 = 2
+\end_layout
+
+\begin_layout Plain Layout
+
+Value(10) = 2 + 0 = 2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So, the 11th number in the sequence is a 2.
+ That answers Q1, Q2 will be answered soon, I promise.
+\end_layout
+
+\begin_layout Standard
+Assuming you need to know these numbers in a program you happen to be writing
+ in assembly language, you could work them out each time.
+ The formula does tend to imply recursion is required and the following
+ brief section of code will do exactly that.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; On Entry (to Value routine) : 
+\end_layout
+
+\begin_layout Plain Layout
+
+;   D0.B = Required value for 'n'.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+; 
+\end_layout
+
+\begin_layout Plain Layout
+
+; On Exit: 
+\end_layout
+
+\begin_layout Plain Layout
+
+;   D1.B = Answer (Value(n)).
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+; 
+\end_layout
+
+\begin_layout Plain Layout
+
+; All registers are preserved except D1 and D0.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+Start   moveq #10,d0        ; N = 10
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr.s Value         ; Get recursive
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Result is now in D1.B.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #0,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Value   tst.b d0            ; N = 0 yet?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne.s More          ; Not yet
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #0,d1         ; Yes Value(0) = 0
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+More    move.w d0,-(a7)     ; Save current N
+\end_layout
+
+\begin_layout Plain Layout
+
+        lsr.b #1,d0         ; INT(N/2)
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr.s Value         ; Recurse
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; On return to here, D1.B holds the Value(N/2) result.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w (a7)+,d0     ; Current N again
+\end_layout
+
+\begin_layout Plain Layout
+
+        btst #0,d0          ; Anything to add in bit 0?
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s Done          ; No, even number.
+\end_layout
+
+\begin_layout Plain Layout
+
+        addq.b #1,d1        ; Yes, add bit 0 of N
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Done    rts 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The above is fine if you only need one or two values, but if your code needs
+ lots, then a lookup table would be a good trade off between memory usage
+ - you need extra space for the table - and CPU resources - if you have
+ to do lots of calculations each time.
+ The following code sets up a lookup table for all values from 0 to 255
+ - so that's a good reason for having a single byte for each value.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; Lookup Table initialisation.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Register Usage:
+\end_layout
+
+\begin_layout Plain Layout
+
+;	D0.B = 'N' counter (0 - 255).
+\end_layout
+
+\begin_layout Plain Layout
+
+;	D2.B = INT(n/2), value(N).
+\end_layout
+
+\begin_layout Plain Layout
+
+;	A2.L = Pointer to start of lookup table.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Lookup  ds.b 256  		  ; Lookup table
+\end_layout
+
+\begin_layout Plain Layout
+
+  	  
+\end_layout
+
+\begin_layout Plain Layout
+
+Start   moveq #0,d0         ; Value(0)
+\end_layout
+
+\begin_layout Plain Layout
+
+        lea Lookup,a2       ; Guess!
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.b d0,(a2)      ; Save value(0) in table
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Loop    addq.b #1,d0        ; Next 'n'
+\end_layout
+
+\begin_layout Plain Layout
+
+        bvs.s Done          ; Bale out at 256
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w d0,d2        ; Copy 'n' to D2
+\end_layout
+
+\begin_layout Plain Layout
+
+        lsr.l #1,d2         ; INT(n/2)
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.b (a2,d2.w),d2 ; Value(INT(n/2))
+\end_layout
+
+\begin_layout Plain Layout
+
+        btst #0,d0          ; Anything to add?
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s Store         ; No, just store value(n)
+\end_layout
+
+\begin_layout Plain Layout
+
+        addq.b #1,d2        ; Yes, add bit 1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Store   move.b d2,(a2,d0.w) ; Store Value(n) 
+\end_layout
+
+\begin_layout Plain Layout
+
+        bra.s Loop          ; Not done yet
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Done    moveq #0,d0         ; No errors
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+		
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If the program initialises the lookup table during startup, then any time
+ it needs to extract a value, it's as simple as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+        ...
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w #n,d0		; D0 must be 0 - 255
+\end_layout
+
+\begin_layout Plain Layout
+
+        lea Lookup,a2
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.b (a2,d0.w),d0 ; Value(d0.b)
+\end_layout
+
+\begin_layout Plain Layout
+
+        ...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At this point, D0.B holds the result of Value(n).
+ Keep in mind that the lookup table only gives values between 0 and 255,
+ but D0 is a word in the above for ease of indexing the table.
+\end_layout
+
+\begin_layout Standard
+So, what's it all about I hear you ask? It's simple, the sequence I gave
+ you way back at the beginning is the number of '1' bits in each byte value.
+ The formula works it out based on the fact that if a number has 'x' bits
+ set, then twice the number will simple be that number shifted left by one
+ position, and will still have 'x' bits set.
+ For odd numbers though, you need to add in bit 0.
+ (aka 1)
+\end_layout
+
+\begin_layout Standard
+Taking 10 as an example, it is 0000 1010
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+bin
+\end_layout
+
+\end_inset
+
+while 5, half of 10, is 0000 0101
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+bin
+\end_layout
+
+\end_inset
+
+- the same number of bits.
+ So, that works for even numbers, how about odd ones? Well, half of 5 is
+ 2.5 bit as we are rounding down, that's 2.
+ Two is 0000 0010
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+bin
+\end_layout
+
+\end_inset
+
+ Doubling 2 gives 4 or 0000 0100
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+bin
+\end_layout
+
+\end_inset
+
+and 5 is just 4 plus 1.
+ So, the number of bits in an odd number is still the same as the number
+ in half of it, plus bit 0.
+ Simples
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+As the odd, occasional, passing meerkat has been know to utter!
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Character Characteristics
+\end_layout
+
+\begin_layout Standard
+Another useful lookup table would be one which, again, covers 256 byte entries.
+ However, instead of values, these bytes contain up to 8 bits of 
+\begin_inset Quotes els
+\end_inset
+
+flag
+\begin_inset Quotes ers
+\end_inset
+
+ information.
+ In the C/C++ programming languages, there are numerous functions (and also,
+ macros with the same name) which can be used to determine if a character
+ is a digit, upper case, lower case, printable etc.
+ This is done with a lookup table of bit flags.
+\end_layout
+
+\begin_layout Standard
+Each character class (numeric, alphabetic etc) has one or more bits set
+ in the table entry to indicate if this character is indeed a digit, upper
+ case etc.
+ In C68 (look in the header file 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+ctypes.h
+\end_layout
+
+\end_inset
+
+) we have a number of bit masks defined, as follows, although I am using
+ better names!
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+UPPERCASE   equ 1        ; Bit 0 = A - Z
+\end_layout
+
+\begin_layout Plain Layout
+
+LOWERCASE   equ 2        ; Bit 1 = a - z
+\end_layout
+
+\begin_layout Plain Layout
+
+NUMBER      equ 4        ; Bit 2 = 0 - 9
+\end_layout
+
+\begin_layout Plain Layout
+
+SPACE       equ 8        ; Bit 3 = space, tab, linefeed
+\end_layout
+
+\begin_layout Plain Layout
+
+PUNCTUATION equ 16       ; Bit 4 = .,;: etc
+\end_layout
+
+\begin_layout Plain Layout
+
+CONTROL     equ 32       ; Bit 5 = Codes < 32 
+\end_layout
+
+\begin_layout Plain Layout
+
+BLANK       equ 64       ; Bit 6 = space, tab
+\end_layout
+
+\begin_layout Plain Layout
+
+HEXDIGIT    equ 128      ; Bit 7 = A - F, a - f
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So, in the lookup table for the English language, every entry between CODE('A')
+ and CODE('Z') will have the UPPERCASE flag, bit 0, set.
+ They will also have the HEXDIGIT flag, bit 7, set for 'A' through 'F'.
+\end_layout
+
+\begin_layout Standard
+In code, a character can be tested as a digit by:
+\end_layout
+
+\begin_layout Standard
+??? YOU ARE HERE ???
+\end_layout
+
+\end_body
+\end_document
