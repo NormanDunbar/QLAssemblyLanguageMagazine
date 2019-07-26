@@ -10,3 +10,5 @@
 *.synctex.gz
 *.toc
 M68000PM.pdf
+*.lyx~
+
