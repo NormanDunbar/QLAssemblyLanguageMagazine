@@ -1,5 +1,5 @@
-#LyX 2.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 508
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
 \begin_document
 \begin_header
 \save_transient_properties true
@@ -29,6 +29,8 @@
 \font_osf false
 \font_sf_scale 100 100
 \font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -71,6 +73,7 @@
 \suppress_date false
 \justification true
 \use_refstyle 1
+\use_minted 0
 \boxbgcolor #ff557f
 \index Index
 \shortcut idx
@@ -80,11 +83,14 @@
 \tocdepth 3
 \paragraph_separation skip
 \defskip medskip
-\quotes_language english
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
 \papercolumns 1
 \papersides 2
 \paperpagestyle default
-\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[GNU]C++}"
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
 \tracking_changes false
 \output_changes false
 \html_math_output 0
@@ -734,7 +740,7 @@ ctypes.h
 \end_inset
 
 ) we have a number of bit masks defined, as follows, although I am using
- better names!
+ better names than the C68 code!
 \end_layout
 
 \begin_layout Standard
@@ -754,7 +760,7 @@ LOWERCASE   equ 2        ; Bit 1 = a - z
 
 \begin_layout Plain Layout
 
-NUMBER      equ 4        ; Bit 2 = 0 - 9
+DIGIT       equ 4        ; Bit 2 = 0 - 9
 \end_layout
 
 \begin_layout Plain Layout
@@ -794,11 +800,1035 @@ So, in the lookup table for the English language, every entry between CODE('A')
 \end_layout
 
 \begin_layout Standard
-In code, a character can be tested as a digit by:
+Now, I don't know about you, but I really don't fancy typing in 256 entries
+ in a table, with the possibility of getting it wrong, somewhere.
+ That's a nightmare scenario, so the QL can do it for me (you, on the other
+ hand, can simply download the code for this issue and get it for free!)
+ I wrote the following, simple, C68 code to generate the file I needed for
+ assembly routines, using my own constant values as listed above.
 \end_layout
 
 \begin_layout Standard
-??? YOU ARE HERE ???
+The following is the listing of the C68 program, 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+characters_c
+\end_layout
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language=C"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+#include <stdio.h> 
+\end_layout
+
+\begin_layout Plain Layout
+
+#include <ctype.h>
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+int main(int argc, char *argv[]) {
+\end_layout
+
+\begin_layout Plain Layout
+
+    int x;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("UPPERCASE    equ 1     ; Bit 0 = A - Z
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("LOWERCASE    equ 2     ; Bit 1 = a - z
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("DIGIT        equ 4     ; Bit 2 = 0 - 9
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("SPACE        equ 8     ; Bit 3 = space tab etc
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("PUNCTUATION  equ 16    ; Bit 4 = .,;: etc
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("CONTROL      equ 32    ; Bit 5 = Various
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("BLANK        equ 64    ; Bit 6 = space tab
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("HEXDIGIT     equ 128   ; Bit 7 = 0 - 9 a - f A - F
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("ALPHABETIC   equ UPPERCASE + LOWERCASE
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("ALPHANUMERIC equ ALPHABETIC + DIGIT
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("PRINTABLE    equ BLANK + PUNCTUATION + ALPHABETIC + DIGIT
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("GRAPHIC      equ PUNCTUATION + ALPHABETIC + DIGIT
+\backslash
+n");
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    printf("
+\backslash
+n
+\backslash
+nchartab    ");
+\end_layout
+
+\begin_layout Plain Layout
+
+    for (x = 0; x < 256; x++) {
+\end_layout
+
+\begin_layout Plain Layout
+
+        printf("dc.b 0 ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (iscntrl(x)) printf("+ CONTROL ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (isupper(x)) printf("+ UPPERCASE ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (islower(x)) printf("+ LOWERCASE ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (isdigit(x)) printf("+ DIGIT ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (isxdigit(x)) printf("+ HEXDIGIT ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (ispunct(x)) printf("+ PUNCTUATION ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (isspace(x)) printf("+ SPACE ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        if (isblank(x)) printf("+ BLANK ");
+\end_layout
+
+\begin_layout Plain Layout
+
+        printf("     ; CHR$(%d) = '%c'
+\backslash
+n           ", x,
+\end_layout
+
+\begin_layout Plain Layout
+
+               isprint(x) ? x : '.');
+\end_layout
+
+\begin_layout Plain Layout
+
+    }
+\end_layout
+
+\begin_layout Plain Layout
+
+        return 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+} 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code above, compiled to 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+characters_exe
+\end_layout
+
+\end_inset
+
+, generates a file that I can use in my assembly code.
+ It does it much faster than I can, and more accurately to boot.
+ The top of the file named 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+characters_asm_in
+\end_layout
+
+\end_inset
+
+, resembles the following:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+UPPERCASE equ 1 ; Bit 0 = A - Z
+\end_layout
+
+\begin_layout Plain Layout
+
+LOWERCASE equ 2 ; Bit 1 = a - z
+\end_layout
+
+\begin_layout Plain Layout
+
+DIGIT equ 4 ; Bit 2 = 0 - 9
+\end_layout
+
+\begin_layout Plain Layout
+
+SPACE equ 8 ; Bit 3 = space tab etc
+\end_layout
+
+\begin_layout Plain Layout
+
+PUNCTUATION equ 16 ; Bit 4 = .,;: etc
+\end_layout
+
+\begin_layout Plain Layout
+
+CONTROL equ 32 ; Bit 5 = Various
+\end_layout
+
+\begin_layout Plain Layout
+
+BLANK equ 64 ; Bit 6 = space tab
+\end_layout
+
+\begin_layout Plain Layout
+
+HEXDIGIT equ 128 ; Bit 7 = 0 - 9 a - f A - F
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+chartab    dc.b 0 + CONTROL            ; CHR$(0) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(1) = '.'
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(2) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(3) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(4) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(5) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(6) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(7) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL            ; CHR$(8) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL + SPACE + BLANK ; CHR$(9) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL + SPACE         ; CHR$(10) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL + SPACE         ; CHR$(11) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL + SPACE         ; CHR$(12) = '.' 
+\end_layout
+
+\begin_layout Plain Layout
+
+           dc.b 0 + CONTROL + SPACE         ; CHR$(13) = '.'
+\end_layout
+
+\begin_layout Plain Layout
+
+           ...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In assembly code, character attribute functions would look like the following.
+ My file is named 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+charAttr_asm_in
+\end_layout
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; All these functions require a character code in D0.B and will
+\end_layout
+
+\begin_layout Plain Layout
+
+; return D0 = 0 if the character is invalid, otherwise, D0.B will be 
+\end_layout
+
+\begin_layout Plain Layout
+
+; a relatively random non-zer0 value.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; ENTRY Registers:
+\end_layout
+
+\begin_layout Plain Layout
+
+;   D0.B Character code to be tested
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; EXIT Registers:
+\end_layout
+
+\begin_layout Plain Layout
+
+;   D0.B Zero - Character test failed.
+ (Z flag set)
+\end_layout
+
+\begin_layout Plain Layout
+
+;        non-zero - Character test passed.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    in characters_asm_in
+\end_layout
+
+\begin_layout Plain Layout
+
+    
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Given a character code in D0.B, extract the character attributes mask 
+\end_layout
+
+\begin_layout Plain Layout
+
+; from chartab to D0.B.
+\end_layout
+
+\begin_layout Plain Layout
+
+; Mask the attributes with the desired mask to get the validation result.
+\end_layout
+
+\begin_layout Plain Layout
+
+; Return the result in D0.B with Z set to show that the test FAILED.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; On the stack we have D1.W.
+\end_layout
+
+\begin_layout Plain Layout
+
+; D1.B = required mask
+\end_layout
+
+\begin_layout Plain Layout
+
+; D0.B = character code
+\end_layout
+
+\begin_layout Plain Layout
+
+isanything move.l a2,-(a7)              ; Save the worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           ext.w d0                     ; We need this to be word wide
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.b (a2,d0.w),d0          ; Character attributes
+\end_layout
+
+\begin_layout Plain Layout
+
+           and.b d1,d0                  ; Do attributes match?
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.l (a7)+,a2              ; Restore worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w (a7)+,d1              ; Restore the other worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           tst.w d0                     ; Z = not numeric
+\end_layout
+
+\begin_layout Plain Layout
+
+           rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; These just set up the mask we want in D1.W, and jump off to the
+\end_layout
+
+\begin_layout Plain Layout
+
+; common code above.
+ The unstacking of D1.W and return to caller
+\end_layout
+
+\begin_layout Plain Layout
+
+; is done above.
+\end_layout
+
+\begin_layout Plain Layout
+
+isdigit    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #DIGIT,d1             ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isalpha    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #ALPHABETIC,d1        ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isalnum    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #ALPHANUMERIC,d1      ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isupper    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #UPPERCASE,d1         ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+islower    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #LOWERCASE,d1         ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isxdigit   move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #HEXDIGIT,d1          ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ispunct    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #PUNCTUATION,d1       ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+iscntrl    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #CONTROL,d1           ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isgraph    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #GRAPHIC,d1           ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isprint    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #PRINTABLE,d1         ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isspace    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #SPACE,d1             ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+isblank    move.w d1,-(a7)              ; Save the first worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           move.w #BLANK,d1             ; Required attribute mask
+\end_layout
+
+\begin_layout Plain Layout
+
+           bra.s isanything             ; Never return here!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+How these work is pretty simple:
+\end_layout
+
+\begin_layout Itemize
+We enter with the character code to be tested in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.B
+\end_layout
+
+\end_inset
+
+, we save 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.W
+\end_layout
+
+\end_inset
+
+ on the stack prior to loading 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.B
+\end_layout
+
+\end_inset
+
+ with the required attribute mask that we need for the current test.
+\end_layout
+
+\begin_layout Itemize
+A branch is then made to the common code which saves 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A2.L
+\end_layout
+
+\end_inset
+
+ as we will be using it.
+ The character attribute mask is then extracted from the table.
+ This mask is appropriate to the value in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.B
+\end_layout
+
+\end_inset
+
+ which we have extended to word sized to index the table.
+\end_layout
+
+\begin_layout Itemize
+The attribute mask is 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+AND
+\end_layout
+
+\end_inset
+
+ed with the character attribute mask and the result in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.B
+\end_layout
+
+\end_inset
+
+ will be zero if there are no common bits in the two masks - the test has
+ failed, or non-zero if at least one pair of common bits matched.
+\end_layout
+
+\begin_layout Itemize
+The stack is then tidied and we return to the caller with the Z flag set
+ to indicate a 
+\emph on
+failure
+\emph default
+, unusually, or unset to show that the character code in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.B
+\end_layout
+
+\end_inset
+
+ was a digit, or a letter etc.
+\end_layout
+
+\begin_layout Standard
+In your code, this can be used as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+          in charAttr_asm_in
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+          ...
+\end_layout
+
+\begin_layout Plain Layout
+
+          move.b(a2),d0             ; Get character code from buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+          bsr isalpha               ; Is it a letter?
+\end_layout
+
+\begin_layout Plain Layout
+
+          beq.s notLetter           ; No, it's not
+\end_layout
+
+\begin_layout Plain Layout
+
+          ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This code is useful when writing something like a lexer (part of a compiler,
+ assembler etc) or where you are processing text for some reason.
+ It can save you having to check that the character in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.B
+\end_layout
+
+\end_inset
+
+ is less than or equal to 'Z' and greater or equal to 'A' or less than or
+ equal to 'z' or greater than or equal to 'a' - and so on.
+ (Yes, I know, the 68020 has the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CMP2
+\end_layout
+
+\end_inset
+
+ instruction which makes this easier.)
 \end_layout
 
 \end_body
