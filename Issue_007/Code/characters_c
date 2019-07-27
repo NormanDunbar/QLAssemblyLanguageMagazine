@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
         if (isxdigit(x)) printf("+ HEXDIGIT ");
         if (ispunct(x)) printf("+ PUNCTUATION ");
         if (isspace(x)) printf("+ SPACE ");
-        if (isblank(x)) printf("+ BLANK ");
+        if (x == 9 || x == 32) printf("+ BLANK ");
         printf("     ; CHR$(%d) = '%c'\n           ", x, 
                isprint(x) ? x : '.');
     }

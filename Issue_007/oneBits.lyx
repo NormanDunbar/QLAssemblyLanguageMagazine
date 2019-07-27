@@ -1,5 +1,5 @@
-#LyX 2.3 created this file. For more info see http://www.lyx.org/
-\lyxformat 544
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
 \begin_document
 \begin_header
 \save_transient_properties true
@@ -12,6 +12,9 @@
 \definecolor{wwwDarkGreen}{HTML}{006400}
 \definecolor{wwwDarkOrchid}{HTML}{9932CC}
 \definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -29,8 +32,6 @@
 \font_osf false
 \font_sf_scale 100 100
 \font_tt_scale 100 100
-\use_microtype false
-\use_dash_ligatures true
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -73,7 +74,6 @@
 \suppress_date false
 \justification true
 \use_refstyle 1
-\use_minted 0
 \boxbgcolor #ff557f
 \index Index
 \shortcut idx
@@ -83,10 +83,7 @@
 \tocdepth 3
 \paragraph_separation skip
 \defskip medskip
-\is_math_indent 0
-\math_numbering_side default
-\quotes_style english
-\dynamic_quotes 0
+\quotes_language english
 \papercolumns 1
 \papersides 2
 \paperpagestyle default
@@ -128,7 +125,7 @@ Here's a sequence of numbers, they are all integers:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "tabsize=4"
+lstparams "tabsize=4,numbers=none"
 inline false
 status open
 
@@ -151,12 +148,13 @@ Q2: Do you know what the above sequence represents?
 \end_layout
 
 \begin_layout Standard
-Would it help if I told you that the value for number 'n' in the sequence
- is given by:
+Would it help if I told you that the formula to calculate the value for
+ number 'n' in the sequence is given by:
 \end_layout
 
 \begin_layout Standard
 \begin_inset listings
+lstparams "numbers=none"
 inline false
 status open
 
@@ -181,6 +179,7 @@ For example, to find the value of the number 10, the 11th number in the
 
 \begin_layout Standard
 \begin_inset listings
+lstparams "numbers=none"
 inline false
 status open
 
@@ -220,6 +219,7 @@ This gives us, working backwards up the above sequence of calculations:
 
 \begin_layout Standard
 \begin_inset listings
+lstparams "numbers=none"
 inline false
 status open
 
@@ -431,16 +431,1075 @@ More    move.w d0,-(a7)     ; Save current N
 Done    rts 
 \end_layout
 
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Calculating values with recursion
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \end_inset
 
 
 \end_layout
 
 \begin_layout Standard
-The above is fine if you only need one or two values, but if your code needs
- lots, then a lookup table would be a good trade off between memory usage
- - you need extra space for the table - and CPU resources - if you have
- to do lots of calculations each time.
+So, what happens in the above when we use 10 as the required value?
+\end_layout
+
+\begin_layout Enumerate
+At the label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+, 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ = 10 and the stack contains the return address to just after Start, and
+ the return to SuperBasic address.
+ The stack looks like this:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is not yet zero, we end up at label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More
+\end_layout
+
+\end_inset
+
+ where we stack 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+, shift it right to get 5, and call 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+ again.
+ At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+, the stack looks like this:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is not yet zero, we end up at label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More
+\end_layout
+
+\end_inset
+
+ where we stack 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+, shift it right to get 2, and call 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+ again.
+ At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+, the stack looks like this:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+5
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is not yet zero, we end up at label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More
+\end_layout
+
+\end_inset
+
+ where we stack 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+, shift it right to get 1, and call 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+ again.
+ At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+, the stack looks like this:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+5
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+2
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is not yet zero, we end up at label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More
+\end_layout
+
+\end_inset
+
+ where we stack 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+, shift it right to get 0, and call 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+ again.
+ At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+, the stack looks like this: 
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+5
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+2
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+1
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Enumerate
+At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Value
+\end_layout
+
+\end_inset
+
+, 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is now zero, so we store zero in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+ and return to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+, we unstack 1 into 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+.
+ The stack now looks like:
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+5
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+2
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is odd, we add 1 to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+.
+ The running total is now 1.
+ Then we execute an 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+RTS
+\end_layout
+
+\end_inset
+
+ instruction and end up back at 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+, we unstack 2 into 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+.
+ The stack now looks like:
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\begin_layout Plain Layout
+
+5
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+ As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is even, we don't add 1 to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+.
+ The running total is still 1.
+ Then we execute an 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+RTS
+\end_layout
+
+\end_inset
+
+ instruction and end up back at 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+, we unstack 5 into 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+.
+ The stack now looks like:
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\begin_layout Plain Layout
+
+10
+\end_layout
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is odd, we add 1 to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+.
+ The running total is now 2.
+ Then we execute an 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+RTS
+\end_layout
+
+\end_inset
+
+ instruction and end up back at 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+More+8
+\end_layout
+
+\end_inset
+
+, we unstack 10 into 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+.
+ The stack now looks like:
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\end_inset
+
+ As 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is even, we don't add 1 to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+.
+ The running total is still 2.
+ Then we execute an 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+RTS
+\end_layout
+
+\end_inset
+
+ instruction and end up back at 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+At 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Start+4
+\end_layout
+
+\end_inset
+
+ we clear 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ and return to SuperBasic.
+ The value in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+ is 2, which is the correct value for the 11th number in the sequence.
+ 
+\end_layout
+
+\begin_layout Standard
+The test code above is fine if you only need one or two values, but if your
+ code needs lots, then a lookup table would be a good trade off between
+ memory usage - you need extra space for the table - and CPU resources -
+ if you have to do lots of calculations each time.
  The following code sets up a lookup table for all values from 0 to 255
  - so that's a good reason for having a single byte for each value.
 \end_layout
@@ -478,6 +1537,15 @@ status open
 \begin_layout Plain Layout
 
 ;	A2.L = Pointer to start of lookup table.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Entry   bra.s Start         ; Skip the lookup table
 \end_layout
 
 \begin_layout Plain Layout
@@ -584,6 +1652,16 @@ Done    moveq #0,d0         ; No errors
 \begin_layout Plain Layout
 
 		
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Initialising the lookup table
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -626,6 +1704,20 @@ status open
         ...
 \end_layout
 
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Using the lookup table to find a value
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \end_inset
 
 
@@ -639,12 +1731,8 @@ At this point, D0.B holds the result of Value(n).
 
 \begin_layout Standard
 So, what's it all about I hear you ask? It's simple, the sequence I gave
- you way back at the beginning is the number of '1' bits in each byte value.
- The formula works it out based on the fact that if a number has 'x' bits
- set, then twice the number will simple be that number shifted left by one
- position, and will still have 'x' bits set.
- For odd numbers though, you need to add in bit 0.
- (aka 1)
+ you way back at the beginning is the number of '1' bits in any byte value.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -786,6 +1874,20 @@ BLANK       equ 64       ; Bit 6 = space, tab
 \begin_layout Plain Layout
 
 HEXDIGIT    equ 128      ; Bit 7 = A - F, a - f
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Character attribute bit masks
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -1001,7 +2103,7 @@ nchartab    ");
 
 \begin_layout Plain Layout
 
-        if (isblank(x)) printf("+ BLANK ");
+        if (x == 9 || x == 32) printf("+ BLANK ");
 \end_layout
 
 \begin_layout Plain Layout
@@ -1031,6 +2133,20 @@ n           ", x,
 } 
 \end_layout
 
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+C68 utility: characters_c
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
 \end_inset
 
 
@@ -1050,7 +2166,68 @@ characters_exe
 
 , generates a file that I can use in my assembly code.
  It does it much faster than I can, and more accurately to boot.
- The top of the file named 
+ 
+\end_layout
+
+\begin_layout Standard
+Note that the QL doesn't have the function 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+isblank
+\end_layout
+
+\end_inset
+
+, so I've hard coded the only two values that that function applies to,
+ tab (9) and space (32).
+ C68 gives the following character attributes:
+\end_layout
+
+\begin_layout Description
+UpperCase 65 through 90, 'A' through 'Z';
+\end_layout
+
+\begin_layout Description
+LowerCase 97 through 122, 'a' through 'z';
+\end_layout
+
+\begin_layout Description
+Digit 48 through 57, '0' through '9';
+\end_layout
+
+\begin_layout Description
+Hex
+\begin_inset space ~
+\end_inset
+
+Digit 48 through 57, 65 through 70, 97 through 102, '0' through '9', 'A'
+ through 'F', 'a' through 'f';
+\end_layout
+
+\begin_layout Description
+WhiteSpace 9 through 13, 32, Tab through Carriage Return, Space;
+\end_layout
+
+\begin_layout Description
+Blank 9 and 32, Tab and Space;
+\end_layout
+
+\begin_layout Description
+Control 33 through 47, 58 through 64, 91 through 96, 123 through 126, 128
+ through 191.
+\end_layout
+
+\begin_layout Description
+Puntuation 33 through 47, 58 through 64, 91 through 96, 123 through 126,
+ 128 through 191;
+\end_layout
+
+\begin_layout Standard
+The top of the generated file, which I named 
 \begin_inset Flex URL
 status open
 
@@ -1071,42 +2248,62 @@ status open
 
 \begin_layout Plain Layout
 
-UPPERCASE equ 1 ; Bit 0 = A - Z
+UPPERCASE    equ 1     ; Bit 0 = A - Z
 \end_layout
 
 \begin_layout Plain Layout
 
-LOWERCASE equ 2 ; Bit 1 = a - z
+LOWERCASE    equ 2     ; Bit 1 = a - z
 \end_layout
 
 \begin_layout Plain Layout
 
-DIGIT equ 4 ; Bit 2 = 0 - 9
+DIGIT        equ 4     ; Bit 2 = 0 - 9
 \end_layout
 
 \begin_layout Plain Layout
 
-SPACE equ 8 ; Bit 3 = space tab etc
+SPACE        equ 8     ; Bit 3 = space tab etc
 \end_layout
 
 \begin_layout Plain Layout
 
-PUNCTUATION equ 16 ; Bit 4 = .,;: etc
+PUNCTUATION  equ 16    ; Bit 4 = .,;: etc
 \end_layout
 
 \begin_layout Plain Layout
 
-CONTROL equ 32 ; Bit 5 = Various
+CONTROL      equ 32    ; Bit 5 = Various
 \end_layout
 
 \begin_layout Plain Layout
 
-BLANK equ 64 ; Bit 6 = space tab
+BLANK        equ 64    ; Bit 6 = space tab
 \end_layout
 
 \begin_layout Plain Layout
 
-HEXDIGIT equ 128 ; Bit 7 = 0 - 9 a - f A - F
+HEXDIGIT     equ 128   ; Bit 7 = 0 - 9 a - f A - F
+\end_layout
+
+\begin_layout Plain Layout
+
+ALPHABETIC   equ UPPERCASE + LOWERCASE
+\end_layout
+
+\begin_layout Plain Layout
+
+ALPHANUMERIC equ ALPHABETIC + DIGIT
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINTABLE    equ BLANK + PUNCTUATION + ALPHABETIC + DIGIT
+\end_layout
+
+\begin_layout Plain Layout
+
+GRAPHIC      equ PUNCTUATION + ALPHABETIC + DIGIT
 \end_layout
 
 \begin_layout Plain Layout
@@ -1186,6 +2383,33 @@ chartab    dc.b 0 + CONTROL            ; CHR$(0) = '.'
 \begin_layout Plain Layout
 
            ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Extract of the generated file 
+\lang british
+
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+characters_asm_in
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -1616,6 +2840,26 @@ isblank    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Character attributes library - 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+charAttr_asm_in
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
@@ -1791,6 +3035,26 @@ status open
 \end_layout
 
 \begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Using the 
+\begin_inset Flex URL
+status open
+
+\begin_layout Plain Layout
+
+charAttr_asm_in
+\end_layout
+
+\end_inset
+
+ routines
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
