@@ -11,7 +11,7 @@ Start   moveq #10,d0        ; N = 10
 
 ; Result is now in D1.B.
 
-        moveq #0,d1
+Back    moveq #0,d1
         rts
 
 Value   tst.b d0            ; N = 0 yet?
@@ -25,7 +25,7 @@ More    move.w d0,-(a7)     ; Save current N
 
 ; On return to here, D1.B holds the Value(N/2) result.
 
-        move.w (a7)+,d0     ; Current N again
+RtnHere move.w (a7)+,d0     ; Current N again
         btst #0,d0          ; Anything to add in bit 0?
         beq.s Done          ; No, even number.
         addq.b #1,d1        ; Yes, add bit 0 of N

@@ -338,7 +338,7 @@ Start   moveq #10,d0        ; N = 10
 
 \begin_layout Plain Layout
 
-        moveq #0,d1
+Back    moveq #0,d1
 \end_layout
 
 \begin_layout Plain Layout
@@ -404,7 +404,7 @@ More    move.w d0,-(a7)     ; Save current N
 
 \begin_layout Plain Layout
 
-        move.w (a7)+,d0     ; Current N again
+rtnHere move.w (a7)+,d0     ; Current N again
 \end_layout
 
 \begin_layout Plain Layout
@@ -478,8 +478,19 @@ D0
 
 \end_inset
 
- = 10 and the stack contains the return address to just after Start, and
- the return to SuperBasic address.
+ = 10 and the stack contains the return address of label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+Back
+\end_layout
+
+\end_inset
+
+, and the return to SuperBasic address.
  The stack looks like this:
 \end_layout
 
@@ -497,7 +508,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \end_inset
@@ -585,7 +596,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -595,7 +606,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -683,7 +694,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -693,7 +704,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -703,7 +714,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -791,7 +802,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -801,7 +812,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -811,7 +822,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -821,7 +832,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -905,7 +916,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -915,7 +926,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -925,7 +936,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -935,7 +946,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -945,7 +956,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -997,7 +1008,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1013,7 +1024,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1044,7 +1055,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -1054,7 +1065,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -1064,7 +1075,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -1074,7 +1085,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1124,7 +1135,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1140,7 +1151,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1171,7 +1182,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -1181,7 +1192,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \begin_layout Plain Layout
@@ -1191,7 +1202,7 @@ More+8
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1241,7 +1252,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1257,7 +1268,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1288,7 +1299,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \begin_layout Plain Layout
@@ -1298,7 +1309,7 @@ Start+4
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1348,7 +1359,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1364,7 +1375,7 @@ status open
 
 \begin_layout Plain Layout
 
-More+8
+rtnHere
 \end_layout
 
 \end_inset
@@ -1395,7 +1406,7 @@ SuperBasic
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \end_inset
@@ -1445,7 +1456,7 @@ status open
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \end_inset
@@ -1461,7 +1472,7 @@ status open
 
 \begin_layout Plain Layout
 
-Start+4
+Back
 \end_layout
 
 \end_inset
@@ -1655,7 +1666,6 @@ Done    moveq #0,d0         ; No errors
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Initialising the lookup table
 \end_layout
 
@@ -1709,7 +1719,6 @@ status open
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Using the lookup table to find a value
 \end_layout
 
@@ -1881,7 +1890,6 @@ HEXDIGIT    equ 128      ; Bit 7 = A - F, a - f
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Character attribute bit masks
 \end_layout
 
@@ -2138,7 +2146,6 @@ n           ", x,
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 C68 utility: characters_c
 \end_layout
 
@@ -2170,7 +2177,7 @@ characters_exe
 \end_layout
 
 \begin_layout Standard
-Note that the QL doesn't have the function 
+Note that C68 on the QL doesn't have the function 
 \begin_inset listings
 inline true
 status open
@@ -2390,10 +2397,7 @@ chartab    dc.b 0 + CONTROL            ; CHR$(0) = '.'
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Extract of the generated file 
-\lang british
-
 \begin_inset Flex URL
 status open
 
@@ -2450,7 +2454,7 @@ status open
 
 \begin_layout Plain Layout
 
-; a relatively random non-zer0 value.
+; a relatively random non-zero value.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2509,22 +2513,27 @@ status open
 
 \begin_layout Plain Layout
 
-; Given a character code in D0.B, extract the character attributes mask 
+; Given a character code in D0.B, extract the character attributes
 \end_layout
 
 \begin_layout Plain Layout
 
-; from chartab to D0.B.
+; bitmap from chartab into D0.B.
 \end_layout
 
 \begin_layout Plain Layout
 
-; Mask the attributes with the desired mask to get the validation result.
+; Mask the attribute bitmap with the desired attribute mask to get
 \end_layout
 
 \begin_layout Plain Layout
 
-; Return the result in D0.B with Z set to show that the test FAILED.
+; the validation result.
+\end_layout
+
+\begin_layout Plain Layout
+
+; Return the result in D0.B with Z set if the test FAILED.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2553,12 +2562,12 @@ isanything move.l a2,-(a7)              ; Save the worker
 
 \begin_layout Plain Layout
 
-           ext.w d0                     ; We need this to be word wide
+           ext.w d0                     ; D0 must be a word wide
 \end_layout
 
 \begin_layout Plain Layout
 
-           move.b (a2,d0.w),d0          ; Character attributes
+           move.b (a2,d0.w),d0          ; Attributes bitmap byte
 \end_layout
 
 \begin_layout Plain Layout
@@ -2578,7 +2587,7 @@ isanything move.l a2,-(a7)              ; Save the worker
 
 \begin_layout Plain Layout
 
-           tst.w d0                     ; Z = not numeric
+           tst.b d0                     ; Z = test failed
 \end_layout
 
 \begin_layout Plain Layout
@@ -2617,7 +2626,7 @@ isdigit    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #DIGIT,d1             ; Required attribute mask
+           move.b #DIGIT,d1             ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2636,7 +2645,7 @@ isalpha    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #ALPHABETIC,d1        ; Required attribute mask
+           move.b #ALPHABETIC,d1        ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2655,7 +2664,7 @@ isalnum    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #ALPHANUMERIC,d1      ; Required attribute mask
+           move.b #ALPHANUMERIC,d1      ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2674,7 +2683,7 @@ isupper    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #UPPERCASE,d1         ; Required attribute mask
+           move.b #UPPERCASE,d1         ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2712,7 +2721,7 @@ isxdigit   move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #HEXDIGIT,d1          ; Required attribute mask
+           move.b #HEXDIGIT,d1          ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2731,7 +2740,7 @@ ispunct    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #PUNCTUATION,d1       ; Required attribute mask
+           move.b #PUNCTUATION,d1       ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2750,7 +2759,7 @@ iscntrl    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #CONTROL,d1           ; Required attribute mask
+           move.b #CONTROL,d1           ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2769,7 +2778,7 @@ isgraph    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #GRAPHIC,d1           ; Required attribute mask
+           move.b #GRAPHIC,d1           ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2788,7 +2797,7 @@ isprint    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #PRINTABLE,d1         ; Required attribute mask
+           move.b #PRINTABLE,d1         ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2807,7 +2816,7 @@ isspace    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #SPACE,d1             ; Required attribute mask
+           move.b #SPACE,d1             ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2826,7 +2835,7 @@ isblank    move.w d1,-(a7)              ; Save the first worker
 
 \begin_layout Plain Layout
 
-           move.w #BLANK,d1             ; Required attribute mask
+           move.b #BLANK,d1             ; Required attribute mask
 \end_layout
 
 \begin_layout Plain Layout
@@ -2884,7 +2893,7 @@ D0.B
 
 \end_inset
 
-, we save 
+, as we will be about to trash it, we save 
 \begin_inset listings
 inline true
 status open
@@ -2896,19 +2905,8 @@ D1.W
 
 \end_inset
 
- on the stack prior to loading 
-\begin_inset listings
-inline true
-status open
-
-\begin_layout Plain Layout
-
-D0.B
-\end_layout
-
-\end_inset
-
- with the required attribute mask that we need for the current test.
+ on the stack prior to loading its low byte with the required attribute
+ mask that we need for the current test.
 \end_layout
 
 \begin_layout Itemize
@@ -2925,8 +2923,8 @@ A2.L
 \end_inset
 
  as we will be using it.
- The character attribute mask is then extracted from the table.
- This mask is appropriate to the value in 
+ The character's attribute bitmap is then extracted from the table.
+ This bitmap is appropriate to the character code originally in 
 \begin_inset listings
 inline true
 status open
@@ -2938,11 +2936,12 @@ D0.B
 
 \end_inset
 
- which we have extended to word sized to index the table.
+ but which we have now extended to word sized to index into the attribute
+ bitmap table.
 \end_layout
 
 \begin_layout Itemize
-The attribute mask is 
+The attribute bitmap is 
 \begin_inset listings
 inline true
 status open
@@ -2954,7 +2953,7 @@ AND
 
 \end_inset
 
-ed with the character attribute mask and the result in 
+ed with the desired attribute mask and the result in 
 \begin_inset listings
 inline true
 status open
@@ -2988,7 +2987,8 @@ D0.B
 
 \end_inset
 
- was a digit, or a letter etc.
+ was a character which belonged to the attribute set we were interested
+ in - a digit, an upper case letter etc.
 \end_layout
 
 \begin_layout Standard
@@ -3021,12 +3021,12 @@ status open
 
 \begin_layout Plain Layout
 
-          bsr isalpha               ; Is it a letter?
+          bsr isalnum               ; Is it a letter or digit?
 \end_layout
 
 \begin_layout Plain Layout
 
-          beq.s notLetter           ; No, it's not
+          beq.s notAlnum            ; No, it's not
 \end_layout
 
 \begin_layout Plain Layout
