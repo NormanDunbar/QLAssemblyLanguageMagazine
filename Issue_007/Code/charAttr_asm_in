@@ -9,7 +9,7 @@
 ;   D0.B Zero - Character test failed. (Z flag set)
 ;        non-zero - Character test passed.
 
-    in characters_asm_in
+    in win1_source_characters_asm_in
     
 
 ; Given a character code in D0.B, extract the character attributes mask 
@@ -21,6 +21,7 @@
 ; D1.B = required mask
 ; D0.B = character code
 isanything move.l a2,-(a7)              ; Save the worker
+           lea chartab,a2               ; Character attributes table
            ext.w d0                     ; We need this to be word wide
            move.b (a2,d0.w),d0          ; Character attributes
            and.b d1,d0                  ; Do attributes match?

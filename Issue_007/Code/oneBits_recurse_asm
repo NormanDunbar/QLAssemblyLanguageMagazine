@@ -6,12 +6,16 @@
 ; 
 ; All registers are preserved except D1 and D0. 
 ;
+; Enter at start for a demo with N = 10. Enter at
+; Value, with D0 holding the required byte value, to
+; calculate the result for that value.
+;
 Start   moveq #10,d0        ; N = 10
         bsr.s Value         ; Get recursive
 
 ; Result is now in D1.B.
 
-Back    moveq #0,d1
+Back    moveq #0,D0         ; No errors
         rts
 
 Value   tst.b d0            ; N = 0 yet?

@@ -105,7 +105,23 @@ Lookup Tables
 Lookup tables are useful.
  Remember when you were at school and had to find the logarithm of a number?
  You didn't have to calculate it every time it was needed, someone else
- did it for you and put the details in a booklet.
+ did it for you and put the details in a booklet
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Ok, I'm 
+\emph on
+probably
+\emph default
+ showing my age here - calculators were not invented/easily available until
+ after I was in secondary school! We had a booklet of log tables to look
+ up.
+\end_layout
+
+\end_inset
+
+.
  When writing code it's sometimes useful to use lookup tables rather than
  doing a possibly resource intensive calculation each and every time.
 \end_layout
@@ -120,7 +136,7 @@ Bits and Bobs
 \end_layout
 
 \begin_layout Standard
-Here's a sequence of numbers, they are all integers:
+Here's a sequence of 10 numbers, they are all integers:
 \end_layout
 
 \begin_layout Standard
@@ -149,7 +165,7 @@ Q2: Do you know what the above sequence represents?
 
 \begin_layout Standard
 Would it help if I told you that the formula to calculate the value for
- number 'n' in the sequence is given by:
+ number `n' in the sequence is given by:
 \end_layout
 
 \begin_layout Standard
@@ -254,7 +270,7 @@ Value(10) = 2 + 0 = 2
 \end_layout
 
 \begin_layout Standard
-So, the 11th number in the sequence is a 2.
+So, the 11th number in the sequence, aka value(10), is 2.
  That answers Q1, Q2 will be answered soon, I promise.
 \end_layout
 
@@ -305,7 +321,27 @@ status open
 \begin_layout Plain Layout
 
 ; All registers are preserved except D1 and D0.
- 
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Enter at start for a demo with N = 10.
+ Enter at
+\end_layout
+
+\begin_layout Plain Layout
+
+; Value, with D0 holding the required byte value, to
+\end_layout
+
+\begin_layout Plain Layout
+
+; calculate the result for that value.
 \end_layout
 
 \begin_layout Plain Layout
@@ -338,7 +374,7 @@ Start   moveq #10,d0        ; N = 10
 
 \begin_layout Plain Layout
 
-Back    moveq #0,d1
+Back    moveq #0,d0		 ; No errors
 \end_layout
 
 \begin_layout Plain Layout
@@ -1556,7 +1592,7 @@ status open
 
 \begin_layout Plain Layout
 
-Entry   bra.s Start         ; Skip the lookup table
+Entry   bra Start           ; Skip the lookup table
 \end_layout
 
 \begin_layout Plain Layout
@@ -1599,7 +1635,7 @@ Loop    addq.b #1,d0        ; Next 'n'
 
 \begin_layout Plain Layout
 
-        bvs.s Done          ; Bale out at 256
+        bcs.s Done          ; Bale out at 256
 \end_layout
 
 \begin_layout Plain Layout
@@ -1609,7 +1645,7 @@ Loop    addq.b #1,d0        ; Next 'n'
 
 \begin_layout Plain Layout
 
-        lsr.l #1,d2         ; INT(n/2)
+        lsr.w #1,d2         ; INT(n/2)
 \end_layout
 
 \begin_layout Plain Layout
@@ -1740,7 +1776,7 @@ At this point, D0.B holds the result of Value(n).
 
 \begin_layout Standard
 So, what's it all about I hear you ask? It's simple, the sequence I gave
- you way back at the beginning is the number of '1' bits in any byte value.
+ you way back at the beginning is the number of `1' bits in any byte value.
  
 \end_layout
 
@@ -1904,9 +1940,32 @@ Character attribute bit masks
 \end_layout
 
 \begin_layout Standard
-So, in the lookup table for the English language, every entry between CODE('A')
- and CODE('Z') will have the UPPERCASE flag, bit 0, set.
- They will also have the HEXDIGIT flag, bit 7, set for 'A' through 'F'.
+So, in the lookup table for the English language, every entry between 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CODE('A')
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CODE('Z')
+\end_layout
+
+\end_inset
+
+ will have the UPPERCASE flag, bit 0, set.
+ They will also have the HEXDIGIT flag, bit 7, set for `A' through `F'.
 \end_layout
 
 \begin_layout Standard
@@ -2195,15 +2254,15 @@ isblank
 \end_layout
 
 \begin_layout Description
-UpperCase 65 through 90, 'A' through 'Z';
+UpperCase 65 through 90, `A' through `Z';
 \end_layout
 
 \begin_layout Description
-LowerCase 97 through 122, 'a' through 'z';
+LowerCase 97 through 122, `a' through `z';
 \end_layout
 
 \begin_layout Description
-Digit 48 through 57, '0' through '9';
+Digit 48 through 57, `0' through `9';
 \end_layout
 
 \begin_layout Description
@@ -2211,8 +2270,8 @@ Hex
 \begin_inset space ~
 \end_inset
 
-Digit 48 through 57, 65 through 70, 97 through 102, '0' through '9', 'A'
- through 'F', 'a' through 'f';
+Digit 48 through 57, 65 through 70, 97 through 102, `0' through `9', `A'
+ through `F', `a' through `f';
 \end_layout
 
 \begin_layout Description
@@ -2422,7 +2481,23 @@ characters_asm_in
 \end_layout
 
 \begin_layout Standard
-In assembly code, character attribute functions would look like the following.
+Beware, however, if you view the generated file in an operating system that
+ is not QDOSMSQ because some of the QL character codes represent 
+\begin_inset Quotes eld
+\end_inset
+
+invalid
+\begin_inset Quotes erd
+\end_inset
+
+ characters in some character sets, on PCs or Linux, for example.
+ 
+\end_layout
+
+\begin_layout Standard
+So, now that the table has been created, we need some assembly code to call
+ when we want to check if, for example, a character code is a digit.
+ Those character attribute functions would look like the following.
  My file is named 
 \begin_inset Flex URL
 status open
@@ -2499,7 +2574,7 @@ status open
 
 \begin_layout Plain Layout
 
-    in characters_asm_in
+    in win1_source_characters_asm_in
 \end_layout
 
 \begin_layout Plain Layout
@@ -2523,12 +2598,22 @@ status open
 
 \begin_layout Plain Layout
 
+;
+\end_layout
+
+\begin_layout Plain Layout
+
 ; Mask the attribute bitmap with the desired attribute mask to get
 \end_layout
 
 \begin_layout Plain Layout
 
 ; the validation result.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
 \end_layout
 
 \begin_layout Plain Layout
@@ -2558,6 +2643,11 @@ status open
 \begin_layout Plain Layout
 
 isanything move.l a2,-(a7)              ; Save the worker
+\end_layout
+
+\begin_layout Plain Layout
+
+           lea chartab,a2               ; Character attributes table 
 \end_layout
 
 \begin_layout Plain Layout
@@ -3078,8 +3168,8 @@ D0.B
 
 \end_inset
 
- is less than or equal to 'Z' and greater or equal to 'A' or less than or
- equal to 'z' or greater than or equal to 'a' - and so on.
+ is less than or equal to `Z' and greater or equal to `A' or less than or
+ equal to `z' or greater than or equal to `a' - and so on.
  (Yes, I know, the 68020 has the 
 \begin_inset listings
 inline true
@@ -3093,6 +3183,46 @@ CMP2
 \end_inset
 
  instruction which makes this easier.)
+\end_layout
+
+\begin_layout Subsection
+A Final Thought
+\end_layout
+
+\begin_layout Standard
+If necessary, the 256 byte table of attributes could be created, then saved
+ as a binary file and binary included into your application's code, using
+ the appropriate command for your assembler.
+ On GWASS this is the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+LIB
+\end_layout
+
+\end_inset
+
+ or the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+INCBIN
+\end_layout
+
+\end_inset
+
+ command.
+\end_layout
+
+\begin_layout Standard
+For homework, you could convert the character attribute functions to be
+ SuperBASIC extensions? If you feel the need? Maybe?
 \end_layout
 
 \end_body
