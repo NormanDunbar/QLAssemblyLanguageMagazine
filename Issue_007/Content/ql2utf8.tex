@@ -1,0 +1,526 @@
+\chapter{Ql2utf8 Utility}
+
+This utility is what I would need to use when I've saved a file on
+the QL, or in QPC, and I need to transfer it down to the Linux box
+for some processing - say, for example, to get the finished and tested
+source code into an article like this one!
+
+The utility is an example of a QL program which are collectively becoming
+known as a ``YAF''.\footnote{Yet Another Filter!}
+
+The utility reads a QL created text file, where the content is any
+of the QL character set up to but not above, character 191 (\$BF)
+which is the down arrow. Anything above that is a control character
+and is unprintable - undefined results may occur if any are present
+in the QL file.
+
+It is executed in the usual manner:
+
+\begin{lstlisting}[tabsize=4]
+ex ram1_ql2utf8_bin, ram1_ql_txt, ram1_utf8_txt
+\end{lstlisting}
+
+The input file, ram1\_ql\_txt will be read in, and each byte converted
+to the appropriate UTF8 byte sequence, and written out to the ram1\_utf8\_txt
+file. The latter file will be used on my Linux box, but Windows and
+MacOS users can also take advantage.
+
+Right, enough waffle, on with the code.
+
+\section{The Code}
+
+As ever, my code starts with an introductory header and some equates.
+This utility is no different as you can see below.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; QL2UTF8:
+;
+; This filter converts QL text files to UTF8 for use on Linux, Mac or
+; Windows where most modern editors etc, default to UTF8.
+;
+;
+; EX ql2utf8_bin, input_file, output_file_or_channel
+;
+;--------------------------------------------------------------------
+; 26/09/2019 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------------
+; (c) Norman Dunbar, 2019. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------------
+
+; How many channels do I want?
+numchans    equ     2       ; How many channels required?
+
+
+; Stack stuff.
+sourceId    equ     $02     ; Offset(A7) to input file id
+destId      equ     $06     ; Offset(A7) to output file id
+
+; Other Variables
+pound       equ     96      ; UK Pound sign.
+copyright   equ     127     ; (c) sign.
+grave       equ     159     ; Backtick/Grave accent.
+euro        equ     181     ; Euro symbol
+err_bp      equ     -15
+err_eof     equ     -10
+me          equ     -1
+timeout     equ     -1
+\end{lstlisting}
+
+The main entry point for the program is next. This section of code
+contains the usual QDOS Job header and a few checks to ensure that
+we only get a pair of channel IDs on the stack. If the user decided
+to pass over a command string as well, it would be ignored.
+
+\begin{lstlisting}
+;====================================================================
+; Here begins the code.
+;--------------------------------------------------------------------
+; Stack on entry:
+;
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;====================================================================
+start       bra.s   checkStack
+
+            dc.l    $00
+            dc.w    $4afb
+name        dc.w    name_end-name-2
+            dc.b    'QL2UTF8'
+name_end    equ     *
+
+version     dc.w    vers_end-version-2
+            dc.b    'Version 1.00'
+vers_end    equ     *
+
+
+bad_parameter
+    moveq   #err_bp,d0      ; Guess!
+    bra     errorExit       ; Die horribly
+
+
+;--------------------------------------------------------------------
+; Check the stack on entry. We only require NUMCHAN channels - any
+; thing other than NUMCHANS will result in a BAD PARAMETER error on
+; exit from EW (but not from EX).
+;--------------------------------------------------------------------
+checkStack
+    cmpi.w  #numchans,(a7)  ; Two channels is a must
+    bne.s   bad_parameter   ; Oops
+\end{lstlisting}
+
+Next up is some initialisation. In this short section of code, a couple
+of registers are set to values which will be used throughout the entire
+utility.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; Initialise a couple of registers that will keep their values all
+; through the rest of the code.
+;--------------------------------------------------------------------
+ql2utf8
+    lea     utf8,a2         ; Preserved throughout
+    moveq   #timeout,d3     ; Timeout, also Preserved
+
+\end{lstlisting}
+
+And now we have the top of the main loop for the program. We start
+here by initialising the various registers to be able to read a single
+byte from the input channel. The ID for that file is on the stack
+at offset 2 from the current value in register A7.
+
+Once a byte has been read we check the error code in D0, and if it
+shows no errors, we can get on with the translation. If D0 is showing
+an error, and it happens to be End Of File, we bale out of the program
+and return success to SuperBASIC, Other errors will return the appropriate
+error code to SuperBASIC, but that will only be seen if the utility
+was executed with EXEC\_W or EW, or equivalent.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; The main loop starts here. Read a single byte, check for EOF etc.
+;--------------------------------------------------------------------
+readLoop
+    moveq   #io_fbyte,d0    ; Fetch one byte
+    move.l  sourceID(a7),a0  ; Channel to readLoop
+    trap    #3              ; Do input
+    tst.l   d0              ; OK?
+    beq.s   testBit7        ; Yes
+    cmpi.l  #ERR_EOF,d0     ; All done?
+    beq     allDone         ; Yes.
+    bra     errorExit       ; Oops!
+\end{lstlisting}
+
+The first check is to test it bit 7 of the character just read, is
+set or not. It it is set then the chances are that it is a multi-byte
+character. If it is clear, then we continue processing.
+
+\begin{lstlisting}
+testBit7
+    btst    #7,d1           ; Bit 7 set?
+    bne.s   twoBytes        ; Multi Byte character if so
+\end{lstlisting}
+
+Right then, at this point the top bit must be clear, so we are looking
+at a single byte character, or are we? The QL has a few little exceptions
+to the rule as it uses different character codes to standard (if there
+is such a thing) ASCII.
+
+The first exception is the UK Pound sign, which is a two byte character
+in UTF8. The code below checks and processes a Pound sign, if one
+is found. After writing out the UTF8 codes, it loops back to the start
+of the main loop, ready for the next character.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; The UK Pound and copyright signs are exceptions to the "bytes 
+; less than $80 are the same in UTF8 as they are in ASCII" rule as 
+; Sir Clive didn't follow ASCII 100%. Both characters are multi-byte
+; in UTF8.
+;--------------------------------------------------------------------
+testPound
+    btst    #7,d1           ; Potential multi-byte character? 
+    bne.s   twoBytes        ; Yes
+    cmpi.b  #pound,d1       ; Got a UK Pound sign?
+    bne.s   testCopyright   ; No.
+
+gotPound
+    move.b  #$c2,d1         ; Pound is $C2A3 in UTF8.
+    bsr.s   writeByte       ; Write first byte
+    move.b  #$a3,d1
+    bsr.s   writeByte       ; Write second byte
+    bra.s   readLoop
+\end{lstlisting}
+
+The next exception is the copyright symbol. It too is a multi byte
+character in UTF8 so the code below checks for it and deals with it
+appropriately.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; Here we repeat the same check as above, in case we have the
+; copyright sign.
+;--------------------------------------------------------------------
+testCopyright
+    cmpi.b  #copyright,d1   ; Got a copyright sign?
+    bne.s   oneByte         ; No.
+
+gotCopyright
+    move.b  #$c2,d1         ; Copyright is $C2A9 in UTF8.
+    bsr.s   writeByte       ; Write first byte
+    move.b  #$a9,d1
+    bsr.s   writeByte       ; Write second byte
+    bra.s   readLoop
+
+\end{lstlisting}
+
+That's all the QL characters that are exceptions to the ``ASCII characters
+below code 128 are single byte in UTF8'' rule. The remaining QL characters
+less than code 128 are dealt with by simply calling the routine to
+write a single byte and then heading back to the top of the main loop.
+Job done.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; All other ASCII characters, below $80, are single byte in UTF8 and
+; are the same code as in ASCII.
+;--------------------------------------------------------------------
+oneByte     
+    bsr.s   writeByte       ; Single byte required in UTF8
+    bra.s   readLoop
+\end{lstlisting}
+
+Speaking of writing a single byte, the following code does exactly
+that. It fetches the channel ID for the output channel from the stack.
+Normally, this would be at offset ``destId'' on from A7, but as
+this code is always called as a subroutine, there is an extra 4 bytes
+on the stack for the calling code's return address, so that has to
+be considered.
+
+All the following snippet has to do is set up the registers to enable
+the trap call, IO\_SBYTE, to be called. D3, the timeout, is already
+set to -1, and will be preserved on return, as will D2, which is being
+used elsewhere in the code to safely hold a value during processing.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; A small but perfectly formed subroutine to send the byte in D1 to
+; the output channel.
+; BEWARE: This is called with an extra 4 bytes on the stack!
+;--------------------------------------------------------------------
+writeByte
+    moveq   #io_sbyte,d0    ; Send one byte
+    move.l  4+destId(a7),a0  ; Output channel id
+    trap    #3
+    tst.l   d0              ; OK?
+    bne.s   errorExit       ; Oops!
+    rts
+\end{lstlisting}
+
+As mentioned above, we have processed all the QL characters that are
+a single byte in UTF8, so now we need to think about those characters
+with codes above 127, the majority of these are accented characters
+and as the QL doesn't cover all the ``standard'' ones, there is
+some ``furkling about''\footnote{That would be a technical term!}
+to be done.
+
+The QL wouldn't be the QL we know and love if there were not a couple
+of exceptions to the rule that ``ASCII characters above code 128
+are always multi-byte''. The grave (no, not somewhere you bury people,
+the accent much loved by the French I believe) aka the backtick (at
+least on Unix, Linux etc) is actually a single byte character in UTF8,
+so that is dealt with first.
+
+We arrive at the following code whenever a character is read in which
+has the top bit, bit 7, set.
+
+The code begins by checking for and processing a grave character.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; ASCII codes from $80 upwards require multiple bytes in UTF8. In the
+; case of the QL, these are mostly 2 bytes long. I could use IO_SSTRG
+; here, I know. 
+; However, as ever, there are exceptions. The grave accent (backtick)
+; is a single byte on output, while the 4 arrow keys are three bytes.
+; The bytes to be sent are read from a table because, again, the QL
+; is not using the full set of accented characters - so there is
+; mucking about to be done.
+;--------------------------------------------------------------------
+twoBytes
+    cmpi.b  #grave,d1       ; Backtick/Grave accent?
+    bne.s   testEuro        ; No.
+
+;--------------------------------------------------------------------
+; We are dealing with a backtick character (aka Grave accent)?
+;--------------------------------------------------------------------
+gotGrave
+    move.b  #pound,d1       ; Grave in = pound out!
+    bsr.s   writeByte       ; Single byte required
+    bra     readLoop        ; Do the rest
+\end{lstlisting}
+
+From here on in we should be dealing with all the two byte characters
+for UTF8, however, those exceptions are popping up again. The first
+is the Euro symbol. This is missing from the original 128Kb QLs of
+old, as the Euro didn't even exist when they were conceived, however,
+in SMSQ, they have been allocated character 181 - which, when you
+look at it in Pennel or similar, is a seriously weird character which
+I've never seen used, so I think the SMSQ authors chose well!
+
+In UTF8 the Euro needs three characters, \$E282AC, so the following
+section of code does the necessary checking and handling of a Euro
+character.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; Here we repeat the same check as above, in case we have the
+; Euro sign.
+;--------------------------------------------------------------------
+testEuro
+    cmpi.b  #euro,d1        ; Got a Euro sign?
+    bne.s   testArrows      ; No.
+
+gotEuro
+    move.b  #$e2,d1         ; Euro is $E282AC in UTF8.
+    bsr.s   writeByte       ; Write first byte
+    move.b  #$82,d1
+    bsr.s   writeByte       ; Write second byte
+    move.b  #$ac,d1
+    bsr.s   writeByte       ; Write third byte
+    bra.s   readLoop
+\end{lstlisting}
+
+Finally, in our exception handling code, the 4 arrow keys. These too
+are three bytes long in UTF8, \$E2869x, where the 'x' nibble is 0,
+1, 2 or 3 depending on the arrow's direction. Just to be awkward,
+the QL's arrow order is different to UTF8 - on the QL the ascending
+character codes are for the Left, Right, Up, Down arrows, but in UTF8
+they are ordered Left, Up, Right, Down. 
+
+The code snippet below handles the arrow keys.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; The arrows are $BC, $BD, $BE and $BF (left, right, up, down). These
+; are three bytes in UTF8, $E2 $86 $9x where 'x' is 0, 2, 1 or 3.
+;--------------------------------------------------------------------
+testArrows
+    move.b  d1,d2           ; Copy character code
+    subi.b  #$bc,d2         ; Anything lower = C set
+    bcs.s   notArrows       ; And is not an arrow
+    subi.b  #4,d2           ; Arrows = 0-3. C clear is bad
+    bcc.s   notArrows       ; Still not an arrow.
+
+gotArrows
+    subi.b  #$bc,d1         ; D1 = 0 to 3 
+    lea     arrows,a3       ; Arrow table
+    move.b  d1,d2           ; Save index into table
+    ext.w   d2              ; Need word not byte
+
+    move.b  #$e2,d1         ; First byte
+    bsr.s   writeByte
+    move.b  #$86,d1         ; Second byte
+    bsr.s   writeByte
+    move.b  0(a3,d2.w),d1   ; Third byte
+    bsr.s   writeByte     
+    bra     readLoop        ; Go around again.
+
+\end{lstlisting}
+
+The arrow key's third byte is located in the following tiny table
+which has the correct third byte for the appropriate arrow's code
+on the QL.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; We need this as arrows in the QL are Left, Right, Up, Down but in
+; UTF8 they are Left, Up, Right, Down. Sigh.
+;--------------------------------------------------------------------
+arrows
+    dc.b    $90,$92,$91,$93  ; Awkward byte order!
+\end{lstlisting}
+
+That is now, all the two byte exceptions catered for. The remainder
+of the higher ASCII characters are all two bytes in size. Obviously,
+being the QL, these are not in the same order as the originating ASCII
+codes would be, had Sir Clive done the decent thing and used a standard
+ASCII code page! Instead he chose to omit some characters and rearrange
+the others into a non-standard order.\footnote{Ok, fair play, there probably wasn't a standard ASCII code page he
+could use back then. }
+
+The following code simply copies the character code from D1 to D2
+and then manipulates D2 to go from an index into the table, to an
+offset into the table where a pair of bytes can be found that represent
+the UTF8 code for the current character. 
+
+As we are dealing with character codes from 128 (\$80) onwards, we
+start by subtracting \$80 from the character code. This gives the
+correct index into the table. As each entry in the table is two bytes,
+we double the index to get the correct offset, then pick up the two
+bytes there and send them on their way to the output file, before
+heading back to the start of the main loop.
+
+\begin{lstlisting}[tabsize=4]
+;--------------------------------------------------------------------
+; Now we are certain, everything is two bytes. Read them from the
+; table and write them out.
+;--------------------------------------------------------------------
+notArrows
+    move.b  d1,d2           ; D2 = byte just read
+    subi.b  #$80,d2         ; Adjust for table index
+    ext.w   d2              ; Word size needed
+    lsl.w   #1,d2           ; Double D2 for Offset
+    move.b  0(a2,d2.w),d1   ; First byte
+    bsr.s   writeByte       ; Send it output
+    addq.b  #1,d2
+    move.b  0(a2,d2.w),d1   ; Second byte
+    bsr.s   writeByte       ; Send it out too
+    bra     readLoop        ; Go around.
+\end{lstlisting}
+
+The code below is the usual tidy up and bale out code. It doesn't
+require much explanation as you will have seen it before, many times.
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; No errors, exit quietly back to SuperBASIC.
+;--------------------------------------------------------------------
+allDone
+    moveq   #0,d0
+
+;--------------------------------------------------------------------
+; We have hit an error so we copy the code to D3 then exit via a
+; forcible removal of this job. EXEC_W/EW will display the error in
+; SuperBASIC, but EXEC/EX will not.
+;--------------------------------------------------------------------
+errorExit
+    move.l  d0,d3           ; Error code we want to return
+
+;--------------------------------------------------------------------
+; Kill myself when an error was detected, or at EOF.
+;--------------------------------------------------------------------
+suicide
+    moveq   #mt_frjob,d0    ; This job will die soon
+    moveq   #me,d1
+    trap    #1
+\end{lstlisting}
+
+Finally, the table of two byte values for the multi-byte characters.
+Those which have a word of \$0000 are exceptions, dealt with elsewhere.
+And finally, the table only goes as far as character 191 (\$BF) as
+everything that follows is unprintable and unlikely to ever get into
+a QL text file. This basically means that if you do manage to do this,
+the output will be ``undefined'' - as they say!
+
+\begin{lstlisting}
+;--------------------------------------------------------------------
+; The following table contains the two byte sequences required for 
+; QL characters above $80. These are all 2 bytes in UTF8, so quite a 
+; simple case. (Not when converting UTF8 to QL though!)
+;--------------------------------------------------------------------
+utf8
+    dc.w    $c3a4           ; a umlaut
+    dc.w    $c3a3           ; a tilde
+    dc.w    $c3a2           ; a circumflex
+    dc.w    $c3a9           ; e acute
+    dc.w    $c3b6           ; o umlaut
+    dc.w    $c3b5           ; o tilde
+    dc.w    $c3b8           ; o slash
+    dc.w    $c3bc           ; u umlaut
+    dc.w    $c3a7           ; c cedilla
+    dc.w    $c3b1           ; n tilde
+    dc.w    $c3a6           ; ae ligature
+    dc.w    $c593           ; oe ligature
+    dc.w    $c3a1           ; a acute
+    dc.w    $c3a0           ; a grave
+    dc.w    $c3a2           ; a circumflex
+    dc.w    $c3ab           ; e umlaut
+    dc.w    $c3a8           ; e grave
+    dc.w    $c3aa           ; e circumflex
+    dc.w    $c3af           ; i umlaut
+    dc.w    $c3ad           ; i acute
+    dc.w    $c3ac           ; i grave
+    dc.w    $c3ae           ; i circumflex
+    dc.w    $c3b3           ; o acute
+    dc.w    $c3b2           ; o grave
+    dc.w    $c3b4           ; o circumflex
+    dc.w    $c3ba           ; u acute
+    dc.w    $c3b9           ; u grave
+    dc.w    $c3bb           ; u circumflex
+    dc.w    $ceb2           ; B as in ss (German)
+    dc.w    $c2a2           ; Cent
+    dc.w    $c2a5           ; Yen
+    dc.w    $0000           ; Grave accent - single byte
+    dc.w    $c384           ; A umlaut
+    dc.w    $c383           ; A tilde
+    dc.w    $c385           ; A circle
+    dc.w    $c389           ; E acute
+    dc.w    $c396           ; O umlaut
+    dc.w    $c395           ; O tilde
+    dc.w    $c398           ; O slash
+    dc.w    $c39c           ; U umlaut
+    dc.w    $c387           ; C cedilla
+    dc.w    $c391           ; N tilde
+    dc.w    $c386           ; AE ligature
+    dc.w    $c592           ; OE ligature
+    dc.w    $ceb1           ; alpha
+    dc.w    $ceb4           ; delta
+    dc.w    $ceb8           ; theta
+    dc.w    $cebb           ; lambda
+    dc.w    $c2b5           ; micro (mu?)
+    dc.w    $cf80           ; PI
+    dc.w    $cf95           ; o pipe
+    dc.w    $c2a1           ; ! upside down
+    dc.w    $c2bf           ; ? upside down
+    dc.w    $0000           ; Euro
+    dc.w    $c2a7           ; Section mark
+    dc.w    $c2a4           ; Currency symbol
+    dc.w    $c2ab           ; <<
+    dc.w    $c2bb           ; >>
+    dc.w    $c2ba           ; Degree
+    dc.w    $c3b7           ; Divide
+\end{lstlisting}
+

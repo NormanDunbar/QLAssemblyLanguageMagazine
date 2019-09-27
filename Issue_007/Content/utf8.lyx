@@ -1,0 +1,369 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+UTF8 and the QL
+\end_layout
+
+\begin_layout Standard
+UTF8 is a character set much loved, perhaps, by Linux, MacOS and increasingly,
+ Windows computers.
+ As it happens, most of the HTML pages, as well as almost all XML files,
+ are themselves in UTF8 format.
+ What is it and how does it affect the QL?
+\end_layout
+
+\begin_layout Standard
+I spend more time editing files, at least to get a first draft, in Linux.
+ When I copy the files up to my QPC session and open them in QD, a couple
+ of things happen:
+\end_layout
+
+\begin_layout Itemize
+QD converts all my runs of 4 spaces to a tab character, even though I've
+ repeatedly asked it not to.
+ I'm rapidly losing patience with QD!
+\end_layout
+
+\begin_layout Itemize
+Some of the QL characters, happily typed on Linux, are shown as weird blobs
+ in QD.
+ The UK Pound sign, for example, or the Euro are blobs in QD when they were
+ fine on Linux.
+ Why?
+\end_layout
+
+\begin_layout Itemize
+Writing QL files back to, say, DOS1_, then opening them in a Linux editor
+ shows many characters as the UTF8 character with Code Point U+0000, the
+ black blob with a question mark in it.
+ Oops! Don't even try opening a QL file with the arrow characters within,
+ you don't want to go there!
+\end_layout
+
+\begin_layout Section
+UTF8 Encoding
+\end_layout
+
+\begin_layout Standard
+UTF8 is an encoding standard for plain text.
+ It is a multi-byte character set which simply means that some characters
+ in the set, take up more than one byte when viewed 
+\begin_inset Quotes eld
+\end_inset
+
+in the raw
+\begin_inset Quotes erd
+\end_inset
+
+ (or with a hex dump).
+ UTF8 has a big enough encoding method that all (I am led to believe) the
+ characters in all the languages of the world, plus all their punctuations,
+ numbers and so on, can be represented.
+\end_layout
+
+\begin_layout Standard
+UTF8 characters can be 1, 2,3 or 4 bytes long.
+ The UK Pound sign, for example, is two bytes - $C2A3, the Euro symbol is
+ three bytes - $E282AC, while the humble digit seven remains as a single
+ byte - $37.
+\end_layout
+
+\begin_layout Standard
+The rules are simple:
+\end_layout
+
+\begin_layout Itemize
+Each character has what is known as a 
+\begin_inset Quotes eld
+\end_inset
+
+code point
+\begin_inset Quotes erd
+\end_inset
+
+ and is represented by the expression 
+\begin_inset Quotes eld
+\end_inset
+
+U+nnnn
+\begin_inset Quotes erd
+\end_inset
+
+ where the 
+\begin_inset Quotes eld
+\end_inset
+
+nnnn
+\begin_inset Quotes erd
+\end_inset
+
+ part may be two, three or four hex pairs.
+ Single byte characters, like the digits, are shows also as 
+\begin_inset Quotes eld
+\end_inset
+
+U+nnnn
+\begin_inset Quotes erd
+\end_inset
+
+ but the first two digits are zeros - 
+\begin_inset Quotes eld
+\end_inset
+
+U+0037
+\begin_inset Quotes erd
+\end_inset
+
+ for our digit seven.
+\end_layout
+
+\begin_layout Itemize
+ASCII characters, below 128, are represented in UTF8 by a single byte, exactly
+ the same as the current ASCII byte.
+ Handy! Not on a QL of course! Code points U+0000 through U+007F are represented
+ here.
+\end_layout
+
+\begin_layout Itemize
+ASCII characters above 128 are split into three groups.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Code points from U+0080 through U+07FF are all two bytes long.
+\end_layout
+
+\begin_layout Itemize
+Code points from U+0800 through U+FFFF are all three bytes long.
+\end_layout
+
+\begin_layout Itemize
+Code points from U+10000 through U+10FFFF are all 4 bytes long.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+So, how do we encode an ASCII character onto one, two, three or four bytes
+ of UTF8? Easy!
+\end_layout
+
+\begin_layout Itemize
+In ASCII, all characters with the top bit (bit 7) clear will have their
+ UTF8 code point value, encoded into the lower 7 bits of a single byte.
+ In other words, 0xxxxxxx, allowing 7 bits to encode the code point.
+\end_layout
+
+\begin_layout Itemize
+Two byte UTF8 characters have the layout 110xxxxx 10xxxxxx, and this allows
+ for 11 bits to encode the code point within the two bytes.
+ 
+\end_layout
+
+\begin_layout Itemize
+Three byte UTF8 characters have the layout 1110xxxx 10xxxxxx 10xxxxxx, allowing
+ for 16 bits of code point information.
+\end_layout
+
+\begin_layout Itemize
+Finally, four byte UTF8 characters have the layout 11110xxx 10xxxxxx 10xxxxxx
+ 10xxxxxx allowing for a massive 21 bits of code point values.
+\end_layout
+
+\begin_layout Standard
+So, how does that work for our examples, the digit seven, UK Pound and the
+ Euro symbol?
+\end_layout
+
+\begin_layout Standard
+The digit seven is a single byte, and is simply the current ASCII value,
+ $37, because that already has the top bit clear and the remaining bits
+ holding the ASCII character, or the UTF8 code point as it is now known.
+\end_layout
+
+\begin_layout Standard
+The UK Pound, has code point U+00A3.
+ This is higher than the highest single byte character, U+007F, but lower
+ than the highest for two byte characters, so it is a two byte character.
+\end_layout
+
+\begin_layout Standard
+A two byte character is of the format 110xxxxx 10xxxxxx where the most significa
+nt bits of the code point value is encoded into the bits marked with an
+ 'x'.
+ As the code point is simply a hexadecimal number, U+00A3 is just 00000000
+ 10100011 in binary, so those 8 bits get encoded onto the 'x' bits, giving
+ 110xxx10 10110011.
+ As we cannot have 'x' bits, those remaining bits are cleared to zero, giving
+ 11000010 10110011 which is, $C2 A3 - and that's the character code for
+ a Pound Sign in UTF8.
+\end_layout
+
+\begin_layout Standard
+Taking the Euro next, it has code point U+20AC which puts it into the three
+ byte set of characters.
+ Those are in the format 1110xxxx 10xxxxxx 10xxxxxx.
+ Once again, we take the code point in binary and mask it onto the 'x'bits,
+ filling with leading zeros as appropriate.
+\end_layout
+
+\begin_layout Standard
+Code point U+20AC is 00100000 10101100 which is 16 bits as a three byte
+ character allows for up to 16 bits, it fits nicely without any spare 'x'
+ bits.
+ The result is 11100010 10000010 10101100 or $E2 82 AC and that's the three
+ bytes we use for the Euro symbol.
+\end_layout
+
+\begin_layout Section
+The QL Character Set
+\end_layout
+
+\begin_layout Standard
+As ever, nothing is straight forward in the QL world.
+ Sir Clive has done his best to unstandardise things.
+ However, I suppose he had only 256 characters to fit ASCII and a few 
+\begin_inset Quotes eld
+\end_inset
+
+foreign
+\begin_inset Quotes erd
+\end_inset
+
+ characters that might be needed in Europe.
+ America seems to get by on only 7 bits ASCII anyway! So, what's broken
+ in the QL's character set?
+\end_layout
+
+\begin_layout Itemize
+The UK Pound symbol is character 96 ($60) on the QL, but in ASCII it is
+ character 163 ($A3).
+\end_layout
+
+\begin_layout Itemize
+The copyright symbol is character 127 ($7F) on the QL but is 169 ($A9) in
+ ASCII.
+\end_layout
+
+\begin_layout Itemize
+The Euro, which came a long time after the QL, doesn't exist in the BBQL
+ character set, but under SMSQ, it is at character 181 ($B5)
+\end_layout
+
+\begin_layout Itemize
+Characters above 128 ($80) are a mess on the QL.
+ Many are simply missing, especially some of the, I assume, lesser used
+ accented characters.
+\end_layout
+
+\begin_layout Standard
+So while my Linux editor can open files created on the QL, and the QL can
+ open (most) files created on the Linux side of things, it's not completely
+ the same.
+ A conversion is required, one to go from the QL to Linux (MacOS, Windows
+ etc) and one to come back again.
+\end_layout
+
+\begin_layout Standard
+I guess we need some assembly code then? Read on.
+\end_layout
+
+\end_body
+\end_document

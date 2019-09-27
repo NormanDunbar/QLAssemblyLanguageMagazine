@@ -1,0 +1,581 @@
+\chapter{Lookup Tables}
+
+Lookup tables are useful. Remember when you were at school and had
+to find the logarithm of a number? You didn't have to calculate it
+every time it was needed, someone else did it for you and put the
+details in a booklet\footnote{Ok, I'm \emph{probably} showing my age here - calculators were not
+invented/easily available until after I was in secondary school! We
+had a booklet of log tables to look up.}. When writing code it's sometimes useful to use lookup tables rather
+than doing a possibly resource intensive calculation each and every
+time.
+
+The rest of this section shows a couple of uses for lookup tables. 
+
+\section{Bits and Bobs}
+
+Here's a sequence of 10 numbers, they are all integers:
+
+\begin{lstlisting}[tabsize=4,numbers=none]
+0, 1, 1, 2, 1, 2, 2, 3, 1, 2 ...
+\end{lstlisting}
+
+Q1: Do you know what the next value in the sequence will be?
+
+Q2: Do you know what the above sequence represents?
+
+Would it help if I told you that the formula to calculate the value
+for number `n' in the sequence is given by:
+
+\begin{lstlisting}[numbers=none]
+Value(n) = (value(int(n/2)) + (n and 1)
+\end{lstlisting}
+
+For example, to find the value of the number 10, the 11th number in
+the sequence as we start from 0, and which just happens to be the
+answer to Q1 above, we must take value(5) and add on bit 0 of 10.
+Of course, we need then to find the answer to Value(2) and add on
+bit 0 of 5 and so on. Recursion anyone? This works out as the following
+sequence of calculations:
+
+\begin{lstlisting}[numbers=none]
+Value(10) = (value(5) + (10 and 1)
+Value(5)  = (value(2) + (5 and 1)
+Value(2)  = (value(1) + (2 and 1)
+Value(1)  = (value(0) + (1 and 1)
+Value(0)  = 0
+\end{lstlisting}
+
+This gives us, working backwards up the above sequence of calculations:
+
+\begin{lstlisting}[numbers=none]
+Value(0)  = 0
+Value(1)  = 0 + 1 = 1
+Value(2)  = 1 + 0 = 1
+Value(5)  = 1 + 1 = 2
+Value(10) = 2 + 0 = 2
+\end{lstlisting}
+
+So, the 11th number in the sequence, aka value(10), is 2. That answers
+Q1, Q2 will be answered soon, I promise.
+
+Assuming you need to know these numbers in a program you happen to
+be writing in assembly language, you could work them out each time.
+The formula does tend to imply recursion is required and the following
+brief section of code will do exactly that.
+
+\begin{lstlisting}[caption={Calculating values with recursion}]
+; On Entry (to Value routine) : 
+;   D0.B = Required value for 'n'. 
+; 
+; On Exit: 
+;   D1.B = Answer (Value(n)). 
+; 
+; All registers are preserved except D1 and D0.
+;
+; Enter at start for a demo with N = 10. Enter at
+; Value, with D0 holding the required byte value, to
+; calculate the result for that value.
+;
+Start   moveq #10,d0        ; N = 10
+        bsr.s Value         ; Get recursive
+
+; Result is now in D1.B.
+
+Back    moveq #0,d0		 ; No errors
+        rts
+
+Value   tst.b d0            ; N = 0 yet?
+        bne.s More          ; Not yet
+        moveq #0,d1         ; Yes Value(0) = 0
+        rts
+
+More    move.w d0,-(a7)     ; Save current N
+        lsr.b #1,d0         ; INT(N/2)
+        bsr.s Value         ; Recurse
+
+; On return to here, D1.B holds the Value(N/2) result.
+
+rtnHere move.w (a7)+,d0     ; Current N again
+        btst #0,d0          ; Anything to add in bit 0?
+        beq.s Done          ; No, even number.
+        addq.b #1,d1        ; Yes, add bit 0 of N
+
+Done    rts 
+\end{lstlisting}
+
+So, what happens in the above when we use 10 as the required value?
+\begin{enumerate}
+\item At the label \lstinline!Value!, \lstinline!D0! = 10 and the stack
+contains the return address of label \lstinline!Back!, and the return
+to SuperBasic address. The stack looks like this:
+
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+\end{lstlisting}
+
+\item As \lstinline!D0! is not yet zero, we end up at label \lstinline!More!
+where we stack \lstinline!D0!, shift it right to get 5, and call
+\lstinline!Value! again. At \lstinline!Value!, the stack looks like
+this:
+
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+\end{lstlisting}
+
+\item As \lstinline!D0! is not yet zero, we end up at label \lstinline!More!
+where we stack \lstinline!D0!, shift it right to get 2, and call
+\lstinline!Value! again. At \lstinline!Value!, the stack looks like
+this:
+
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+5
+rtnHere
+\end{lstlisting}
+
+\item As \lstinline!D0! is not yet zero, we end up at label \lstinline!More!
+where we stack \lstinline!D0!, shift it right to get 1, and call
+\lstinline!Value! again. At \lstinline!Value!, the stack looks like
+this:
+
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+5
+rtnHere
+2
+rtnHere
+\end{lstlisting}
+
+\item As \lstinline!D0! is not yet zero, we end up at label \lstinline!More!
+where we stack \lstinline!D0!, shift it right to get 0, and call
+\lstinline!Value! again. At \lstinline!Value!, the stack looks like
+this: 
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+5
+rtnHere
+2
+rtnHere
+1
+rtnHere
+\end{lstlisting}
+\item At \lstinline!Value!, \lstinline!D0! is now zero, so we store zero
+in \lstinline!D1! and return to \lstinline!rtnHere!.
+\item At \lstinline!rtnHere!, we unstack 1 into \lstinline!D0!. The stack
+now looks like:
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+5
+rtnHere
+2
+rtnHere
+\end{lstlisting}
+As \lstinline!D0! is odd, we add 1 to \lstinline!D1!. The running
+total is now 1. Then we execute an \lstinline!RTS! instruction and
+end up back at \lstinline!rtnHere!.
+\item At \lstinline!rtnHere!, we unstack 2 into \lstinline!D0!. The stack
+now looks like:
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+5
+rtnHere
+\end{lstlisting}
+ As \lstinline!D0! is even, we don't add 1 to \lstinline!D1!. The
+running total is still 1. Then we execute an \lstinline!RTS! instruction
+and end up back at \lstinline!rtnHere!.
+\item At \lstinline!rtnHere!, we unstack 5 into \lstinline!D0!. The stack
+now looks like:
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+10
+rtnHere
+\end{lstlisting}
+As \lstinline!D0! is odd, we add 1 to \lstinline!D1!. The running
+total is now 2. Then we execute an \lstinline!RTS! instruction and
+end up back at \lstinline!rtnHere!.
+\item At \lstinline!rtnHere!, we unstack 10 into \lstinline!D0!. The stack
+now looks like:
+\begin{lstlisting}[numbers=none]
+SuperBasic
+Back
+\end{lstlisting}
+ As \lstinline!D0! is even, we don't add 1 to \lstinline!D1!. The
+running total is still 2. Then we execute an \lstinline!RTS! instruction
+and end up back at \lstinline!Back!.
+\item At \lstinline!Back! we clear \lstinline!D0! and return to SuperBasic.
+The value in \lstinline!D1! is 2, which is the correct value for
+the 11th number in the sequence. 
+\end{enumerate}
+The test code above is fine if you only need one or two values, but
+if your code needs lots, then a lookup table would be a good trade
+off between memory usage - you need extra space for the table - and
+CPU resources - if you have to do lots of calculations each time.
+The following code sets up a lookup table for all values from 0 to
+255 - so that's a good reason for having a single byte for each value.
+
+\begin{lstlisting}[caption={Initialising the lookup table}]
+; Lookup Table initialisation.
+;
+; Register Usage:
+;	D0.B = 'N' counter (0 - 255).
+;	D2.B = INT(n/2), value(N).
+;	A2.L = Pointer to start of lookup table.
+
+Entry   bra Start           ; Skip the lookup table
+
+Lookup  ds.b 256  		  ; Lookup table
+  	  
+Start   moveq #0,d0         ; Value(0)
+        lea Lookup,a2       ; Guess!
+        move.b d0,(a2)      ; Save value(0) in table
+
+Loop    addq.b #1,d0        ; Next 'n'
+        bcs.s Done          ; Bale out at 256
+        move.w d0,d2        ; Copy 'n' to D2
+        lsr.w #1,d2         ; INT(n/2)
+        move.b (a2,d2.w),d2 ; Value(INT(n/2))
+        btst #0,d0          ; Anything to add?
+        beq.s Store         ; No, just store value(n)
+        addq.b #1,d2        ; Yes, add bit 1
+
+Store   move.b d2,(a2,d0.w) ; Store Value(n) 
+        bra.s Loop          ; Not done yet
+
+Done    moveq #0,d0         ; No errors
+        rts
+		
+\end{lstlisting}
+
+If the program initialises the lookup table during startup, then any
+time it needs to extract a value, it's as simple as:
+
+\begin{lstlisting}[caption={Using the lookup table to find a value}]
+        ...
+        move.w #n,d0		; D0 must be 0 - 255
+        lea Lookup,a2
+        move.b (a2,d0.w),d0 ; Value(d0.b)
+        ...
+\end{lstlisting}
+
+At this point, D0.B holds the result of Value(n). Keep in mind that
+the lookup table only gives values between 0 and 255, but D0 is a
+word in the above for ease of indexing the table.
+
+So, what's it all about I hear you ask? It's simple, the sequence
+I gave you way back at the beginning is the number of `1' bits in
+any byte value. 
+
+Taking 10 as an example, it is 0000 1010\textsubscript{bin}while
+5, half of 10, is 0000 0101\textsubscript{bin}- the same number of
+bits. So, that works for even numbers, how about odd ones? Well, half
+of 5 is 2.5 bit as we are rounding down, that's 2. Two is 0000 0010\textsubscript{bin}
+Doubling 2 gives 4 or 0000 0100\textsubscript{bin}and 5 is just 4
+plus 1. So, the number of bits in an odd number is still the same
+as the number in half of it, plus bit 0. Simples\footnote{As the odd, occasional, passing meerkat has been know to utter!}.
+
+\section{Character Characteristics}
+
+Another useful lookup table would be one which, again, covers 256
+byte entries. However, instead of values, these bytes contain up to
+8 bits of `flag' information. In the C/C++ programming languages,
+there are numerous functions (and also, macros with the same name)
+which can be used to determine if a character is a digit, upper case,
+lower case, printable etc. This is done with a lookup table of bit
+flags.
+
+Each character class (numeric, alphabetic etc) has one or more bits
+set in the table entry to indicate if this character is indeed a digit,
+upper case etc. In C68 (look in the header file \url{ctypes.h}) we
+have a number of bit masks defined, as follows, although I am using
+better names than the C68 code!
+
+\begin{lstlisting}[caption={Character attribute bit masks}]
+UPPERCASE   equ 1        ; Bit 0 = A - Z
+LOWERCASE   equ 2        ; Bit 1 = a - z
+DIGIT       equ 4        ; Bit 2 = 0 - 9
+SPACE       equ 8        ; Bit 3 = space, tab, linefeed
+PUNCTUATION equ 16       ; Bit 4 = .,;: etc
+CONTROL     equ 32       ; Bit 5 = Codes < 32 
+BLANK       equ 64       ; Bit 6 = space, tab
+HEXDIGIT    equ 128      ; Bit 7 = A - F, a - f
+\end{lstlisting}
+
+So, in the lookup table for the English language, every entry between
+\lstinline!CODE('A')! and \lstinline!CODE('Z')! will have the UPPERCASE
+flag, bit 0, set. They will also have the HEXDIGIT flag, bit 7, set
+for `A' through `F'.
+
+Now, I don't know about you, but I really don't fancy typing in 256
+entries in a table, with the possibility of getting it wrong, somewhere.
+That's a nightmare scenario, so the QL can do it for me (you, on the
+other hand, can simply download the code for this issue and get it
+for free!) I wrote the following, simple, C68 code to generate the
+file I needed for assembly routines, using my own constant values
+as listed above.
+
+The following is the listing of the C68 program, \url{characters_c}:
+
+\begin{lstlisting}[caption={C68 utility: characters\_c},language=C]
+#include <stdio.h> 
+#include <ctype.h>
+
+int main(int argc, char *argv[]) {
+    int x;
+
+    printf("UPPERCASE    equ 1     ; Bit 0 = A - Z\n");
+    printf("LOWERCASE    equ 2     ; Bit 1 = a - z\n");
+    printf("DIGIT        equ 4     ; Bit 2 = 0 - 9\n");
+    printf("SPACE        equ 8     ; Bit 3 = space tab etc\n");
+    printf("PUNCTUATION  equ 16    ; Bit 4 = .,;: etc\n");
+    printf("CONTROL      equ 32    ; Bit 5 = Various\n");
+    printf("BLANK        equ 64    ; Bit 6 = space tab\n");
+    printf("HEXDIGIT     equ 128   ; Bit 7 = 0 - 9 a - f A - F\n");
+    printf("ALPHABETIC   equ UPPERCASE + LOWERCASE\n");
+    printf("ALPHANUMERIC equ ALPHABETIC + DIGIT\n");
+    printf("PRINTABLE    equ BLANK + PUNCTUATION + ALPHABETIC + DIGIT\n");
+    printf("GRAPHIC      equ PUNCTUATION + ALPHABETIC + DIGIT\n");
+
+    printf("\n\nchartab    ");
+    for (x = 0; x < 256; x++) {
+        printf("dc.b 0 ");
+        if (iscntrl(x)) printf("+ CONTROL ");
+        if (isupper(x)) printf("+ UPPERCASE ");
+        if (islower(x)) printf("+ LOWERCASE ");
+        if (isdigit(x)) printf("+ DIGIT ");
+        if (isxdigit(x)) printf("+ HEXDIGIT ");
+        if (ispunct(x)) printf("+ PUNCTUATION ");
+        if (isspace(x)) printf("+ SPACE ");
+        if (x == 9 || x == 32) printf("+ BLANK ");
+        printf("     ; CHR$(%d) = '%c'\n           ", x,
+               isprint(x) ? x : '.');
+    }
+        return 0;
+} 
+\end{lstlisting}
+
+The code above, compiled to \url{characters_exe}, generates a file
+that I can use in my assembly code. It does it much faster than I
+can, and more accurately to boot. 
+
+Note that C68 on the QL doesn't have the function \lstinline!isblank!,
+so I've hard coded the only two values that that function applies
+to, tab (9) and space (32). C68 gives the following character attributes:
+\begin{description}
+\item [{UpperCase}] 65 through 90, `A' through `Z';
+\item [{LowerCase}] 97 through 122, `a' through `z';
+\item [{Digit}] 48 through 57, `0' through `9';
+\item [{Hex~Digit}] 48 through 57, 65 through 70, 97 through 102, `0'
+through `9', `A' through `F', `a' through `f';
+\item [{WhiteSpace}] 9 through 13, 32, Tab through Carriage Return, Space;
+\item [{Blank}] 9 and 32, Tab and Space;
+\item [{Control}] 33 through 47, 58 through 64, 91 through 96, 123 through
+126, 128 through 191.
+\item [{Puntuation}] 33 through 47, 58 through 64, 91 through 96, 123 through
+126, 128 through 191;
+\end{description}
+The top of the generated file, which I named \url{characters_asm_in},
+resembles the following:
+
+\begin{lstlisting}[caption={Extract of the generated file \protect\url{characters_asm_in}}]
+UPPERCASE    equ 1     ; Bit 0 = A - Z
+LOWERCASE    equ 2     ; Bit 1 = a - z
+DIGIT        equ 4     ; Bit 2 = 0 - 9
+SPACE        equ 8     ; Bit 3 = space tab etc
+PUNCTUATION  equ 16    ; Bit 4 = .,;: etc
+CONTROL      equ 32    ; Bit 5 = Various
+BLANK        equ 64    ; Bit 6 = space tab
+HEXDIGIT     equ 128   ; Bit 7 = 0 - 9 a - f A - F
+ALPHABETIC   equ UPPERCASE + LOWERCASE
+ALPHANUMERIC equ ALPHABETIC + DIGIT
+PRINTABLE    equ BLANK + PUNCTUATION + ALPHABETIC + DIGIT
+GRAPHIC      equ PUNCTUATION + ALPHABETIC + DIGIT
+
+chartab    dc.b 0 + CONTROL            ; CHR$(0) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(1) = '.'
+           dc.b 0 + CONTROL            ; CHR$(2) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(3) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(4) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(5) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(6) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(7) = '.' 
+           dc.b 0 + CONTROL            ; CHR$(8) = '.' 
+           dc.b 0 + CONTROL + SPACE + BLANK ; CHR$(9) = '.' 
+           dc.b 0 + CONTROL + SPACE         ; CHR$(10) = '.' 
+           dc.b 0 + CONTROL + SPACE         ; CHR$(11) = '.' 
+           dc.b 0 + CONTROL + SPACE         ; CHR$(12) = '.' 
+           dc.b 0 + CONTROL + SPACE         ; CHR$(13) = '.'
+           ...
+\end{lstlisting}
+
+Beware, however, if you view the generated file in an operating system
+that is not QDOSMSQ because some of the QL character codes represent
+``invalid'' characters in some character sets, on PCs or Linux,
+for example. 
+
+So, now that the table has been created, we need some assembly code
+to call when we want to check if, for example, a character code is
+a digit. Those character attribute functions would look like the following.
+My file is named \url{charAttr_asm_in}:
+
+\begin{lstlisting}[caption={Character attributes library - \protect\url{charAttr_asm_in}}]
+; All these functions require a character code in D0.B and will
+; return D0 = 0 if the character is invalid, otherwise, D0.B will be 
+; a relatively random non-zero value.
+;
+; ENTRY Registers:
+;   D0.B Character code to be tested
+;
+; EXIT Registers:
+;   D0.B Zero - Character test failed. (Z flag set)
+;        non-zero - Character test passed.
+
+    in win1_source_characters_asm_in
+    
+
+; Given a character code in D0.B, extract the character attributes
+; bitmap from chartab into D0.B.
+;
+; Mask the attribute bitmap with the desired attribute mask to get
+; the validation result.
+;
+; Return the result in D0.B with Z set if the test FAILED.
+
+; On the stack we have D1.W.
+; D1.B = required mask
+; D0.B = character code
+isanything move.l a2,-(a7)              ; Save the worker
+           lea chartab,a2               ; Character attributes table 
+           ext.w d0                     ; D0 must be a word wide
+           move.b (a2,d0.w),d0          ; Attributes bitmap byte
+           and.b d1,d0                  ; Do attributes match?
+           move.l (a7)+,a2              ; Restore worker
+           move.w (a7)+,d1              ; Restore the other worker
+           tst.b d0                     ; Z = test failed
+           rts
+
+
+; These just set up the mask we want in D1.W, and jump off to the
+; common code above. The unstacking of D1.W and return to caller
+; is done above.
+isdigit    move.w d1,-(a7)              ; Save the first worker
+           move.b #DIGIT,d1             ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isalpha    move.w d1,-(a7)              ; Save the first worker
+           move.b #ALPHABETIC,d1        ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isalnum    move.w d1,-(a7)              ; Save the first worker
+           move.b #ALPHANUMERIC,d1      ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isupper    move.w d1,-(a7)              ; Save the first worker
+           move.b #UPPERCASE,d1         ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+islower    move.w d1,-(a7)              ; Save the first worker
+           move.w #LOWERCASE,d1         ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isxdigit   move.w d1,-(a7)              ; Save the first worker
+           move.b #HEXDIGIT,d1          ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+ispunct    move.w d1,-(a7)              ; Save the first worker
+           move.b #PUNCTUATION,d1       ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+iscntrl    move.w d1,-(a7)              ; Save the first worker
+           move.b #CONTROL,d1           ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isgraph    move.w d1,-(a7)              ; Save the first worker
+           move.b #GRAPHIC,d1           ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isprint    move.w d1,-(a7)              ; Save the first worker
+           move.b #PRINTABLE,d1         ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isspace    move.w d1,-(a7)              ; Save the first worker
+           move.b #SPACE,d1             ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+isblank    move.w d1,-(a7)              ; Save the first worker
+           move.b #BLANK,d1             ; Required attribute mask
+           bra.s isanything             ; Never return here!
+
+\end{lstlisting}
+
+How these work is pretty simple:
+\begin{itemize}
+\item We enter with the character code to be tested in \lstinline!D0.B!,
+as we will be about to trash it, we save \lstinline!D1.W! on the
+stack prior to loading its low byte with the required attribute mask
+that we need for the current test.
+\item A branch is then made to the common code which saves \lstinline!A2.L!
+as we will be using it. The character's attribute bitmap is then extracted
+from the table. This bitmap is appropriate to the character code originally
+in \lstinline!D0.B! but which we have now extended to word sized
+to index into the attribute bitmap table.
+\item The attribute bitmap is \lstinline!AND!ed with the desired attribute
+mask and the result in \lstinline!D0.B! will be zero if there are
+no common bits in the two masks - the test has failed, or non-zero
+if at least one pair of common bits matched.
+\item The stack is then tidied and we return to the caller with the Z flag
+set to indicate a \emph{failure}, unusually, or unset to show that
+the character code in \lstinline!D0.B! was a character which belonged
+to the attribute set we were interested in - a digit, an upper case
+letter etc.
+\end{itemize}
+In your code, this can be used as follows:
+
+\begin{lstlisting}[caption={Using the \protect\url{charAttr_asm_in} routines}]
+          in charAttr_asm_in
+
+          ...
+          move.b(a2),d0             ; Get character code from buffer
+          bsr isalnum               ; Is it a letter or digit?
+          beq.s notAlnum            ; No, it's not
+          ...
+\end{lstlisting}
+
+This code is useful when writing something like a lexer (part of a
+compiler, assembler etc) or where you are processing text for some
+reason. It can save you having to check that the character in \lstinline!D0.B!
+is less than or equal to `Z' and greater or equal to `A' or less than
+or equal to `z' or greater than or equal to `a' - and so on. (Yes,
+I know, the 68020 has the \lstinline!CMP2! instruction which makes
+this easier.)
+
+\subsection{A Final Thought}
+
+If necessary, the 256 byte table of attributes could be created, then
+saved as a binary file and binary included into your application's
+code, using the appropriate command for your assembler. On GWASS this
+is the \lstinline!LIB! or the \lstinline!INCBIN! command.
+
+For homework, you could convert the character attribute functions
+to be SuperBASIC extensions? If you feel the need? Maybe?
+
+

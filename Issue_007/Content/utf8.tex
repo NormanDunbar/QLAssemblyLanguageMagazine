@@ -1,0 +1,121 @@
+\chapter{UTF8 and the QL}
+
+UTF8 is a character set much loved, perhaps, by Linux, MacOS and increasingly,
+Windows computers. As it happens, most of the HTML pages, as well
+as almost all XML files, are themselves in UTF8 format. What is it
+and how does it affect the QL?
+
+I spend more time editing files, at least to get a first draft, in
+Linux. When I copy the files up to my QPC session and open them in
+QD, a couple of things happen:
+\begin{itemize}
+\item QD converts all my runs of 4 spaces to a tab character, even though
+I've repeatedly asked it not to. I'm rapidly losing patience with
+QD!
+\item Some of the QL characters, happily typed on Linux, are shown as weird
+blobs in QD. The UK Pound sign, for example, or the Euro are
+blobs in QD when they were fine on Linux. Why?
+\item Writing QL files back to, say, DOS1\_, then opening them in a Linux
+editor shows many characters as the UTF8 character with Code Point
+U+0000, the black blob with a question mark in it. Oops! Don't even
+try opening a QL file with the arrow characters within, you don't
+want to go there!
+\end{itemize}
+
+\section{UTF8 Encoding}
+
+UTF8 is an encoding standard for plain text. It is a multi-byte character
+set which simply means that some characters in the set, take up more
+than one byte when viewed ``in the raw'' (or with a hex dump). UTF8
+has a big enough encoding method that all (I am led to believe) the
+characters in all the languages of the world, plus all their punctuations,
+numbers and so on, can be represented.
+
+UTF8 characters can be 1, 2,3 or 4 bytes long. The UK Pound sign,
+for example, is two bytes - \$C2A3, the Euro symbol is three bytes
+- \$E282AC, while the humble digit seven remains as a single byte
+- \$37.
+
+The rules are simple:
+\begin{itemize}
+\item Each character has what is known as a ``code point'' and is represented
+by the expression ``U+nnnn'' where the ``nnnn'' part may be two,
+three or four hex pairs. Single byte characters, like the digits,
+are shows also as ``U+nnnn'' but the first two digits are zeros
+- ``U+0037'' for our digit seven.
+\item ASCII characters, below 128, are represented in UTF8 by a single byte,
+exactly the same as the current ASCII byte. Handy! Not on a QL of
+course! Code points U+0000 through U+007F are represented here.
+\item ASCII characters above 128 are split into three groups. 
+\begin{itemize}
+\item Code points from U+0080 through U+07FF are all two bytes long.
+\item Code points from U+0800 through U+FFFF are all three bytes long.
+\item Code points from U+10000 through U+10FFFF are all 4 bytes long.
+\end{itemize}
+\end{itemize}
+So, how do we encode an ASCII character onto one, two, three or four bytes of UTF8? Easy!
+\begin{itemize}
+\item In ASCII, all characters with the top bit (bit 7) clear will have their UTF8 code point value, encoded into the lower 7 bits of a single byte. In other words, 0xxxxxxx, allowing 7 bits to encode the code point.
+\item Two byte UTF8 characters have the layout 110xxxxx 10xxxxxx, and this allows
+for 11 bits to encode the code point within the two bytes. 
+\item Three byte UTF8 characters have the layout 1110xxxx 10xxxxxx 10xxxxxx,
+allowing for 16 bits of code point information.
+\item Finally, four byte UTF8 characters have the layout 11110xxx 10xxxxxx 10xxxxxx
+10xxxxxx allowing for a massive 21 bits of code point values.
+\end{itemize}
+So, how does that work for our examples, the digit seven, UK Pound
+and the Euro symbol?
+
+The digit seven is a single byte, and is simply the current ASCII
+value, \$37, because that already has the top bit clear and the remaining
+bits holding the ASCII character, or the UTF8 code point as it is
+now known.
+
+The UK Pound, has code point U+00A3. This is higher than the highest
+single byte character, U+007F, but lower than the highest for two
+byte characters, so it is a two byte character.
+
+A two byte character is of the format 110xxxxx 10xxxxxx where the
+most significant bits of the code point value is encoded into the
+bits marked with an 'x'. As the code point is simply a hexadecimal
+number, U+00A3 is just 00000000 10100011 in binary, so those 8 bits
+get encoded onto the 'x' bits, giving 110xxx10 10110011. As we cannot
+have any spare 'x' bits left over, those that remain are cleared to zero, giving 11000010
+10110011 which is, \$C2 A3 - and that's the character code for a Pound
+Sign in UTF8.
+
+Taking the Euro next, it has code point U+20AC which puts it into
+the three byte set of characters. Those are in the format 1110xxxx
+10xxxxxx 10xxxxxx. Once again, we take the code point in binary and
+mask it onto the 'x'bits, filling with leading zeros as appropriate.
+
+Code point U+20AC is 00100000 10101100 which is 16 bits as a three
+byte character allows for up to 16 bits, it fits nicely without any
+spare 'x' bits. The result is 11100010 10000010 10101100 or \$E2 82
+AC and that's the three bytes we use for the Euro symbol.
+
+\section{The QL Character Set}
+
+As ever, nothing is straight forward in the QL world. Sir Clive has
+done his best to unstandardise things. However, I suppose he had only
+256 characters to fit ASCII and a few ``foreign'' characters that
+might be needed in Europe. America seems to get by on only 7 bits
+ASCII anyway! So, what's broken in the QL's character set?
+\begin{itemize}
+\item The UK Pound symbol is character 96 (\$60) on the QL, but in ASCII
+it is character 163 (\$A3).
+\item The copyright symbol is character 127 (\$7F) on the QL but is 169
+(\$A9) in ASCII.
+\item The Euro, which came a long time after the QL, doesn't exist in the
+BBQL character set, but under SMSQ, it is at character 181 (\$B5)
+\item Characters above 128 (\$80) are a mess on the QL. Many are simply
+missing, especially some of the, I assume, lesser used accented characters.
+\end{itemize}
+So while my Linux editor can open files created on the QL, and the
+QL can open (most) files created on the Linux side of things, it's
+not completely the same. A conversion is required, one to go from
+the QL to Linux (MacOS, Windows etc) and one to come back again.
+
+I guess we need some assembly code then? Read on.
+
+
