@@ -291,9 +291,9 @@ nt bits of the code point value is encoded into the bits marked with an
  As the code point is simply a hexadecimal number, U+00A3 is just 00000000
  10100011 in binary, so those 8 bits get encoded onto the 'x' bits, giving
  110xxx10 10110011.
- As we cannot have 'x' bits, those remaining bits are cleared to zero, giving
- 11000010 10110011 which is, $C2 A3 - and that's the character code for
- a Pound Sign in UTF8.
+ As we cannot have any spare 'x' bits left over, those that remain are cleared
+ to zero, giving 11000010 10110011 which is, $C2 A3 - and that's the character
+ code for a Pound Sign in UTF8.
 \end_layout
 
 \begin_layout Standard
