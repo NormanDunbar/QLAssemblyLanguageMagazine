@@ -12,3 +12,5 @@
 M68000PM.pdf
 *.lyx~
 
+*.bbl
+*.blg
