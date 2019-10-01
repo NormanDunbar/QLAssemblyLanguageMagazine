@@ -199,7 +199,7 @@ per instruction like in (note the backslash in a macro invocation is
 understood as a line continuation character in QMac)
 
 \begin{lstlisting}[firstnumber=1,caption={Improving the REPT macro}]
-    REPT     25,{   movem.l (a1)+,d3-d7/a2-a7},\
+    REPT     25,{   movem.l (a1)+,d3-d7/a2-a6},\
                 {   movem.l d3-d7,a2-a6,(a0)},\
                 {   adda.l \#40,a0}
 \end{lstlisting}
