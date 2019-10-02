@@ -1,0 +1,72 @@
+\chapter{Feedback on Issue 7}
+
+Well now, here's a thing. Very quickly after Issue 7 "hit the streets" I got feedback from two different people. Thanks very much to Wolfgang and to Marcel for their input, and their permission to publish.
+
+
+\section{Feedback from Wolfgang Lenerz}
+
+[WL] Just a little comment: there is a typo on page 16, in the third code extract at line 1: Tobias makes a \opcode{MOVEM} to ...\register{a2-a7} : it should be to ...\register{a2-a6}.
+
+[ND] Thanks. I don't have a Q68 (yet?) and I really didn't have much to do with Tobias's article to get it into the eComic, so I didn;t notice that slight error. I fixed it in the PDF download on 1st October 2019 at around 19:00 BST (UTC + 01:00) - so anyone who downloaded prior to that time might wish to download again to get the correction.
+
+
+[WL] Also a more general comment, which I offer as constructive criticism: in the \program{utf82ql} routine, when handling values over 127 (i.e. at least 2 bytes), why check for the special cases first (arrows, pound etc) before getting the values from the table? Wouldn't it be better to leave their place in the table at 0 as well, and every time you hit a 0 in the table you check for the exception?
+
+[ND] Good point, thanks. That would have made more sense as the processing is more likely to be processing valid characters than the exceptions. I thought I was doing well getting the exceptions in what I thought was the most likely order!
+
+
+[WL] Oh, and this probably doesn't get said often enough : \emph{ really enjoy reading your prose!}
+
+[ND] Thanks. It's nice to get feedback, but much nicer to get compliments. 
+
+
+
+\section{Feedback from Marcel Kilgus}
+
+[MK] As a pedantic ass I have to object so sentences like these:
+
+\emph{The UK Pound symbol is character 96 (\$60) on the QL, but in ASCII
+it is character 163 (\$A3)" (etc.)}
+
+[ND] I like pedants! My wife says I am one, then she corrects me at every available opportunity!
+
+
+[MK] ASCII is, by definition, 7-bit, so it cannot contain a character with
+the number 163. The tale of characters 128-255 is one fought in many
+battles. Linux tended to be "ISO 8859-1" and later "ISO 8859-15"
+before they adopted UTF-8, on Windows you will mostly find the
+"Windows-1252" encoding. These are very similar, but differ when it
+comes to the Euro sign for example (ISO 8859-1 is too old to have a
+Euro sign and the others have adopted it in different places).
+
+[ND] Technically, I agree, ASCII is indeed 7 bit. But let's face it, there have been 8 bit "ASCII" characters for many years, even when I was at college back in the, ahem, early eighties, ASCII was 8 bit - whether pedantically correct or not. However, true ASCII is 7 bit.
+
+[ND] I remember many occasions, back when \url{config.txt} was still a thing, trying to set up the correct code page for a system. A nightmare as there was no Google back then to help out, just the manual for whatever system I was installing or working with.
+
+[ND] I am led to understand, however, that ISO/IEC 4873 introduced some extra control codes ``characters'', in the \$80 to \$9F hexadecimal range, as part of extending the 7-bit ASCII encoding to become an 8-bit system.\footnote{The Unicode Consortium (October 27, 2006). "Chapter 13: Special Areas and Format Characters" (PDF). In Allen, Julie D. (ed.). The Unicode standard, Version 5.0. Upper Saddle River, New Jersey, US: Addison-Wesley Professional. p. 314. ISBN 978-0-321-48091-0. Retrieved March 13, 2015.} However, I sit corrected on the 7/8 bit point. Thanks.
+
+
+[MK] But, and that is the important thing, Unicode was made to unify them
+all. And UTF-8 is a pretty darn cool invention, unfortunately it came
+too late for Windows, which was a very early adopter of Unicode at a
+time when everybody thought "65536 characters ought to be enough for
+everyone!". So Windows started to used 16-bits for every character
+("UCS-2" encoding), which makes coding somewhat weird, and then they
+found out that 65536 characters are not enough after all, so now
+Windows uses UTF-16, which is UTF-8's big brother, with sometimes 2
+bytes per character and sometimes 4. What a mess. But when it comes to
+data storage UTF-8 is the way to go these days, always!
+
+[ND] It sure is a mess, and yes, UTF-8 is the way to go. As I mentioned XML files depend on it, the web is pretty much full of it in all those HTML files etc. And, once you get your head around the difference between a ``code point'' and the character's actual bytes, it's pretty easy to understand.
+
+[ND] I'm not so sure that Windows is missing out or behind the times though. At work, my files are all pretty much UTF-8 (I write my documents in \program{ASCIIDOCTOR}\footnote{Now that's ironic!} format and convert them to PDF files using \program{asciidoctor-pdf} - if I need Office flavoured docs, I use \program{pandoc} to convert to something in DOCX format - but I almost never use those. \program{Asciidoctor files are plain text, and very easy to version control!}) \program{Notepad++} or \program{VSCodium} are my text editors of choice and both save in UTF-8 with no problems. Even Notepad itself can read the files - and I suspect Windows 10 will be better, I'm on Windows 7. (Currently)
+
+[ND] Mind you, those damned so-called "smart" quotes that Office documents insist on using mess things up truly. It's the first thing I turn off with my Office stuff, and every slight update or patch seems to turn them back on! So annoying.
+
+[MK] For QPC I already implemented these translations 20 years ago when
+copying text to/from the clipboard. But well done for bringing UTF-8
+to the QL 
+
+[ND] Well, thanks for the reminder of how old I'm getting! The reason I did the utilities was simple, I had one of those itches to scratch. When I did a bit of work with Jan on his updated QL Monitor, I used a Linux system to do the typing - it's what I'm used to - and those arrow characters caused me no end of grief, as did the copyright and the pound signs. I messed about there using actual, ahem, ASCII codes (sorry!) but now, I don't have to.
+
+[ND] Oh, and \emph{thank you} for \program{QPC2}, it's my favourite QL program of all time, and it simply "just" works on Linux under \program{Wine}. I did have some problems recently with it not working, but I traced that to a mix and match installation with bits of \program{Wine 3} and bits of \program{Wine 4} living together in sin. It's what has kept me in the QL scene for as long as I can remember - I always got somewhat tired of the QL, the cables, the hard drive, the noise, the length of table I needed with limited space in my flat (appartment) and so on. With \program{QPC2} it's all on my laptop. Nice and compact.

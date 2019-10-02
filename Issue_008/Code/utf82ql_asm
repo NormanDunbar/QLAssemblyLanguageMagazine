@@ -1,0 +1,422 @@
+;--------------------------------------------------------------------
+; UTF82QL:
+;
+; This filter converts UTF8 text files from Linux, Mac or Windows to
+; to the SMSQ character set.
+;
+;
+; EX utf82ql2_bin, input_file, output_file_or_channel
+;
+;--------------------------------------------------------------------
+; 28/09/2019 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------------
+; (c) Norman Dunbar, 2019. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------------
+
+; How many channels do I want?
+numchans    equ     2       ; How many channels required?
+
+
+; Stack stuff.
+sourceId    equ     $02     ; Offset(A7) to input file id
+destId      equ     $06     ; Offset(A7) to output file id
+
+; Other Variables
+utf8Pound   equ     $c2a3   ; UTF8 Pound sign
+qlPound     equ     96      ; QL Pound sign
+
+utf8Grave   equ     96      ; UTF8 Grave code
+qlGrave     equ     159     ; QL Grave code
+
+utf8Copyright equ   $c2a9   ; UTF8 copyright
+qlCopyright equ     127     ; QL copyright sign
+
+qlEuro      equ     181     ; SMSQ Euro symbol
+
+err_exp     equ     -17
+err_bp      equ     -15
+err_eof     equ     -10
+err_or      equ     -4
+me          equ     -1
+timeout     equ     -1
+
+
+
+
+;====================================================================
+; Here begins the code.
+;--------------------------------------------------------------------
+; Stack on entry:
+;
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;====================================================================
+start       bra.s   checkStack
+
+            dc.l    $00
+            dc.w    $4afb
+name        dc.w    name_end-name-2
+            dc.b    'UTF82QL'
+name_end    equ     *
+
+version     dc.w    vers_end-version-2
+            dc.b    'Version 1.00'
+vers_end    equ     *
+
+
+bad_parameter
+    moveq   #err_bp,d0      ; Guess!
+    bra     errorExit       ; Die horribly
+
+
+;--------------------------------------------------------------------
+; Check the stack on entry. We only require NUMCHAN channels - any
+; thing other than NUMCHANS will result in a BAD PARAMETER error on
+; exit from EW (but not from EX).
+;--------------------------------------------------------------------
+checkStack
+    cmpi.w  #numchans,(a7)  ; Two channels is a must
+    bne.s   bad_parameter   ; Oops
+
+;--------------------------------------------------------------------
+; Initialise a couple of registers that will keep their values all
+; through the rest of the code.
+;--------------------------------------------------------------------
+ql2utf8
+    lea     utf8,a2         ; Preserved throughout
+    moveq   #timeout,d3     ; Timeout, also Preserved
+    move.l  sourceId(a7),a4 ; Channel ID for UTF8 input file
+    move.l  destId(a7),a5   ; Channel ID for QL output file
+
+;--------------------------------------------------------------------
+; The main loop starts here. Read a single byte, check for EOF etc.
+;--------------------------------------------------------------------
+readLoop
+    bsr     readByte        ; Read one byte
+    beq.s   testBit7        ; No errors is good.
+    cmpi.l  #ERR_EOF,d0     ; All done?
+    beq     allDone         ; Yes.
+    bra     errorExit       ; Oops!
+
+;--------------------------------------------------------------------
+; Test the top bit here. If it is zero, we are good for most single
+; byte characters, otherwise it is potentially multi-byte. 
+;--------------------------------------------------------------------
+testBit7
+    btst    #7,d1           ; Bit 7 set?
+    bne.s   multiBytes      ; Multi Byte character if so
+
+;--------------------------------------------------------------------
+; In UTF8, the Grave accent (backtick) is a single byte character but
+; the byte value doesn't correspond to that on the QL. On UTF8 it is
+; $60 (96) but on the QL it is $9F (159) so, this is another Sir
+; Clive induced exception!
+;--------------------------------------------------------------------
+testGrave
+    cmpi.b  #utf8Grave,d1   ; Got a grave!
+    bne.s   oneByte         ; Must be a single byte if not a pound.
+
+gotGrave
+    move.b  #qlGrave,d1     ; Write a grave character
+
+;--------------------------------------------------------------------
+; The byte read is a valid single byte character so it has the exact
+; same code in the QL's variation of ASCII, just write it out.
+;--------------------------------------------------------------------
+oneByte
+    bsr     writeByte       ; Write the byte out
+    bra.s   readLoop        ; And continue.
+
+
+;--------------------------------------------------------------------
+; Most of the remaining characters will be two bytes in UTF8 and one
+; byte on the QL. There are a few exceptions though - the Euro and 
+; the four arrow keys are three bytes long in UTF8.
+;--------------------------------------------------------------------
+multiBytes
+    move.b  d1,d2           ; Copy character code
+    andi.b  #%11100000,d2   ; Keep top three bits
+    cmpi.b  #%11000000,d2   ; Two bytes?
+    beq.s   twoBytes        ; Yes.
+
+;--------------------------------------------------------------------
+; We are interested in a few three byte characters, so we check those
+; next. These are identified by the top nibble of the first character
+; read in being 1110.
+;--------------------------------------------------------------------
+testThree
+    move.b  d1,d2           ; Copy character code
+    andi.b  #%11110000,d2   ; Keep top four bits
+    cmpi.b  #%11100000,d2   ; Three bytes?
+    beq.s   threeBytes      ; Yes.
+
+
+;--------------------------------------------------------------------
+; If we get here, it's not a valid two or three byte character, so it 
+; is, effectively, an error, so we bale out with 
+;--------------------------------------------------------------------
+    moveq   #err_or,d0      ; Out of range error code
+    bra     errorExit       ; And exit with error.
+
+;--------------------------------------------------------------------
+; At this point we should have a UTF8 two byte character but we only
+; have the first byte in D1. We need the second byte also, so read it
+; and check that it is indeed valid.
+;--------------------------------------------------------------------
+twoBytes
+    move.b  d1,d2           ; Save the leading byte
+    bsr     readByte        ; Read the second byte
+    lsl.w   #8,d2           ; Shift first byte upwards
+    or.b    d1,d2           ; And add the new byte
+
+;--------------------------------------------------------------------
+; Exception checking. UTF8 codes $C2A3 for the UK Pound and $C2A9 for
+; copyright, are not in the table. They are QL codes $60 (96) and $7F
+; (127) and are exceptions to the rule that a QL code less than 128
+; always has a one byte code in UTF8 - they are both two bytes.
+;--------------------------------------------------------------------
+testPound
+    cmpi.w  #utf8Pound,d2   ; Got a UK Pound?
+    bne.s   testCopyright   ; No
+
+gotPound
+    move.b  #qlPound,d1     ; QL Pound code
+    bra.s   oneByte         ; Write it out & loop around
+
+testCopyright
+    cmpi.w  #utf8Copyright,d2 ; Got a copyright?
+    bne.s   doScan          ; No
+
+gotCopyright
+    move.b  #qlCopyright,d1
+    bra.s   oneByte         ; Write it out & loop around
+
+;--------------------------------------------------------------------
+; Ok, exceptions processed, do the remaining two byte characters.
+;--------------------------------------------------------------------
+doScan
+    bsr.s   scanTable       ; Is this valid UTF8?
+    cmpi.w  #-1,d0          ; Not found?
+    beq.s   invalidUTF8     ; No, not found.
+
+validUTF8
+    move.b  d0,d1           ; Get the character code
+    bsr.s   writeByte       ; Write it out
+    bra     readLoop        ; And continue.
+
+invalidUTF8
+    moveq   #err_exp,d0     ; Error in expression
+    bra     errorExit       ; Bale out.
+
+;--------------------------------------------------------------------
+; At this point we should have a UTF8 three byte character but we 
+; only have the first byte in D1. We need the second byte also, so 
+; read it and check that it is indeed valid. Then get the third byte.
+; All our three byte characters should have $E2 in the first byte.
+;
+; The Euro is $E282AC.
+; The Arrows are $E2869x where 'x' is 0,1,2 or 3.
+;--------------------------------------------------------------------
+threeBytes
+    cmpi.b  #$e2,d1         ; Valid three byte?
+    bne.s invalidUTF8       ; Looks unlikely.
+
+    move.b  d1,d2           ; Save the first byte
+    bsr.s   readByte        ; Get the second byte
+    cmpi.b  #$82,d1         ; Euro second byte?
+    beq.s   threeValid       ; Yes
+    cmpi.b  #$86,d1         ; Arrow second byte?
+    bne.s   invalidUTF8     ; Sadly, no, error out.
+
+threeValid
+    lsl.w   #8,d2           ; Shift first byte upwards
+    or.b    d1,d2           ; And add the new byte
+    bsr.s   readByte        ; Get the third byte
+    cmpi.w  #$e282,d2       ; Euro possibly?
+    bne.s   threeArrows     ; No, try arrows
+     
+;--------------------------------------------------------------------
+; We have read $e282 so if we get $ac next, we have the euro. If not
+; it's an error in the UTF8 characters that the QL understands.
+;--------------------------------------------------------------------
+threeEuro
+    cmpi.b  #$ac,d1         ; Need this for the Euro
+    bne.s   invalidUTF8     ; No, error out again.
+    move.b  #qlEuro,d1      ; QL Euro code
+    bra     oneByte         ; Write it out and continue.
+
+;--------------------------------------------------------------------
+; The QL arrows are $BC, $BD, $BE and $BF (left, right, up, down). 
+; The UTF8, $E2869x where 'x' is 0, 2, 1 or 3 to correspond with the
+; order of the QL arrow codes.
+;--------------------------------------------------------------------
+threeArrows
+    cmpi.w  #$e286,d2       ; Got a potential arrow code?
+    bne.s   invalidUTF8     ; Fraid not, error out.
+    subi.b  #$90,d1         ; D1 is now 0-3 for valid arrows
+    bmi.s   invalidUTF8     ; Oops, it went negative
+    cmpi.b  #3,d1           ; Highest arrow code
+    bhi.s   invalidUTF8     ; Oops, invalid arrow code.
+    addi.b  #$bc,d1         ; Convert to QL arrow code.
+    bra     oneByte         ; Write out and continue
+
+;--------------------------------------------------------------------
+; A small but perfectly formed subroutine to send the byte in D1 to
+; the output QL file. 
+; On Entry, A0 = input channel ID and A3 = output channel ID. 
+; On exit, D0 = 0, Z set.
+; On error, never returns.
+;--------------------------------------------------------------------
+writeByte
+    move.l  a5,a0           ; Get the correct channel ID
+    moveq   #io_sbyte,d0    ; Send one byte
+    trap    #3
+    tst.l   d0              ; OK?
+    bne.s   errorExit       ; Oops!
+    rts
+
+;--------------------------------------------------------------------
+; Another perfectly formed subroutine to read one byte into D1
+; from the input UTF8 file. 
+; On Entry, A0 = output channel ID and A3 = input channel ID.
+; On exit, error codes in D0, Z set if no error and D1.B = character
+; just read.
+;--------------------------------------------------------------------
+readByte
+    move.l  a4,a0           ; Get the correct channel ID
+    moveq   #io_fbyte,d0    ; Fetch one byte
+    trap    #3              ; Do input
+    tst.l   d0              ; OK?
+    rts
+    
+;--------------------------------------------------------------------
+; Scan the UTF8 table looking for the word in D2. If found, we have
+; the table offset in D0 and that is then halved to get the index which
+; is still $80 below the correct character code - we add to convert.
+; Returns with D0 = the character code, or $FFFF to show the end was
+; reached and we appear to have an invalid two byte character. A2
+; holds the table address. D7 is a working register.
+;--------------------------------------------------------------------
+scanTable
+    moveq   #0,d0           ; Current offset into UTF8 table.
+
+scanLoop
+    move.w  0(a2,d0.w),d7   ; Fetch current table entry
+    beq.s   scanDone        ; Yes, zero = not found
+    cmp.w   d2,d7           ; Found it yet?
+    beq.s   scanFound       ; Yes
+    addq.w  #2,d0           ; No, next offset
+    bra.s   scanLoop        ; Keep looking
+
+
+;--------------------------------------------------------------------
+; The offset in D0 is where we found the UTF8 word we wanted. Halve 
+; it to get the index into the table, then add $80 to get the correct 
+; code for the character on the QL.
+;--------------------------------------------------------------------
+scanFound
+    lsr.w   #1,d0           ; Convert offset to index
+    add.w   #$80,d0         ; Convert to character code
+    rts
+
+;--------------------------------------------------------------------
+; UTF8 word not found, panic!
+;--------------------------------------------------------------------
+scanDone
+    moveq   #-1,d0          ; Not found
+    rts
+
+;--------------------------------------------------------------------
+; No errors, exit quietly back to SuperBASIC.
+;--------------------------------------------------------------------
+allDone
+    moveq   #0,d0
+
+;--------------------------------------------------------------------
+; We have hit an error so we copy the code to D3 then exit via a
+; forcible removal of this job. EXEC_W/EW will display the error in
+; SuperBASIC, but EXEC/EX will not.
+;--------------------------------------------------------------------
+errorExit
+    move.l  d0,d3           ; Error code we want to return
+
+;--------------------------------------------------------------------
+; Kill myself when an error was detected, or at EOF.
+;--------------------------------------------------------------------
+suicide
+    moveq   #mt_frjob,d0    ; This job will die soon
+    moveq   #me,d1
+    trap    #1
+
+;--------------------------------------------------------------------
+; The following table contains the two byte sequences required for 
+; QL characters from character $80 onwards. Those flagged as $FFFF 
+; are exceptions, dealt with in the code. There are no entries for
+; the arrow keys as they would simply be zero words at the end of the
+; table.
+;--------------------------------------------------------------------
+utf8
+    dc.w    $c3a4           ; a umlaut
+    dc.w    $c3a3           ; a tilde
+    dc.w    $c3a2           ; a circumflex
+    dc.w    $c3a9           ; e acute
+    dc.w    $c3b6           ; o umlaut
+    dc.w    $c3b5           ; o tilde
+    dc.w    $c3b8           ; o slash
+    dc.w    $c3bc           ; u umlaut
+    dc.w    $c3a7           ; c cedilla
+    dc.w    $c3b1           ; n tilde
+    dc.w    $c3a6           ; ae ligature
+    dc.w    $c593           ; oe ligature
+    dc.w    $c3a1           ; a acute
+    dc.w    $c3a0           ; a grave
+    dc.w    $c3a2           ; a circumflex
+    dc.w    $c3ab           ; e umlaut
+    dc.w    $c3a8           ; e grave
+    dc.w    $c3aa           ; e circumflex
+    dc.w    $c3af           ; i umlaut
+    dc.w    $c3ad           ; i acute
+    dc.w    $c3ac           ; i grave
+    dc.w    $c3ae           ; i circumflex
+    dc.w    $c3b3           ; o acute
+    dc.w    $c3b2           ; o grave
+    dc.w    $c3b4           ; o circumflex
+    dc.w    $c3ba           ; u acute
+    dc.w    $c3b9           ; u grave
+    dc.w    $c3bb           ; u circumflex
+    dc.w    $ceb2           ; B as in ss (German)
+    dc.w    $c2a2           ; Cent
+    dc.w    $c2a5           ; Yen
+    dc.w    $ffff           ; Grave accent - single byte
+    dc.w    $c384           ; A umlaut
+    dc.w    $c383           ; A tilde
+    dc.w    $c385           ; A circle
+    dc.w    $c389           ; E acute
+    dc.w    $c396           ; O umlaut
+    dc.w    $c395           ; O tilde
+    dc.w    $c398           ; O slash
+    dc.w    $c39c           ; U umlaut
+    dc.w    $c387           ; C cedilla
+    dc.w    $c391           ; N tilde
+    dc.w    $c386           ; AE ligature
+    dc.w    $c592           ; OE ligature
+    dc.w    $ceb1           ; alpha
+    dc.w    $ceb4           ; delta
+    dc.w    $ceb8           ; theta
+    dc.w    $cebb           ; lambda
+    dc.w    $c2b5           ; micro (mu?)
+    dc.w    $cf80           ; PI
+    dc.w    $cf95           ; o pipe
+    dc.w    $c2a1           ; ! upside down
+    dc.w    $c2bf           ; ? upside down
+    dc.w    $ffff           ; Euro
+    dc.w    $c2a7           ; Section mark
+    dc.w    $c2a4           ; Currency symbol
+    dc.w    $c2ab           ; <<
+    dc.w    $c2bb           ; >>
+    dc.w    $c2ba           ; Degree
+    dc.w    $c3b7           ; Divide
+
+    dc.w    $0000           ; End of table

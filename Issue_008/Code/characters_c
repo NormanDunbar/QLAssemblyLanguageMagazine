@@ -1,0 +1,37 @@
+#include <stdio.h>
+#include <ctype.h>
+
+int main(int argc, char *argv[]) {
+    int x;
+    
+    printf("UPPERCASE    equ 1     ; Bit 0 = A - Z\n");
+    printf("LOWERCASE    equ 2     ; Bit 1 = a - z\n");
+    printf("DIGIT        equ 4     ; Bit 2 = 0 - 9\n");
+    printf("SPACE        equ 8     ; Bit 3 = space tab etc\n");
+    printf("PUNCTUATION  equ 16    ; Bit 4 = .,;: etc\n");
+    printf("CONTROL      equ 32    ; Bit 5 = Various\n");
+    printf("BLANK        equ 64    ; Bit 6 = space tab\n");
+    printf("HEXDIGIT     equ 128   ; Bit 7 = 0 - 9 a - f A - F\n");
+    printf("ALPHABETIC   equ UPPERCASE + LOWERCASE\n");
+    printf("ALPHANUMERIC equ ALPHABETIC + DIGIT\n");
+    printf("PRINTABLE    equ BLANK + PUNCTUATION + ALPHABETIC + DIGIT\n");
+    printf("GRAPHIC      equ PUNCTUATION + ALPHABETIC + DIGIT\n");
+
+
+    printf("\n\nchartab    ");
+    for (x = 0; x < 256; x++) {
+        printf("dc.b 0 ");
+        if (iscntrl(x)) printf("+ CONTROL ");
+        if (isupper(x)) printf("+ UPPERCASE ");
+        if (islower(x)) printf("+ LOWERCASE ");
+        if (isdigit(x)) printf("+ DIGIT ");
+        if (isxdigit(x)) printf("+ HEXDIGIT ");
+        if (ispunct(x)) printf("+ PUNCTUATION ");
+        if (isspace(x)) printf("+ SPACE ");
+        if (x == 9 || x == 32) printf("+ BLANK ");
+        printf("     ; CHR$(%d) = '%c'\n           ", x, 
+               isprint(x) ? x : '.');
+    }
+    
+    return 0;
+}

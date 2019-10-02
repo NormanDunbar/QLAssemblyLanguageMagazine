@@ -1,0 +1,51 @@
+// dot -T png -o exception_1_2.png exception_1_2.dot
+
+
+digraph structs {
+    rankdir=LR
+    
+    // Captions are commented because we supply one in the LaTeX source.
+    //label="MC68020 Long Bus Cycle Stack Frame";
+    pad="0.3";
+    
+
+    // Structure defaults, unless specified otherwise.
+    node [shape=record style=filled];
+
+// Structures...
+    // If you want to split structures over multiple lines, then
+    // put the | on the next line. 
+
+    structSP    [label="<sp> Stack pointer in A7.L" 
+                    fillcolor=thistle
+                ];
+
+    structStack  [label="Internal Registers (18 Words)
+                    |    Version # \| Internal Information (Word)
+                    |    Internal Registers (3 Words) 
+                    |    Data Input Buffer (Long)
+                    |    Internal Registers (2 Words) 
+                    |    Stage B Address (Long)
+                    |    Internal Registers (4 Words)
+                    |    Data Output Buffer (Long)
+                    |    Internal Register (Word)
+                    |    Internal Register (Word)
+                    |    Data Cycle Fault Address (Long)
+                    |    Instruction Pipe - Stage B (Word)
+                    |    Instruction Pipe - Stage C (Word)
+                    |    Special Status Register (Word)
+                    |    Internal Register (Word)
+                    |    1011 \| Vector Offset (Word)
+                    |    Program Counter High (Long)
+                    | <sr> Status Register (Word)" 
+                    fillcolor=yellowgreen
+                 ];
+
+
+// Connecting lines...
+    edge [style="dashed"];
+      structSP:sp -> structStack:sr;
+}
+
+
+

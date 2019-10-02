@@ -1,0 +1,37 @@
+; On Entry (to Value routine) : 
+;   D0.B = Required value for 'n'. 
+; 
+; On Exit: 
+;   D1.B = Answer (Value(n)). 
+; 
+; All registers are preserved except D1 and D0. 
+;
+; Enter at start for a demo with N = 10. Enter at
+; Value, with D0 holding the required byte value, to
+; calculate the result for that value.
+;
+Start   moveq #10,d0        ; N = 10
+        bsr.s Value         ; Get recursive
+
+; Result is now in D1.B.
+
+Back    moveq #0,D0         ; No errors
+        rts
+
+Value   tst.b d0            ; N = 0 yet?
+        bne.s More          ; Not yet
+        moveq #0,d1         ; Yes Value(0) = 0
+        rts
+
+More    move.w d0,-(a7)     ; Save current N
+        lsr.b #1,d0         ; INT(N/2)
+        bsr.s Value         ; Recurse
+
+; On return to here, D1.B holds the Value(N/2) result.
+
+RtnHere move.w (a7)+,d0     ; Current N again
+        btst #0,d0          ; Anything to add in bit 0?
+        beq.s Done          ; No, even number.
+        addq.b #1,d1        ; Yes, add bit 0 of N
+
+Done    rts 

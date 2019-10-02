@@ -1,0 +1,2178 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Ql2utf8 Utility
+\end_layout
+
+\begin_layout Standard
+This utility is what I would need to use when I've saved a file on the QL,
+ or in QPC, and I need to transfer it down to the Linux box for some processing
+ - say, for example, to get the finished and tested source code into an
+ article like this one!
+\end_layout
+
+\begin_layout Standard
+The utility is an example of a QL program which are collectively becoming
+ known as a 
+\begin_inset Quotes eld
+\end_inset
+
+YAF
+\begin_inset Quotes erd
+\end_inset
+
+.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Yet Another Filter!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The utility reads a QL created text file, where the content is any of the
+ QL character set up to but not above, character 191 ($BF) which is the
+ down arrow.
+ Anything above that is a control character and is unprintable - undefined
+ results may occur if any are present in the QL file.
+\end_layout
+
+\begin_layout Standard
+It is executed in the usual manner:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ex ram1_ql2utf8_bin, ram1_ql_txt, ram1_utf8_txt
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The input file, ram1_ql_txt will be read in, and each byte converted to
+ the appropriate UTF8 byte sequence, and written out to the ram1_utf8_txt
+ file.
+ The latter file will be used on my Linux box, but Windows and MacOS users
+ can also take advantage.
+\end_layout
+
+\begin_layout Standard
+Right, enough waffle, on with the code.
+\end_layout
+
+\begin_layout Section
+The Code
+\end_layout
+
+\begin_layout Standard
+As ever, my code starts with an introductory header and some equates.
+ This utility is no different as you can see below.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; QL2UTF8:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; This filter converts QL text files to UTF8 for use on Linux, Mac or
+\end_layout
+
+\begin_layout Plain Layout
+
+; Windows where most modern editors etc, default to UTF8.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; EX ql2utf8_bin, input_file, output_file_or_channel
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; 26/09/2019 NDunbar Created for QDOSMSQ Assembly Mailing List
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; (c) Norman Dunbar, 2019.
+ Permission granted for unlimited use
+\end_layout
+
+\begin_layout Plain Layout
+
+; or abuse, without attribution being required.
+ Just enjoy!
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; How many channels do I want?
+\end_layout
+
+\begin_layout Plain Layout
+
+numchans    equ     2       ; How many channels required?
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Stack stuff.
+\end_layout
+
+\begin_layout Plain Layout
+
+sourceId    equ     $02     ; Offset(A7) to input file id
+\end_layout
+
+\begin_layout Plain Layout
+
+destId      equ     $06     ; Offset(A7) to output file id
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Other Variables
+\end_layout
+
+\begin_layout Plain Layout
+
+pound       equ     96      ; UK Pound sign.
+\end_layout
+
+\begin_layout Plain Layout
+
+copyright   equ     127     ; (c) sign.
+\end_layout
+
+\begin_layout Plain Layout
+
+grave       equ     159     ; Backtick/Grave accent.
+\end_layout
+
+\begin_layout Plain Layout
+
+euro        equ     181     ; Euro symbol
+\end_layout
+
+\begin_layout Plain Layout
+
+err_bp      equ     -15
+\end_layout
+
+\begin_layout Plain Layout
+
+err_eof     equ     -10
+\end_layout
+
+\begin_layout Plain Layout
+
+me          equ     -1
+\end_layout
+
+\begin_layout Plain Layout
+
+timeout     equ     -1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The main entry point for the program is next.
+ This section of code contains the usual QDOS Job header and a few checks
+ to ensure that we only get a pair of channel IDs on the stack.
+ If the user decided to pass over a command string as well, it would be
+ ignored.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;====================================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+; Here begins the code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Stack on entry:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; $06(a7) = Output file channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; $02(a7) = Source file channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; $00(a7) = How many channels? Should be $02.
+\end_layout
+
+\begin_layout Plain Layout
+
+;====================================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+start       bra.s   checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+            dc.l    $00
+\end_layout
+
+\begin_layout Plain Layout
+
+            dc.w    $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+name        dc.w    name_end-name-2
+\end_layout
+
+\begin_layout Plain Layout
+
+            dc.b    'QL2UTF8'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end    equ     *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version     dc.w    vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+            dc.b    'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end    equ     *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bad_parameter
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #err_bp,d0      ; Guess!
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit       ; Die horribly
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Check the stack on entry.
+ We only require NUMCHAN channels - any
+\end_layout
+
+\begin_layout Plain Layout
+
+; thing other than NUMCHANS will result in a BAD PARAMETER error on
+\end_layout
+
+\begin_layout Plain Layout
+
+; exit from EW (but not from EX).
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.w  #numchans,(a7)  ; Two channels is a must
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   bad_parameter   ; Oops
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Next up is some initialisation.
+ In this short section of code, a couple of registers are set to values
+ which will be used throughout the entire utility.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Initialise a couple of registers that will keep their values all
+\end_layout
+
+\begin_layout Plain Layout
+
+; through the rest of the code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+ql2utf8
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     utf8,a2         ; Preserved throughout
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #timeout,d3     ; Timeout, also Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And now we have the top of the main loop for the program.
+ We start here by initialising the various registers to be able to read
+ a single byte from the input channel.
+ The ID for that file is on the stack at offset 2 from the current value
+ in register A7.
+\end_layout
+
+\begin_layout Standard
+Once a byte has been read we check the error code in D0, and if it shows
+ no errors, we can get on with the translation.
+ If D0 is showing an error, and it happens to be End Of File, we bale out
+ of the program and return success to SuperBASIC, Other errors will return
+ the appropriate error code to SuperBASIC, but that will only be seen if
+ the utility was executed with EXEC_W or EW, or equivalent.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; The main loop starts here.
+ Read a single byte, check for EOF etc.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_fbyte,d0    ; Fetch one byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  sourceID(a7),a0  ; Channel to readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3              ; Do input
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0              ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   testBit7        ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_EOF,d0     ; All done?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq     allDone         ; Yes.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit       ; Oops!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first check is to test it bit 7 of the character just read, is set or
+ not.
+ It it is set then the chances are that it is a multi-byte character.
+ If it is clear, then we continue processing.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+testBit7
+\end_layout
+
+\begin_layout Plain Layout
+
+    btst    #7,d1           ; Bit 7 set?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   twoBytes        ; Multi Byte character if so
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Right then, at this point the top bit must be clear, so we are looking at
+ a single byte character, or are we? The QL has a few little exceptions
+ to the rule as it uses different character codes to standard (if there
+ is such a thing) ASCII.
+\end_layout
+
+\begin_layout Standard
+The first exception is the UK Pound sign, which is a two byte character
+ in UTF8.
+ The code below checks and processes a Pound sign, if one is found.
+ After writing out the UTF8 codes, it loops back to the start of the main
+ loop, ready for the next character.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; The UK Pound and copyright signs are exceptions to the "bytes 
+\end_layout
+
+\begin_layout Plain Layout
+
+; less than $80 are the same in UTF8 as they are in ASCII" rule as 
+\end_layout
+
+\begin_layout Plain Layout
+
+; Sir Clive didn't follow ASCII 100%.
+ Both characters are multi-byte
+\end_layout
+
+\begin_layout Plain Layout
+
+; in UTF8.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+testPound
+\end_layout
+
+\begin_layout Plain Layout
+
+    btst    #7,d1           ; Potential multi-byte character? 
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   twoBytes        ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #pound,d1       ; Got a UK Pound sign?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   testCopyright   ; No.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+gotPound
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$c2,d1         ; Pound is $C2A3 in UTF8.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write first byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$a3,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write second byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   readLoop
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The next exception is the copyright symbol.
+ It too is a multi byte character in UTF8 so the code below checks for it
+ and deals with it appropriately.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Here we repeat the same check as above, in case we have the
+\end_layout
+
+\begin_layout Plain Layout
+
+; copyright sign.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+testCopyright
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #copyright,d1   ; Got a copyright sign?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   oneByte         ; No.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+gotCopyright
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$c2,d1         ; Copyright is $C2A9 in UTF8.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write first byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$a9,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write second byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+That's all the QL characters that are exceptions to the 
+\begin_inset Quotes eld
+\end_inset
+
+ASCII characters below code 128 are single byte in UTF8
+\begin_inset Quotes erd
+\end_inset
+
+ rule.
+ The remaining QL characters less than code 128 are dealt with by simply
+ calling the routine to write a single byte and then heading back to the
+ top of the main loop.
+ Job done.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; All other ASCII characters, below $80, are single byte in UTF8 and
+\end_layout
+
+\begin_layout Plain Layout
+
+; are the same code as in ASCII.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+oneByte     
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Single byte required in UTF8
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   readLoop
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Speaking of writing a single byte, the following code does exactly that.
+ It fetches the channel ID for the output channel from the stack.
+ Normally, this would be at offset 
+\begin_inset Quotes eld
+\end_inset
+
+destId
+\begin_inset Quotes erd
+\end_inset
+
+ on from A7, but as this code is always called as a subroutine, there is
+ an extra 4 bytes on the stack for the calling code's return address, so
+ that has to be considered.
+\end_layout
+
+\begin_layout Standard
+All the following snippet has to do is set up the registers to enable the
+ trap call, IO_SBYTE, to be called.
+ D3, the timeout, is already set to -1, and will be preserved on return,
+ as will D2, which is being used elsewhere in the code to safely hold a
+ value during processing.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; A small but perfectly formed subroutine to send the byte in D1 to
+\end_layout
+
+\begin_layout Plain Layout
+
+; the output channel.
+\end_layout
+
+\begin_layout Plain Layout
+
+; BEWARE: This is called with an extra 4 bytes on the stack!
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+writeByte
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_sbyte,d0    ; Send one byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  4+destId(a7),a0  ; Output channel id
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0              ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   errorExit       ; Oops!
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As mentioned above, we have processed all the QL characters that are a single
+ byte in UTF8, so now we need to think about those characters with codes
+ above 127, the majority of these are accented characters and as the QL
+ doesn't cover all the 
+\begin_inset Quotes eld
+\end_inset
+
+standard
+\begin_inset Quotes erd
+\end_inset
+
+ ones, there is some 
+\begin_inset Quotes eld
+\end_inset
+
+furkling about
+\begin_inset Quotes erd
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+That would be a technical term!
+\end_layout
+
+\end_inset
+
+ to be done.
+\end_layout
+
+\begin_layout Standard
+The QL wouldn't be the QL we know and love if there were not a couple of
+ exceptions to the rule that 
+\begin_inset Quotes eld
+\end_inset
+
+ASCII characters above code 128 are always multi-byte
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The grave (no, not somewhere you bury people, the accent much loved by
+ the French I believe) aka the backtick (at least on Unix, Linux etc) is
+ actually a single byte character in UTF8, so that is dealt with first.
+\end_layout
+
+\begin_layout Standard
+We arrive at the following code whenever a character is read in which has
+ the top bit, bit 7, set.
+\end_layout
+
+\begin_layout Standard
+The code begins by checking for and processing a grave character.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; ASCII codes from $80 upwards require multiple bytes in UTF8.
+ In the
+\end_layout
+
+\begin_layout Plain Layout
+
+; case of the QL, these are mostly 2 bytes long.
+ I could use IO_SSTRG
+\end_layout
+
+\begin_layout Plain Layout
+
+; here, I know.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+; However, as ever, there are exceptions.
+ The grave accent (backtick)
+\end_layout
+
+\begin_layout Plain Layout
+
+; is a single byte on output, while the 4 arrow keys are three bytes.
+\end_layout
+
+\begin_layout Plain Layout
+
+; The bytes to be sent are read from a table because, again, the QL
+\end_layout
+
+\begin_layout Plain Layout
+
+; is not using the full set of accented characters - so there is
+\end_layout
+
+\begin_layout Plain Layout
+
+; mucking about to be done.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+twoBytes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #grave,d1       ; Backtick/Grave accent?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   testEuro        ; No.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We are dealing with a backtick character (aka Grave accent)?
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+gotGrave
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #pound,d1       ; Grave in = pound out!
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Single byte required
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     readLoop        ; Do the rest
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+From here on in we should be dealing with all the two byte characters for
+ UTF8, however, those exceptions are popping up again.
+ The first is the Euro symbol.
+ This is missing from the original 128Kb QLs of old, as the Euro didn't
+ even exist when they were conceived, however, in SMSQ, they have been allocated
+ character 181 - which, when you look at it in Pennel or similar, is a seriously
+ weird character which I've never seen used, so I think the SMSQ authors
+ chose well!
+\end_layout
+
+\begin_layout Standard
+In UTF8 the Euro needs three characters, $E282AC, so the following section
+ of code does the necessary checking and handling of a Euro character.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Here we repeat the same check as above, in case we have the
+\end_layout
+
+\begin_layout Plain Layout
+
+; Euro sign.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+testEuro
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #euro,d1        ; Got a Euro sign?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   testArrows      ; No.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+gotEuro
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$e2,d1         ; Euro is $E282AC in UTF8.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write first byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$82,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write second byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$ac,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Write third byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   readLoop
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Finally, in our exception handling code, the 4 arrow keys.
+ These too are three bytes long in UTF8, $E2869x, where the 'x' nibble is
+ 0, 1, 2 or 3 depending on the arrow's direction.
+ Just to be awkward, the QL's arrow order is different to UTF8 - on the
+ QL the ascending character codes are for the Left, Right, Up, Down arrows,
+ but in UTF8 they are ordered Left, Up, Right, Down.
+ 
+\end_layout
+
+\begin_layout Standard
+The code snippet below handles the arrow keys.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; The arrows are $BC, $BD, $BE and $BF (left, right, up, down).
+ These
+\end_layout
+
+\begin_layout Plain Layout
+
+; are three bytes in UTF8, $E2 $86 $9x where 'x' is 0, 2, 1 or 3.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+testArrows
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  d1,d2           ; Copy character code
+\end_layout
+
+\begin_layout Plain Layout
+
+    subi.b  #$bc,d2         ; Anything lower = C set
+\end_layout
+
+\begin_layout Plain Layout
+
+    bcs.s   notArrows       ; And is not an arrow
+\end_layout
+
+\begin_layout Plain Layout
+
+    subi.b  #4,d2           ; Arrows = 0-3.
+ C clear is bad
+\end_layout
+
+\begin_layout Plain Layout
+
+    bcc.s   notArrows       ; Still not an arrow.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+gotArrows
+\end_layout
+
+\begin_layout Plain Layout
+
+    subi.b  #$bc,d1         ; D1 = 0 to 3 
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     arrows,a3       ; Arrow table
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  d1,d2           ; Save index into table
+\end_layout
+
+\begin_layout Plain Layout
+
+    ext.w   d2              ; Need word not byte
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$e2,d1         ; First byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #$86,d1         ; Second byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  0(a3,d2.w),d1   ; Third byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte     
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     readLoop        ; Go around again.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The arrow key's third byte is located in the following tiny table which
+ has the correct third byte for the appropriate arrow's code on the QL.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We need this as arrows in the QL are Left, Right, Up, Down but in
+\end_layout
+
+\begin_layout Plain Layout
+
+; UTF8 they are Left, Up, Right, Down.
+ Sigh.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+arrows
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b    $90,$92,$91,$93  ; Awkward byte order!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+That is now, all the two byte exceptions catered for.
+ The remainder of the higher ASCII characters are all two bytes in size.
+ Obviously, being the QL, these are not in the same order as the originating
+ ASCII codes would be, had Sir Clive done the decent thing and used a standard
+ ASCII code page! Instead he chose to omit some characters and rearrange
+ the others into a non-standard order.
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Ok, fair play, there probably wasn't a standard ASCII code page he could
+ use back then.
+ 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The following code simply copies the character code from D1 to D2 and then
+ manipulates D2 to go from an index into the table, to an offset into the
+ table where a pair of bytes can be found that represent the UTF8 code for
+ the current character.
+ 
+\end_layout
+
+\begin_layout Standard
+As we are dealing with character codes from 128 ($80) onwards, we start
+ by subtracting $80 from the character code.
+ This gives the correct index into the table.
+ As each entry in the table is two bytes, we double the index to get the
+ correct offset, then pick up the two bytes there and send them on their
+ way to the output file, before heading back to the start of the main loop.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Now we are certain, everything is two bytes.
+ Read them from the
+\end_layout
+
+\begin_layout Plain Layout
+
+; table and write them out.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+notArrows
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  d1,d2           ; D2 = byte just read
+\end_layout
+
+\begin_layout Plain Layout
+
+    subi.b  #$80,d2         ; Adjust for table index
+\end_layout
+
+\begin_layout Plain Layout
+
+    ext.w   d2              ; Word size needed
+\end_layout
+
+\begin_layout Plain Layout
+
+    lsl.w   #1,d2           ; Double D2 for Offset
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  0(a2,d2.w),d1   ; First byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Send it output
+\end_layout
+
+\begin_layout Plain Layout
+
+    addq.b  #1,d2
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  0(a2,d2.w),d1   ; Second byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   writeByte       ; Send it out too
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     readLoop        ; Go around.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code below is the usual tidy up and bale out code.
+ It doesn't require much explanation as you will have seen it before, many
+ times.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; No errors, exit quietly back to SuperBASIC.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+allDone
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #0,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We have hit an error so we copy the code to D3 then exit via a
+\end_layout
+
+\begin_layout Plain Layout
+
+; forcible removal of this job.
+ EXEC_W/EW will display the error in
+\end_layout
+
+\begin_layout Plain Layout
+
+; SuperBASIC, but EXEC/EX will not.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+errorExit
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d0,d3           ; Error code we want to return
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Kill myself when an error was detected, or at EOF.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+suicide
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #mt_frjob,d0    ; This job will die soon
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #me,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Finally, the table of two byte values for the multi-byte characters.
+ Those which have a word of $0000 are exceptions, dealt with elsewhere.
+ And finally, the table only goes as far as character 191 ($BF) as everything
+ that follows is unprintable and unlikely to ever get into a QL text file.
+ This basically means that if you do manage to do this, the output will
+ be 
+\begin_inset Quotes eld
+\end_inset
+
+undefined
+\begin_inset Quotes erd
+\end_inset
+
+ - as they say!
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; The following table contains the two byte sequences required for 
+\end_layout
+
+\begin_layout Plain Layout
+
+; QL characters above $80.
+ These are all 2 bytes in UTF8, so quite a 
+\end_layout
+
+\begin_layout Plain Layout
+
+; simple case.
+ (Not when converting UTF8 to QL though!)
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+utf8
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a4           ; a umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a3           ; a tilde
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a2           ; a circumflex
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a9           ; e acute
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b6           ; o umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b5           ; o tilde
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b8           ; o slash
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3bc           ; u umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a7           ; c cedilla
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b1           ; n tilde
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a6           ; ae ligature
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c593           ; oe ligature
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a1           ; a acute
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a0           ; a grave
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a2           ; a circumflex
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3ab           ; e umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3a8           ; e grave
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3aa           ; e circumflex
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3af           ; i umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3ad           ; i acute
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3ac           ; i grave
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3ae           ; i circumflex
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b3           ; o acute
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b2           ; o grave
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b4           ; o circumflex
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3ba           ; u acute
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b9           ; u grave
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3bb           ; u circumflex
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $ceb2           ; B as in ss (German)
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2a2           ; Cent
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2a5           ; Yen
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $0000           ; Grave accent - single byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c384           ; A umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c383           ; A tilde
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c385           ; A circle
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c389           ; E acute
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c396           ; O umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c395           ; O tilde
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c398           ; O slash
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c39c           ; U umlaut
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c387           ; C cedilla
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c391           ; N tilde
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c386           ; AE ligature
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c592           ; OE ligature
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $ceb1           ; alpha
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $ceb4           ; delta
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $ceb8           ; theta
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $cebb           ; lambda
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2b5           ; micro (mu?)
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $cf80           ; PI
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $cf95           ; o pipe
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2a1           ; ! upside down
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2bf           ; ? upside down
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $0000           ; Euro
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2a7           ; Section mark
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2a4           ; Currency symbol
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2ab           ; <<
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2bb           ; >>
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c2ba           ; Degree
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $c3b7           ; Divide
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
