@@ -7,10 +7,10 @@ Well now, here's a thing. Very quickly after Issue 7 "hit the streets" I got fee
 
 [WL] Just a little comment: there is a typo on page 16, in the third code extract at line 1: Tobias makes a \opcode{MOVEM} to ...\register{a2-a7} : it should be to ...\register{a2-a6}.
 
-[ND] Thanks. I don't have a Q68 (yet?) and I really didn't have much to do with Tobias's article to get it into the eComic, so I didn;t notice that slight error. I fixed it in the PDF download on 1st October 2019 at around 19:00 BST (UTC + 01:00) - so anyone who downloaded prior to that time might wish to download again to get the correction.
+[ND] Thanks. I don't have a Q68 (yet?) and I really didn't have much to do with Tobias's article to get it into the eComic, so I didn't notice that slight error. I fixed it in the PDF download on 1st October 2019 at around 19:00 BST (UTC + 01:00) - so anyone who downloaded prior to that time might wish to download again to get the correction.
 
 
-[WL] Also a more general comment, which I offer as constructive criticism: in the \program{utf82ql} routine, when handling values over 127 (i.e. at least 2 bytes), why check for the special cases first (arrows, pound etc) before getting the values from the table? Wouldn't it be better to leave their place in the table at 0 as well, and every time you hit a 0 in the table you check for the exception?
+[WL] Also a more general comment, which I offer as constructive criticism: in the  \texttt{utf82ql} routine, when handling values over 127 (i.e. at least 2 bytes), why check for the special cases first (arrows, pound etc) before getting the values from the table? Wouldn't it be better to leave their place in the table at 0 as well, and every time you hit a 0 in the table you check for the exception?
 
 [ND] Good point, thanks. That would have made more sense as the processing is more likely to be processing valid characters than the exceptions. I thought I was doing well getting the exceptions in what I thought was the most likely order!
 
@@ -39,7 +39,7 @@ before they adopted UTF-8, on Windows you will mostly find the
 comes to the Euro sign for example (ISO 8859-1 is too old to have a
 Euro sign and the others have adopted it in different places).
 
-[ND] Technically, I agree, ASCII is indeed 7 bit. But let's face it, there have been 8 bit "ASCII" characters for many years, even when I was at college back in the, ahem, early eighties, ASCII was 8 bit - whether pedantically correct or not. However, true ASCII is 7 bit.
+[ND] Technically, I agree, ASCII is indeed 7 bit and 163 is definitely not 7 bit. But let's face it, there have been 8 bit "ASCII" characters for many years, even when I was at college back in the, ahem, early eighties, ASCII was (at least, considered) 8 bit - whether pedantically correct or not. However, true ASCII is 7 bit.
 
 [ND] I remember many occasions, back when \url{config.txt} was still a thing, trying to set up the correct code page for a system. A nightmare as there was no Google back then to help out, just the manual for whatever system I was installing or working with.
 
@@ -59,7 +59,7 @@ data storage UTF-8 is the way to go these days, always!
 
 [ND] It sure is a mess, and yes, UTF-8 is the way to go. As I mentioned XML files depend on it, the web is pretty much full of it in all those HTML files etc. And, once you get your head around the difference between a ``code point'' and the character's actual bytes, it's pretty easy to understand.
 
-[ND] I'm not so sure that Windows is missing out or behind the times though. At work, my files are all pretty much UTF-8 (I write my documents in \program{ASCIIDOCTOR}\footnote{Now that's ironic!} format and convert them to PDF files using \program{asciidoctor-pdf} - if I need Office flavoured docs, I use \program{pandoc} to convert to something in DOCX format - but I almost never use those. \program{Asciidoctor files are plain text, and very easy to version control!}) \program{Notepad++} or \program{VSCodium} are my text editors of choice and both save in UTF-8 with no problems. Even Notepad itself can read the files - and I suspect Windows 10 will be better, I'm on Windows 7. (Currently)
+[ND] I'm not so sure that Windows is missing out or behind the times though. At work, my files are all pretty much UTF-8 (I write my documents in  \texttt{ASCIIDOCTOR}\footnote{Now that's ironic!} format and convert them to PDF files using  \texttt{asciidoctor-pdf} - if I need Office flavoured docs, I use  \texttt{pandoc} to convert to something in DOCX format - but I almost never use those.  \texttt{Asciidoctor} files are plain text, and very easy to version control!  \texttt{Notepad++} or  \texttt{VSCodium} are my text editors of choice and both save in UTF-8 with no problems. Even Notepad itself can read the files - and I suspect Windows 10 will be better, I'm on Windows 7. (Currently)
 
 [ND] Mind you, those damned so-called "smart" quotes that Office documents insist on using mess things up truly. It's the first thing I turn off with my Office stuff, and every slight update or patch seems to turn them back on! So annoying.
 
@@ -69,4 +69,101 @@ to the QL
 
 [ND] Well, thanks for the reminder of how old I'm getting! The reason I did the utilities was simple, I had one of those itches to scratch. When I did a bit of work with Jan on his updated QL Monitor, I used a Linux system to do the typing - it's what I'm used to - and those arrow characters caused me no end of grief, as did the copyright and the pound signs. I messed about there using actual, ahem, ASCII codes (sorry!) but now, I don't have to.
 
-[ND] Oh, and \emph{thank you} for \program{QPC2}, it's my favourite QL program of all time, and it simply "just" works on Linux under \program{Wine}. I did have some problems recently with it not working, but I traced that to a mix and match installation with bits of \program{Wine 3} and bits of \program{Wine 4} living together in sin. It's what has kept me in the QL scene for as long as I can remember - I always got somewhat tired of the QL, the cables, the hard drive, the noise, the length of table I needed with limited space in my flat (appartment) and so on. With \program{QPC2} it's all on my laptop. Nice and compact.
+[ND] Oh, and \emph{thank you} for  \texttt{QPC2}, it's my favourite QL program of all time, and it simply "just" works on Linux under  \texttt{Wine}. I did have some problems recently with it not working, but I traced that to a mix and match installation with bits of  \texttt{Wine 3} and bits of  \texttt{Wine 4} living together in sin. 
+
+\texttt{QPC2} is what has kept me in the QL scene for as long as I can remember - I always got somewhat tired of the QL, the cables, the hard drive, the noise, the length of table I needed with limited space in my flat (apartment) and so on. With  \texttt{QPC2} it's all on my laptop. Nice and compact.
+
+[ND] And, by the way, \emph{I am a pedant's baddest nightmare!}
+
+
+\section{More Feedback from Wolfgang Lenerz}
+
+
+[WL] I had a longer look at ql2utf8. I hope you don't mind a few more comments.
+
+[ND] No, I like getting comments - most people do assembly better than I do!
+
+[WL] When I tried to compile the source file, I couldn't, as the different traps weren't defined.
+
+\begin{lstlisting}[numbers=none]
+io_fbyte        equ 1
+io_sbyte        equ 5
+mt_frjob        equ 5
+\end{lstlisting}
+
+[ND] Were you using \texttt{QMAC} by any chance? I know that's a recurring problem for \texttt{QMAC} as \texttt{GWASS} and \texttt{GWASL} come with the various traps and vectors "automatically" included. If I include them in the source, then they won't assemble for me, I get an error about duplicate definitions.
+
+
+[WL] Moreover, I got a few errors that some bra.s  were out of reach.
+
+[ND] Hmmm, I just recompiled with \texttt{GWASS} and got no errors at all. However, I did get one error with \texttt{GWASL}. Looking at the listing file, it's complaining that the label \texttt{oneByte} is an ``illegal instruction'' - weird. I remember \texttt{GWASL} doing that on a few occasions in the past. I used to edit the sources, rub out the label, and type it in again, that usually worked. I could never trace it to hidden characters etc as a hex dump of the source showed nothing out of the ordinary.
+
+I don't however, get any errors about short branches being out of reach. 
+
+
+[WL] It seems to me that the two lines of code at label \texttt{TestBit7} are superfluous: you are doing the exact same test just beneath it, at label \texttt{Testpound}.
+
+[ND] That's a typing error. Originally I only had the BVS.S instruction rather than the BTST \#7 so in theory, if D1 was loaded with a byte >= \$80 the V flag would be set. Unfortunately it didn't work. I traced the code under QMON2 and by the time we get to that point, the V flag is clear, always. I obviously forgot to remove the BVS when I edited the code to add in the BTST \#7 instruction. My mistake.
+
+
+[WL] You could replace the two instructions at Label \texttt{OneByte} with the single instruction \texttt{PEA readLoop}.
+
+[ND] I see what you mean, if I do that replacement, then instead of branching to \texttt{writeByte} and returning and then branching off to \texttt{readLoop}, just drop in to \texttt{writeByte} and return automagically to the top of the loop. Nice!
+
+
+[WL] Then you could also just delete the last two instructions of label \texttt{gotCopyright} (no need to bsr.s writebyte, you just fall through) and you could also replace, in the different \texttt{gotxxxx} routines (e.g. \texttt{gotEuro}, \texttt{gotGrave} etc) the two instructions:
+
+\begin{lstlisting}[numbers=none]
+ bsr.s writeByte
+ bra readLoop
+\end{lstlisting}
+ 
+with a simple:
+
+\begin{lstlisting}[numbers=none]
+ bra.s oneByte
+\end{lstlisting}
+ 
+and it might be able to use a bra.s rather than a bra somewhere in the changed code.
+
+[ND] Yes, that all makes perfect sense given the above changes to \texttt{oneByte}.
+
+[WL] At label \texttt{notArrows}, you might want to replace these 4 lines
+
+\begin{lstlisting}[numbers=none]
+ addq.b  #1,d2
+ move.b  0(a2,d2.w),d1   ; Second byte
+ bsr     writeByte       ; Send it out
+ bra     readLoop        ; Go around.
+\end{lstlisting}
+
+with these two
+
+\begin{lstlisting}
+ move.b  1(a2,d2.w),d1   ; Second byte
+ bra     oneByte
+\end{lstlisting}
+ 
+[ND] Yes, that makes perfect sense too. Thanks.
+
+
+[WL] I would set the output \& input channel IDs into two registers (eg A4, A5) and move them into A0 when needed in the byte read/write subroutines, instead of accessing the stack (and thus memory) every time with a LEA.
+
+[ND] I used A4 and A5 for that very purpose in the following chapter, in the \texttt{Utf82ql} code, and forgot to go back and fix this code to do the same.
+
+[WL] Finally, I would also include  test at label \texttt{notArrows} to make sure that the byte in D1 doesn't exceed the max value of your table. I know that values above that are not printable characters, but it \emph{is} possible to include them in a text file. You might want to tell the user that some characters couldn't be translated...
+
+[ND] Yes indeed, that was an oversight. Thanks for pointing it out.
+
+[WL] Hope you don't mind the above.
+
+[ND] Not at all, many thanks indeed.
+
+So, given all those amendments, here for your delectation is the latest version of the \texttt{Ql2utf8} code, incorporating all of Wolgang's changes and corrections.
+
+
+\begin{lstlisting}[firstnumber=1, caption={Wolfgang's improved ql2utf8 Utility}]
+
+... NORM - DO THE ABOVE CHANGES AND PASTE HERE...
+
+\end{lstlisting}
