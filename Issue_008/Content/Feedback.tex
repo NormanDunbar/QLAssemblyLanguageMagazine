@@ -76,7 +76,7 @@ to the QL
 [ND] And, by the way, \emph{I am a pedant's baddest nightmare!}
 
 
-\section{More Feedback from Wolfgang Lenerz}
+\section{\emph{More} Feedback from Wolfgang Lenerz}
 
 
 [WL] I had a longer look at ql2utf8. I hope you don't mind a few more comments.
@@ -162,7 +162,195 @@ with these two
 So, given all those amendments, here for your delectation is the latest version of the \texttt{Ql2utf8} code, incorporating all of Wolgang's changes and corrections.
 
 
+\section{\emph{Even More} Feedback from Wolfgang Lenerz}
+	
+[WL] I also had a look through the \texttt{utf2ql} code. Some of the comments made for the other routine (\texttt{ql2utf8} ND) may also apply here, no need to go through them again. Here I have some more comments on this routine.
+
+[ND] Ok, I'm sitting comfortably ....
+	
+[WL] The first one is not really about the code itself, but the way you structured it. Of course, this is much of a personal preference, so please take this with a pinch (or even a spoonful) of salt. Leaving out the exception and read/write routines, your code is structured thus:
+	
+\begin{lstlisting}[numbers=none]
+  readLoop
+    get byte
+    leave if EOF
+
+  Multibytes
+    is it two bytes?
+    yes -> jump to handle_two
+  
+  NotTwo
+    is it three bytes?
+    yes -> jump to handle_three
+
+  Error   
+    not three bytes, return error
+
+  handle_two   
+    treat two bytes
+    bra    readloop
+
+  handle_three
+    treat three bytes
+    bra    readLoop
+\end{lstlisting}
+	
+	
+[WL] For me, you have 6 different blocks of code. I would prefer the following structure with 4 blocks (making the code less "spaghetti"):
+	
+\begin{lstlisting}[numbers=none]	
+  readLoop
+    get byte
+    leave if EOF
+
+  handle_two
+    is it two bytes?
+    no-> jump to handle three
+    treat two bytes
+    bra    readloop
+
+  handle_three
+    is it 3 bytes?
+    no -> jump to error
+    treat three bytes
+    bra    readLoop
+
+  Error   
+    not three bytes, return error
+\end{lstlisting}
+
+[ND] Yes, I admit that sometimes my structure leaves a lot to be desired and you are correct in what you say above - I must try harder!
+	
+	
+[WL] Leaving out the branches to the loop, basically your way of doing it is:
+	
+\begin{lstlisting}[numbers=none]	
+  is it something?
+    yes, go off, handle it_1
+  is it something else?
+    yes, go off and handle it_2
+  error
+  handle_it1
+  handle_it2
+\end{lstlisting}
+	
+[WL] Whereas mine is:
+	
+\begin{lstlisting}[numbers=none]	
+  is it something?
+    no, go off to next check
+
+  handle it1
+    is it something else?
+      no, go to error
+
+  handle it2
+
+  error
+\end{lstlisting}
+	
+[WL] Again, this is a personal preference: There is no functional difference, but I, personally, find the second one easier to read if you want to follow the flow of the code.
+
+[ND] Agreed.
+	
+[WL] But in doing so it will allow you to write the code at the \texttt{multiBytes} label so:
+	
+\begin{lstlisting}[numbers=none]	
+  multiBytes
+    move.b    d1,d2
+    andi.b    #%11100000,d2    ; <-- BUG HERE? [ND]
+    cmp.b     #%11000000,d2    ; 2 bytes?
+    bne.s     threebytes       ;  ... no->
+
+  twoBytes
+    (treat 2 bytes including exceptions)
+
+  testThree   (no need to copy d1 into d2 again)
+    cmp.b     #%11100000,d2    ; 3 bytes?
+    bne       invalidUTF8      ;  ... no ->
+    ...
+\end{lstlisting}
+	
+[ND] Hmm, I think you have a bug there. For three byte characters the top nibble should be 1110, so your mask is missing a '1' bit. I suspect you intended to type the following for \texttt{multiBytes}:
+
+\begin{lstlisting}[numbers=none]	
+  multiBytes
+    move.b    d1,d2
+    andi.b    #%11110000,d2
+\end{lstlisting}
+
+Otherwise you are forcing bit 4 of D2 to always be a zero. However, that minor niggle aside, I like your version better than mine as I/we only need a single ANDI instruction which keeps the top nibble, which can then be compared to check for two byte (110x) or three byte (1110) characters. Far more efficient indeed.
+
+	
+[WL] The \texttt{scanTable} routine is probably the most time consuming part of the code, so I'd have written it as follows:
+
+\begin{lstlisting}[numbers=none]	
+  scanTable
+    move.l    a2,a3            ; point to table
+    move.w    #59,d0           ; there are 60 words to compare
+
+  scanLoop
+    cmp.w     (a3)+,d2         ; is it a match?
+    beq.s     scanDone         ;  ...yes ->
+    dbf       d0,scanLoop      ; try all permitted values
+    rts                        ; no match found, return NZ from cmp
+
+  scanDone   
+    move.l    a3,d0            ; where we found it (+2)
+    sub.l     a2,d0            ; index into table
+    subq.w    #2,d0            ; but we overshot by 2 bytes
+
+    lsr.w     #1,d0            ; offset into index
+    add.w     #$80,d0          ; convert to character code
+    cmp.w     d0,d0            ; see below
+    rts                        ; the condition code Z is set by the cmp
+\end{lstlisting}
+
+[ND] Curses, I've been found out! My way was easier for me as I didn't have to count up however many two byte characters there were! However, as they say about Unix/Linux, there's more than one way to skin a cat, but again, I prefer your method.
+	
+[WL] There are a few more instructions when you find the correct value, but the search loop itself is smaller and will be faster (unless the value searched for is the very first in the table, and even then it'll be a close match). The CMP D0,D0 is there so that the routine returns with the Z flag set, without affecting any other register by zeroing it. 
+
+[ND] I wasn't fond of the non-standard way of detecting an error in my version, I have to admit. This is far far better.
+
+[WL] So, coming back from calling the routine at label \texttt{doScan}, a simple BNE.S ERROR will do:
+	
+\begin{lstlisting}[numbers=none]	
+  doScan   
+    bsr.s    scanTable
+    bne.s    invalidUTF8
+    (... success in d0 ...)
+\end{lstlisting}
+
+[ND] Agreed, this is better and resembles more a standard error return, zero is good, non-zero is not good.
+
+[WL] At label \texttt{twoBytes}, you should be able to write:
+
+\begin{lstlisting}[numbers=none]
+  twoBytes
+    lsl.w    #8,d1             ; move byte up
+    bsr      readByte          ; get next byte into LSB of D1
+\end{lstlisting}
+	
+[WL] You should now have the correct word in D1. Remember, though, as of then to test on D1, not D2, for valid utf, even in the \texttt{scanTable} loop.
+
+\textbf{Note}, this presumes that the trap handler does its work correctly and \emph{only} modifies the LSB\footnote{LSB = Lowest Significant Byte.} of D1 to put the returned value in there. (Unlike, e.g. some early versions of SMSQmulator which just reset the \emph{entire} register to 0 and then sets the byte. Ouch!)
+	
+[WL] Most of these comments go a little beyond just checking the code itself, I hope you don't mind.
+
+[ND] No, I don;t mind and in fact I welcome comments on anything printed in this ePeriodical. If you have a problem with my writing style, code etc, I'm happy to hear from you. From anyone that is!
+
+\section{A Better Ql2utf8}
+
 \begin{lstlisting}[firstnumber=1, caption={Wolfgang's improved ql2utf8 Utility}]
+
+... NORM - DO THE ABOVE CHANGES AND PASTE HERE...
+
+\end{lstlisting}
+
+
+\section{A Better Utf82ql}
+
+\begin{lstlisting}[firstnumber=1, caption={Wolfgang's improved utf82ql Utility}]
 
 ... NORM - DO THE ABOVE CHANGES AND PASTE HERE...
 
