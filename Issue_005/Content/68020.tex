@@ -56,9 +56,9 @@ You can calculate the desired starting bit number by subtracting the highest bit
 
 \opcode{\{16:5\}}
 
-For example, in many opcodes, the size of the operand - .B, .W or .L - is specified in bits 5 and 6 of the opcode instruction word in memory.This is therefore a 2 bit wide bit field, starting at bit $31-5=26$ and would be represented as follows:
+For example, in many opcodes, the size of the operand - .B, .W or .L - is specified in bits 5 and 6 of the opcode instruction word in memory.This is therefore a 2 bit wide bit field, starting at bit $31-6=25$ and would be represented as follows:
 
-	\opcode{\{26:2\}}
+	\opcode{\{25:2\}}
 
 This would be tagged onto the end of one of the new bit field instructions. 
 
