@@ -1,3 +1,22 @@
+\chapter{Feedback on Issue 5}
+
+While looking at something else, I noticed that in Issue 4, Page 28, Section 4.2.1 the following text:
+
+
+\emph{For example, in many opcodes, the size of the operand - .B, .W or .L - is specified in bits 5 and 6 of the opcode instruction word in memory.This is therefore a 2 bit wide bit field, starting at bit $31-5=26$ and would be represented as follows:}
+
+	\opcode{\{26:2\}}
+
+
+I thought something was wrong, but didn't know which bit(!) was incorrect, so I worked through it and of course, the two bits in the bit field are wrong! The text should read as follows:
+
+For example, in many opcodes, the size of the operand - .B, .W or .L - is specified in bits 6 and 5 of the opcode instruction word in memory.This is therefore a 2 bit wide bit field, starting at bit $31-6=25$ and would be represented as follows:
+
+	\opcode{\{25:2\}}
+
+I had of course specified a bit field for bits 5 and 4 and not for bits 6 and 5. I did mention that there was a certain amount of confusion in bit field specifications!
+
+
 \chapter{Feedback on Issue 7}
 
 Well now, here's a thing. Very quickly after Issue 7 "hit the streets" I got feedback from two different people. Thanks very much to Wolfgang and to Marcel for their input, and their permission to publish.

@@ -1,0 +1,1127 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Various macros for the Arduino Book. Saves typing when things change!
+\newcommand{\avr}{AVR micro controller}
+\newcommand{\avrs}{AVR micro controllers}
+\newcommand{\ardvers}{1.8.5}
+
+% In file and path names, a "\-" is a hint to LaTeX to hyphenate here.
+\newcommand{\ardbase}{\texttt{/home/\-norman/\-arduino-\ardvers}}
+\newcommand{\ardbasew}{\texttt{c:$\backslash$\-users$\backslash$\-norman$\backslash$\-arduino-\ardvers}}
+\newcommand{\ardinst}{\ardbase\texttt{/\-hardware/\-arduino/\-avr}}
+\newcommand{\ardinstw}{\ardbasew\texttt{$\backslash$\-hardware$\backslash$\-arduino$\backslash$\-avr}}
+\newcommand{\ardinc}{\ardinst\texttt{/\-cores/\-arduino}}
+\newcommand{\ardincw}{\ardinstw\texttt{$\backslash$\-cores$\backslash$\-arduino}}
+\newcommand{\avrinc}{\ardbase\texttt{/\-hardware/\-tools/\-avr/\-avr/\-include}}
+\newcommand{\avrincw}{\ardbasew\texttt{$\backslash$\-hardware$\backslash$\-tools$\backslash$\-avr$\backslash$\-include}}
+
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+
+
+% Boxes
+\usepackage{tcolorbox}
+
+% WARNING
+\newtcbox{\warningbox}{colback=red!5!white,colframe=red!75!black,fonttitle=\bfseries,title=Warning}
+\newcommand{\warning}[1]{\warningbox{\vbox{#1}}}
+
+% IMPORTANT
+\definecolor{amber}{rgb}{1.0, 0.75, 0.0}
+\newtcbox{\importantbox}{colback=amber!5!white,colframe=amber!75!black,fonttitle=\bfseries,title=Important}
+\newcommand{\important}[1]{\importantbox{\vbox{#1}}}
+
+%NOTE
+\newtcbox{\notebox}{colback=blue!5!white,colframe=blue!75!black,fonttitle=\bfseries,title=Note}
+\newcommand{\note}[1]{\notebox{\vbox{#1}}}
+
+%TIP
+\newtcbox{\tipbox}{colback=green!5!white,colframe=green!75!black,fonttitle=\bfseries,title=Tip}
+\newcommand{\tip}[1]{\tipbox{\vbox{#1}}}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+
+% To get Arduino code highlighting
+%\input{arduinoLanguage.tex}    % adds the arduino language listing
+
+%% Define an Arduino style for use later %%
+\lstdefinestyle{myArduino}{
+  language=Arduino,
+  %% Add other words needing highlighting below %%
+  morekeywords=[1]{},                  % [1] -> dark green
+  morekeywords=[2]{FILE_WRITE},        % [2] -> light blue
+  morekeywords=[3]{SD, File},          % [3] -> bold orange
+  morekeywords=[4]{open, exists},      % [4] -> orange
+  %% The lines below add a nifty box around the code %%
+  frame=shadowbox,
+  rulesepcolor=\color{arduinoBlue},
+}
+\end_preamble
+\use_default_options true
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+tcolorbox
+\end_modules
+\maintain_unincluded_children false
+\begin_local_layout
+Format 60
+    InsetLayout Flex:RegisterName
+    LyxType          charstyle
+    LabelString    RegisterName
+    LatexType      command
+    LatexName    registername
+    Preamble
+        \newcommand*{\registername}[1]{{\ttfamily #1}}
+    EndPreamble
+    Font
+        Family        Typewriter
+    EndFont
+    ResetsFont  true
+End
+    InsetLayout Flex:FileName
+    LyxType          charstyle
+    LabelString    FileName
+    LatexType      command
+    LatexName    filename
+    Preamble
+        \newcommand*{\filename}[1]{{\ttfamily #1}}
+    EndPreamble
+    Font
+        Family        Typewriter
+    EndFont
+    ResetsFont  true
+End
+    InsetLayout Flex:FunctionName
+    LyxType          charstyle
+    LabelString    FunctionName
+    LatexType      command
+    LatexName    functionname
+    Preamble
+        \newcommand*{\functionname}[1]{{\ttfamily #1}}
+    EndPreamble
+    Font
+        Family        Typewriter
+    EndFont
+    ResetsFont  true
+End
+    InsetLayout Flex:EnvVar
+    LyxType          charstyle
+    LabelString    EnvVar
+    LatexType      command
+    LatexName    envvar
+    Preamble
+        \newcommand*{\envvar}[1]{{\ttfamily #1}}
+    EndPreamble
+    Font
+        Family        Typewriter
+    EndFont
+    ResetsFont  true
+End
+    InsetLayout Flex:ClassName
+    LyxType          charstyle
+    LabelString    ClassName
+    LatexType      command
+    LatexName    classname
+    Preamble
+        \newcommand*{\classname}[1]{{\ttfamily #1}}
+    EndPreamble
+    Font
+        Family        Typewriter
+    EndFont
+    ResetsFont  true
+End
+\end_local_layout
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "Arduino Software Internals"
+\pdf_author "Norman Dunbar"
+\pdf_subject "How the Arduino Language works"
+\pdf_keywords "Arduino"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks true
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "style=myArduino"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Powers of Two
+\end_layout
+
+\begin_layout Standard
+Some more messing about with a bit of code I'm writing for my Arduino required
+ a given number to be adjusted to the next power of two, unless that number
+ was already a power of two.
+ So, the value 6 is not a power of two and would result in a new value of
+ 8, while 4 is already a power of two and thus, would not be changed.
+\end_layout
+
+\begin_layout Standard
+I managed to get this task accomplished – it was for a circular buffer which
+ can be set up at any size, but the size must be a power of two, and fit
+ into 8 bits, unsigned – in case you were wondering!
+\end_layout
+
+\begin_layout Standard
+As I'm a bit short on ideas for stuff to write about for this eComic, I
+ wondered how easy it would be to convert a few hundred bytes of C++ code
+ into Assembly Language? With a 68000 processor and George's GWASS assembler,
+ it was rather simple, and took far less bytes than on my Arduino! It was
+ a little more difficult with a 68008 and GWASL though.
+\end_layout
+
+\begin_layout Section
+The Algorithm
+\end_layout
+
+\begin_layout Standard
+The way to determine the next power of 2 value for a number is reasonably
+ simple, but there's a catch, a number might already be a power of 2.
+ This is 
+\begin_inset Quotes eld
+\end_inset
+
+easy
+\begin_inset Quotes erd
+\end_inset
+
+ to determine as there will be a single set bit in the number, so we could
+ count the set bits to determine if the number is already a power, and return
+ it if so.
+ Too difficult! 
+\end_layout
+
+\begin_layout Itemize
+Subtract 1 from the number;
+\end_layout
+
+\begin_layout Itemize
+Find the most significant set bit;
+\end_layout
+
+\begin_layout Itemize
+Work out a value for a number with just that bit set;
+\end_layout
+
+\begin_layout Itemize
+Return double the number.
+\end_layout
+
+\begin_layout Subsection
+How it Works
+\end_layout
+
+\begin_layout Standard
+Ok, we know what to do, how does it work? And why subtract 1 at the start?
+ Let us assume 8 bit values, for simplicity, and to stop me typing 32 ones
+ or zeros across the page!
+\end_layout
+
+\begin_layout Standard
+If we take an example of the value 65, this has the binary value 0100 0001.
+ The highest set bit is bit 6 for a value of 64.
+ But as there are other bits set in the number, 65 is obviously greater
+ than 64.
+ The next power of 2 greater than 65 is 128.
+ Even though we didn't do the required subtraction, we would correctly return
+ 
+\begin_inset Formula $2*64$
+\end_inset
+
+, or 128.
+\end_layout
+
+\begin_layout Standard
+If, on the other foot, the value we started with was 64, it has a binary
+ value of 0100 0000.
+ Returning 
+\begin_inset Formula $2*64$
+\end_inset
+
+ would be 128, again, but this would be incorrect as 64 is already a power
+ of 2, so the correct answer should be 64.
+\end_layout
+
+\begin_layout Standard
+So, adding in the subtraction this time, we start with 64 – 0100 0000 –
+ and subtract 1 to give 63, or 0011 1111.
+ The highest bit set here is bit 5, for a value of 32.
+ Returning 
+\begin_inset Formula $2*32$
+\end_inset
+
+ is indeed 64.
+ But does that work with a higher value?
+\end_layout
+
+\begin_layout Standard
+Taking 65 again, we still have a binary value of 0100 0001.
+ When we subtract 1 we get 64 – 0100 0000 – returning 
+\begin_inset Formula $2*64$
+\end_inset
+
+ does indeed still give the correct result of 128.
+\end_layout
+
+\begin_layout Standard
+The algorithm works.
+ Ok, what about zero? Does that end case work?
+\end_layout
+
+\begin_layout Standard
+Subtracting 1 from zero gives -1, or 1111 1111.
+ The most significant bit set is bit 7 or 128.
+ Returning 
+\begin_inset Formula $2*128$
+\end_inset
+
+ would be 256, which has the lower 8 bits clear, or zero.
+ The closest 8 bit power of 2 to zero is actually zero.
+ This is incorrect as the closest power of 2 to zero is 
+\begin_inset Formula $2^{0}$
+\end_inset
+
+ or 1.
+ Hmmm.
+\end_layout
+
+\begin_layout Standard
+In my C++ code, I tested for this corner case, and simply returned zero.
+ However, in the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:MC60000-Power2"
+
+\end_inset
+
+, it actually doesn't need a corner case check as passing zero does correctly
+ result in 1 being returned.
+ Spooky!
+\end_layout
+
+\begin_layout Section
+Easy Version for 68000
+\end_layout
+
+\begin_layout Standard
+The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:MC60000-Power2"
+
+\end_inset
+
+ is the entire routine.
+ It is a massive 38 bytes long.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "breaklines=true,showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; This code finds the value of the "Next Power of Two" for any
+\end_layout
+
+\begin_layout Plain Layout
+
+; given number.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Call here with one (long) parameter.
+\end_layout
+
+\begin_layout Plain Layout
+
+; PRINT PEEK_L(start + 2) for the result.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start   bra.s   doit
+\end_layout
+
+\begin_layout Plain Layout
+
+result  ds.l    1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+doit    lea result,a1       ; Result address
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d1,d0        ; Passed parameter
+\end_layout
+
+\begin_layout Plain Layout
+
+        subq.l #1,d0        ; D0 might be a power of 2
+\end_layout
+
+\begin_layout Plain Layout
+
+        bfffo d0{0:32},d1   ; Find first 1 bit
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; If we find a set bit, D1 has the "offset".
+ Bit 31 = offset 0,
+\end_layout
+
+\begin_layout Plain Layout
+
+; bit 30 = offset 1 and so on.
+ The bits are numbered from the
+\end_layout
+
+\begin_layout Plain Layout
+
+; MSB which is not the normal manner.
+ To convert, subtract the
+\end_layout
+
+\begin_layout Plain Layout
+
+; offset from 31 to get the required bit number.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        neg.l d1            ; D1 = -D1
+\end_layout
+
+\begin_layout Plain Layout
+
+        add.l #31,d1        ; Same as subtracting!
+\end_layout
+
+\begin_layout Plain Layout
+
+        addq.l #1,d1        ; Just because!
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #0,d2         ; For the result
+\end_layout
+
+\begin_layout Plain Layout
+
+        bset d1,d2          ; Set the result bit.
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d2,(a1)      ; Save the result
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+done
+\end_layout
+
+\begin_layout Plain Layout
+
+        clr.l d0
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MC60000 - Power2_asm
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:MC60000-Power2"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The value we pass in will end up in register D1.
+ For some reason, I copy that into D0 (I forget why I did that!) but I could
+ have saved a couple of bytes here and there by leaving it alone! Silly
+ me.
+\end_layout
+
+\begin_layout Standard
+Anyway, the next step is to subtract 1 from D0 and then look for the most
+ significant set bit.
+ On the 68000 we have the ability to use bit fields, so that's what the
+ 
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+bfffo d0{0:32},d1
+\end_layout
+
+\end_inset
+
+ instruction does, it stands for 
+\emph on
+Bit Fields Find First One
+\emph default
+.
+ It looks in D0, starting at 
+\emph on
+offset
+\emph default
+ 0 for 32 bits, for the first set 1 bit.
+ If there are no set bits, the Z flag will be set, and D1 will take on the
+ bit field width, or 32, as it's value.
+ 
+\end_layout
+
+\begin_layout Standard
+If there is a set bit, its 
+\emph on
+offset
+\emph default
+ will be placed in D1, however, the offset is not the actual bit number.
+ The offset, as the comments indicate, is counted from bit 31 down towards
+ bit 0.
+ Normally we count bits from the least significant end but not in a bit
+ field, they count from the most significant end.
+ Confusing or what.
+ We can easily convert an offset into a bit number simply by subtracting
+ it from 31.
+\end_layout
+
+\begin_layout Standard
+We subtract D1 from 31 in the roundabout way of negating D1 and adding 31
+ to it as 
+\begin_inset Formula $-D1+31=31-D1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Section
+Hard Version for 68008
+\end_layout
+
+\begin_layout Standard
+That was the easy case, when using the 68000 (and higher) processor's useful
+ 
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+bfffo
+\end_layout
+
+\end_inset
+
+ instruction, what about the original QL's 68008 processor - it doesn't
+ have this instruction?
+\end_layout
+
+\begin_layout Standard
+Ok, going back to the examples above with 64 – a power of 2 already – first.
+ If we AND a value with the value minus 1, and keep going until we get a
+ zero answer, we have detected the leftmost set bit.
+ For example:
+\end_layout
+
+\begin_layout Itemize
+Value = ??
+\end_layout
+
+\begin_layout Itemize
+Value = Value - 1 (in case it's already a power of 2)
+\end_layout
+
+\begin_layout Itemize
+Repeat loop
+\end_layout
+
+\begin_layout Itemize
+If (value and (value - 1)) = 0, return value * 2
+\end_layout
+
+\begin_layout Itemize
+Else value = (value & (value - 1))
+\end_layout
+
+\begin_layout Itemize
+End repeat loop
+\end_layout
+
+\begin_layout Standard
+For the initial value of 64, 0100 0000, we have:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+64 - 1 = 63
+\end_layout
+
+\begin_layout Plain Layout
+
+63  = 0011 1111
+\end_layout
+
+\begin_layout Plain Layout
+
+62  = 0011 1110
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0011 1110 = 62
+\end_layout
+
+\begin_layout Plain Layout
+
+61  = 0011 1101 
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0011 1100 = 60
+\end_layout
+
+\begin_layout Plain Layout
+
+59  = 0011 1011
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0011 1000 = 56
+\end_layout
+
+\begin_layout Plain Layout
+
+55  = 0011 0111
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0011 0000 = 48
+\end_layout
+
+\begin_layout Plain Layout
+
+47  = 0010 1111
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0010 0000 = 32
+\end_layout
+
+\begin_layout Plain Layout
+
+31  = 0001 1111 
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0000 0000 = 0.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As 32 was the current value when we got zero, we return 64, which is the
+ next power of two to 64.
+ Return 
+\begin_inset Formula $2*32=64$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+If you look at the binary values above, you will see that we delete one
+ of the lower signifiant 1s each time we AND with 
+\begin_inset Formula $(value-1)$
+\end_inset
+
+.
+ When only a single 1 bit remains, the highest, we are done.
+\end_layout
+
+\begin_layout Standard
+Continuing with the above examples, let's now do 65.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+65 - 1 = 64
+\end_layout
+
+\begin_layout Plain Layout
+
+64  = 0100 0000
+\end_layout
+
+\begin_layout Plain Layout
+
+63  = 0011 1111
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0000 0000 = 0.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As before, the current value was 64 when we got a zero from the AND operation,
+ so we exit and return the result of 128.
+ That was quick!
+\end_layout
+
+\begin_layout Standard
+Looking good, what about 1?
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+1 - 1 = 0
+\end_layout
+
+\begin_layout Plain Layout
+
+0  = 0000 0000
+\end_layout
+
+\begin_layout Plain Layout
+
+-1 = 1111 1111
+\end_layout
+
+\begin_layout Plain Layout
+
+AND = 0000 0000 = 0.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In this example, the value when we hit zero was zero, so returning 
+\begin_inset Formula $2*0$
+\end_inset
+
+ is 
+\emph on
+not
+\emph default
+ the correct answer!
+\end_layout
+
+\begin_layout Standard
+It appears that 1 is a special case which the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:MC68008-Power2"
+
+\end_inset
+
+ must check for at the start.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; This code finds the value of the "Next Power of Two" for any
+\end_layout
+
+\begin_layout Plain Layout
+
+; given number.
+ The first few results are:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Call here with one (long) parameter.
+\end_layout
+
+\begin_layout Plain Layout
+
+; PRINT PEEK_L(start + 2) for the result.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start   bra.s   doit
+\end_layout
+
+\begin_layout Plain Layout
+
+result  ds.l    1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+doit    lea result,a1       ; Result address
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Special case.
+ If D1 is 1, we expect 2 as the result.
+ But
+\end_layout
+
+\begin_layout Plain Layout
+
+; we actually get 0.
+ This is because ANDing D0 with 1-1 = 0.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d1,d0        ; Passed parameter
+\end_layout
+
+\begin_layout Plain Layout
+
+        cmpi.l #1,d0        ; Was it 1?
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s done          ; Yes, return result (2)
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+setup
+\end_layout
+
+\begin_layout Plain Layout
+
+        subq.l #1,d0        ; D0 might be a power of 2
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d0,d2        ; TEMP is D2
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+loop    move.l d0,d1        ; D1 = D0
+\end_layout
+
+\begin_layout Plain Layout
+
+        subq.l #1,d1        ; D1 = (D0 - 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+        and.l d1,d2         ; TEMP = D0 & (D0 - 1)
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s done          ; Zero = no more set bits.
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d2,d0        ; D0 = TEMP
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne.s loop          ; Not done yet.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+done
+\end_layout
+
+\begin_layout Plain Layout
+
+        lsl.l #1,d0         ; D0 = 2 * D0
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d0,(a1)      ; Save the result
+\end_layout
+
+\begin_layout Plain Layout
+
+        clr.l d0
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MC68008 - Power2_asm
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:MC68008-Power2"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the code, the comments show the algorithm in use for any non-special
+ values – basically, anything that isn't 1 – and uses D2 as the TEMP register,
+ D0 is Value and D1 is Value - 1.
+\end_layout
+
+\begin_layout Standard
+D0 is loaded from D1 and has 1 subtracted in case it is already a power
+ of 2.
+ It is then copied into D2 ready for the main loop.
+ In the loop, D0 is again copied, this time over to D1, and has 1 subtracted.
+ This is ANDed with D2 and if the result is zero, we exit the loop and return
+ whatever is in D0 * 2.
+\end_layout
+
+\begin_layout Standard
+If the result is not yet zero, we copy D2 into D0 as the new value, and
+ try again from the top of the loop.
+ Eventually, we will get a zero result and will bale out with a value to
+ return.
+\end_layout
+
+\begin_layout Standard
+If the value passed was 1, then we copy that into D0 as normal, and test
+ for the special case.
+ If we find it, we skip over the main processing and return 
+\begin_inset Formula $1*2$
+\end_inset
+
+, which is the correct result.
+\end_layout
+
+\end_body
+\end_document

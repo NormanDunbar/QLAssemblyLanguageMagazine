@@ -1,0 +1,1640 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Reversing Bits
+\end_layout
+
+\begin_layout Standard
+Many years ago, I needed a routine to reverse the bits in a register so
+ that bit 0 ended up in bit 31, bit 31 was in bit 0 and so on.
+ I think I asked on the QL Mailing List and the responses I received were
+ pretty similar to the method I knew about - shifting bits right from the
+ input register through the Carry Flag and shifting left into another register.
+ It worked fine but I always thought that there would be a 
+\emph on
+better
+\emph default
+ solution.
+ I never found one.
+\end_layout
+
+\begin_layout Standard
+The other day, while doing some embedded (aka Arduino) fiddling, I found
+ a piece of code to reveres the order of bits in an 8 bit register, which
+ is what the Arduino's ATmega328P microcontroller has.
+ I had a look at the code and decided that I could adapt it to reverse all
+ 32 bits on a QL register.
+ This is what I came up with.
+\end_layout
+
+\begin_layout Standard
+Bear in mind that in order to reverse 32 bits through the Carry Flag you
+ only need three registers - the source, the destination and a counter for
+ the 32 shifts for each register.
+ That takes a total of 64 one bit shifts to reverse all the bits.
+\end_layout
+
+\begin_layout Section
+Reversing 2 Bits
+\end_layout
+
+\begin_layout Standard
+Might as well start easy.
+ If we start with the value 10 in our two bit register, we can reverse the
+ value to 01 as follows:
+\end_layout
+
+\begin_layout Itemize
+AND 10 
+\emph on
+with 10;
+\end_layout
+
+\begin_layout Itemize
+Shift the result 
+\emph on
+right
+\emph default
+ by one bit;
+\end_layout
+
+\begin_layout Itemize
+AND 10 with 01;
+\end_layout
+
+\begin_layout Itemize
+Shift the result 
+\emph on
+left
+\emph default
+ by 1 bit;
+\end_layout
+
+\begin_layout Itemize
+OR the results of the two AND operations.
+\end_layout
+
+\begin_layout Standard
+So much for the theory, let's see if it works:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+10 AND with 10 = 10.
+\end_layout
+
+\begin_layout Plain Layout
+
+10 >> 1 = 01.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+10 AND with 01 = 00.
+\end_layout
+
+\begin_layout Plain Layout
+
+00 << 1 = 00.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+10 OR 00 = 10.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Easy? We started with 10 and finished with 01, job done, we reversed the
+ two bits.
+ So far so good, lets up things a bit and see what happens with 4 bits.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Note:
+\series default
+ You can, if you wish, shift first then AND, it still works.
+\end_layout
+
+\begin_layout Section
+Reversing 4 Bits
+\end_layout
+
+\begin_layout Standard
+To reverse 4 bits, we would do something similar.
+ If we start with the value 1101, then all we have to do is:
+\end_layout
+
+\begin_layout Itemize
+AND 1101 with 1100;
+\end_layout
+
+\begin_layout Itemize
+Shift the result 
+\emph on
+right
+\emph default
+ by two bits;
+\end_layout
+
+\begin_layout Itemize
+AND 1101with 0011;
+\end_layout
+
+\begin_layout Itemize
+Shift the result 
+\emph on
+left
+\emph default
+ by two bits;
+\end_layout
+
+\begin_layout Itemize
+OR the two results of the AND operations.
+\end_layout
+
+\begin_layout Standard
+Again, let's see if it works:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+1101 AND 1100 = 1100.
+\end_layout
+
+\begin_layout Plain Layout
+
+1100 >> 2 = 0011.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+1101 AND 0011 = 0001.
+\end_layout
+
+\begin_layout Plain Layout
+
+0001 << 2 = 0100.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+0011 OR 0100 = 0111.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Oops! That's not quite right.
+ All we have really done, and indeed, in the first two bit example, is 
+\emph on
+swap
+\emph default
+ the top two bits with the bottom two bits, we have not 
+\emph on
+reversed
+\emph default
+ them.
+ We need to now swap the two pairs of two bit values in the above result,
+ 0111.
+ Let's continue.
+\end_layout
+
+\begin_layout Standard
+We are currently have 0111 as our intermediate result.
+ This is 2 two bit values, 01 and 11.
+ We know that swapping the 2 bits in a two bit value reverses them.
+ Can we now reverse the pair of two bit values 
+\emph on
+at the same time
+\emph default
+?
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+0111 AND 1010 = 0010.
+\end_layout
+
+\begin_layout Plain Layout
+
+0010 >> 1 = 0001.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+0111 AND 0101 = 0101.
+\end_layout
+
+\begin_layout Plain Layout
+
+0101 << 1 = 1010.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+0001 OR 1010 = 1011.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So, we started with 1101, swapped the two pairs of two bit values over,
+ then reversed both bits in each pair to receive the result 1011 which is
+ a complete bit reversal of the original 4 bits.
+ 
+\end_layout
+
+\begin_layout Section
+Reversing 8 Bit values
+\end_layout
+
+\begin_layout Standard
+In theory then, we should be able to start with 8 bits, swap the two pairs
+ of 4 bits over, then swap the 4 pairs of two bit values over, then reverse
+ the bits in those 4 two bit values.
+\end_layout
+
+\begin_layout Standard
+To swap the 4 bit values we follow the same principle as above:
+\end_layout
+
+\begin_layout Itemize
+AND the value with 11110000;
+\end_layout
+
+\begin_layout Itemize
+Shift the result 
+\emph on
+right
+\emph default
+ by 4 bits;
+\end_layout
+
+\begin_layout Itemize
+AND the value with 00001111;
+\end_layout
+
+\begin_layout Itemize
+Shift the result 
+\emph on
+left
+\emph default
+ by four bits;
+\end_layout
+
+\begin_layout Itemize
+OR the two results of the AND operations;
+\end_layout
+
+\begin_layout Itemize
+Then carry out the steps for a 4 bit swap but do two at a time;
+\end_layout
+
+\begin_layout Itemize
+Swap/reverse the bits in each of the resulting two bit values.
+\end_layout
+
+\begin_layout Standard
+Does it work? Lets try with $C9 or 11001001:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+11001001 AND 11110000 = 11000000.
+\end_layout
+
+\begin_layout Plain Layout
+
+11000000 >> 4 = 00001100.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+11001001 AND 00001111 = 00001001.
+\end_layout
+
+\begin_layout Plain Layout
+
+00001001 << 4 = 10010000.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+00001100 OR 10010000 = 10011100.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+That's the 2 four bit values exchanged, but not yet reversed.
+ We continue with the process to swap the 2 two bit values in each of the
+ 4 bit values:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+10011100 AND 11001100 = 10001100.
+\end_layout
+
+\begin_layout Plain Layout
+
+10001100 >> 2 = 00100011.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+10011100 AND 00110011 = 00010000.
+\end_layout
+
+\begin_layout Plain Layout
+
+00010000 << 2 = 01000000.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+00100011 OR 01000000 = 01100011.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now we simply reverse the bits in each of the 4 two bit values:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+01100011 AND 10101010 = 00100010.
+\end_layout
+
+\begin_layout Plain Layout
+
+00100010 >> 1 = 00010001.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+01100011 AND 01010101 = 01000001.
+\end_layout
+
+\begin_layout Plain Layout
+
+01000001 << 1 = 10000010.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+00010001 OR 10000010 = 10010011.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And that's working correctly too, 11001001 has been bit reversed to become
+ 10010011.
+\end_layout
+
+\begin_layout Section
+Reversing 16 Bit Values
+\end_layout
+
+\begin_layout Standard
+With a 16 bit value, we would:
+\end_layout
+
+\begin_layout Itemize
+Swap the pair of 8 bit values around;
+\end_layout
+
+\begin_layout Itemize
+Swap the 4 four bit values around;
+\end_layout
+
+\begin_layout Itemize
+Swap the 8 two bit values;
+\end_layout
+
+\begin_layout Itemize
+Reverse the 8 two bit values.
+\end_layout
+
+\begin_layout Standard
+Do you see a pattern developing? To swap the two n/2 bit values in an 'n'
+ bit value:
+\end_layout
+
+\begin_layout Itemize
+AND the value with a mask of n/2 ones and n/2 zeros;
+\end_layout
+
+\begin_layout Itemize
+Shift the value 
+\emph on
+right
+\emph default
+ by n/2 bits;
+\end_layout
+
+\begin_layout Itemize
+AND the value with a mask of n/2 zeros and n/2 ones;
+\end_layout
+
+\begin_layout Itemize
+Shift the value 
+\emph on
+left
+\emph default
+ by n/2 bits;
+\end_layout
+
+\begin_layout Itemize
+OR the two results to obtain a new value where the two n/2 bit values have
+ been swapped.
+\end_layout
+
+\begin_layout Standard
+This works all the way down until the final processing of two bit values
+ and swapping those over actually reverses the bit in the pairs of bits,
+ giving the final result.
+\end_layout
+
+\begin_layout Section
+Reversing 32 Bit Values
+\end_layout
+
+\begin_layout Standard
+You should be able to work out the bit shifts and masks required to swap
+ around the two 16 bit values in a 32 bit value? If you said 
+\begin_inset Quotes eld
+\end_inset
+
+Yes, use the 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+SWAP
+\end_layout
+
+\end_inset
+
+ instruction
+\begin_inset Quotes erd
+\end_inset
+
+ you would be correct - there is no need to do the 
+\emph on
+mask and shift dance
+\emph default
+ to swap them over, we already have a single instruction to do exactly that!
+\end_layout
+
+\begin_layout Standard
+It's time for some code.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Reverse32_asm-Header-comments"
+
+\end_inset
+
+ is the comments at the head of the file which explains how to call the
+ demo code from SuperBASIC or Assembly, and how to extract the result.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=1"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; A small function to reverse the bits in a long word.
+\end_layout
+
+\begin_layout Plain Layout
+
+; So, 1111 1111 0000 0000 1100 1100 1010 1010 will become
+\end_layout
+
+\begin_layout Plain Layout
+
+;     0101 0101 0011 0011 0000 0000 1111 1111
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Norman Dunbar
+\end_layout
+
+\begin_layout Plain Layout
+
+; June 25 2020.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Call this code from SuperBASIC as follows:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; CALL address, value
+\end_layout
+
+\begin_layout Plain Layout
+
+; PRINT bin$(PEEK_L(address + 2), 32)
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Where 'address' is the address of the label 'entry'.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; To use the code in Assembly:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Call 'reverse32Bits' with D0.L as the value to reverse.
+\end_layout
+
+\begin_layout Plain Layout
+
+; The code exits with the reversed bits in D0.L.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Reverse32_asm - Header Comments.
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Reverse32_asm-Header-comments"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Reverse32_asm-SuperBASIC-entry-point"
+
+\end_inset
+
+ is the SuperBASIC code entry point.
+ The code should be 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CALL
+\end_layout
+
+\end_inset
+
+ed and passed a single value to be bit reversed.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=left,firstnumber=20"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+entry
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   start
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+saveD0
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d1,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr.s   reverse32Bits
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     saveD0,a3
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d0,(a3)
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #0,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Reverse32_asm - SuperBASIC Entry Point.
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Reverse32_asm-SuperBASIC-entry-point"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As you cannot pass a value to register 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ from SuperBASIC, the value in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.L
+\end_layout
+
+\end_inset
+
+ is copied into 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+ and the bit reversal code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Reverse32_asm-Reverse32Bits"
+
+\end_inset
+
+ is called to reverse the bits.
+ The result is extracted from 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+ and stored in the long word at label 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+saveD0
+\end_layout
+
+\end_inset
+
+ from where it can be 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+PEEK_L
+\end_layout
+
+\end_inset
+
+'d by SuperBASIC to retrieve the reversed bit value.
+\end_layout
+
+\begin_layout Standard
+The code for the actual bit reversal is shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Reverse32_asm-Reverse32Bits"
+
+\end_inset
+
+.
+ This routine starts by saving all the working registers and testing 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ for zero.
+ Zero is already 
+\begin_inset Quotes eld
+\end_inset
+
+reversed
+\begin_inset Quotes erd
+\end_inset
+
+ so we bale out early if this special case is detected.
+\end_layout
+
+\begin_layout Standard
+If we intend to carry on, the table of mask values is assigned to 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A0
+\end_layout
+
+\end_inset
+
+ and we start by swapping over the two 16 bit values in the 32 bit register.
+ That's the simple bit out of the way.
+ The masks we have in the table are those we will use to swap over 16 bit
+ values, then 8, then 4 and finally the 16 pairs of two bit values.
+\end_layout
+
+\begin_layout Standard
+Register 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ holds the number of shifts we need to do at each step in the process.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=33"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+reverse32Bits
+\end_layout
+
+\begin_layout Plain Layout
+
+    movem.l d1-d4/a0,-(a7)  ; Save the workers
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0              ; Zero?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   reverseDone     ; Yes, done
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     maskTable,a0    ; Mask table
+\end_layout
+
+\begin_layout Plain Layout
+
+    swap    d0              ; The easy 16 bits are swapped...
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #8,d4           ; Shift counter
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+reverseLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  (a0)+,d1        ; Get first/next mask
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   reverseDone     ; Finished
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d1,d2           ; Copy mask
+\end_layout
+
+\begin_layout Plain Layout
+
+    not.l   d2              ; Invert mask copy
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d0,d3           ; Copy value
+\end_layout
+
+\begin_layout Plain Layout
+
+    and.l   d1,d0           ; Mask
+\end_layout
+
+\begin_layout Plain Layout
+
+    and.l   d2,d3           ; Inverted mask
+\end_layout
+
+\begin_layout Plain Layout
+
+    lsr.l   d4,d0           ; Shift top down
+\end_layout
+
+\begin_layout Plain Layout
+
+    lsl.l   d4,d3           ; Shift bottom up
+\end_layout
+
+\begin_layout Plain Layout
+
+    or.l    d3,d0           ; Combine the bits
+\end_layout
+
+\begin_layout Plain Layout
+
+    lsr.b   #1,d4           ; Reduce shift count
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   reverseLoop     ; And again
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+reverseDone
+\end_layout
+
+\begin_layout Plain Layout
+
+    movem.l (a7)+,d1-d4/a0  ; Restore workers
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+maskTable
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    $FF00FF00       ; 1111111100000000 1111111100000000
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    $F0F0F0F0       ; 1111000011110000 1111000011110000
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    $CCCCCCCC       ; 1100110011001100 1100110011001100
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    $AAAAAAAA       ; 1010101010101010 1010101010101010
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    0
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Reverse32_asm - Reverse32Bits Routine.
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Reverse32_asm-Reverse32Bits"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code at 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+reverseLoop
+\end_layout
+
+\end_inset
+
+ does all the hard work.
+ On entry 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A0.L
+\end_layout
+
+\end_inset
+
+ points at the first mask we need, so that is loaded into 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.L
+\end_layout
+
+\end_inset
+
+ and copied immediately to register 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.L
+\end_layout
+
+\end_inset
+
+ where the bits are inverted to give the second mask we need.
+ The 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+maskTable
+\end_layout
+
+\end_inset
+
+ only stores one of each pair of mask values.
+ If the mask value is zero, we are done and we exit the loop.
+\end_layout
+
+\begin_layout Standard
+The value to be reversed is copied into 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D3.L
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+ is 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+AND.L
+\end_layout
+
+\end_inset
+
+'d with the mask in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.L
+\end_layout
+
+\end_inset
+
+.
+ That gives the first result, prior to the shifts.
+ 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D3.L
+\end_layout
+
+\end_inset
+
+ is 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+AND.L
+\end_layout
+
+\end_inset
+
+'d with the inverted mask in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.L
+\end_layout
+
+\end_inset
+
+ which gives the second result, prior to the shifts.
+ 
+\end_layout
+
+\begin_layout Standard
+Both registers are then shifted in the appropriate direction by the number
+ of bits in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4.B
+\end_layout
+
+\end_inset
+
+ before the value in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D3.L
+\end_layout
+
+\end_inset
+
+ is 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+OR.L
+\end_layout
+
+\end_inset
+
+'d into 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+.
+ All that remains is to divide the shift count in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4.B
+\end_layout
+
+\end_inset
+
+ by two before we jump back into the top of the loop.
+\end_layout
+
+\begin_layout Standard
+When we are all done reversing the bits in 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+, we restore the working registers and return to the caller with the reversed
+ bits in register 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+The table at 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+maskTable
+\end_layout
+
+\end_inset
+
+ holds 4 masks which are used when swapping over the two n/2 bit values
+ in an n bit value.
+ As you can see only the mask for the first 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+AND.L
+\end_layout
+
+\end_inset
+
+ instruction is stored.
+ This is because the mask used in the second 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+AND.L
+\end_layout
+
+\end_inset
+
+ instruction is the inverted value, and the 
+\begin_inset listings
+lstparams "numbers=none,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+NOT.L
+\end_layout
+
+\end_inset
+
+ instruction will give us that mask.
+\end_layout
+
+\end_body
+\end_document

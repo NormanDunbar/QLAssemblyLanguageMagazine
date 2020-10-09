@@ -1,0 +1,260 @@
+\chapter{Powers of Two}
+
+Some more messing about with a bit of code I'm writing for my Arduino
+required a given number to be adjusted to the next power of two, unless
+that number was already a power of two. So, the value 6 is not a power
+of two and would result in a new value of 8, while 4 is already a
+power of two and thus, would not be changed.
+
+I managed to get this task accomplished \textendash{} it was for a
+circular buffer which can be set up at any size, but the size must
+be a power of two, and fit into 8 bits, unsigned \textendash{} in
+case you were wondering!
+
+As I'm a bit short on ideas for stuff to write about for this eComic,
+I wondered how easy it would be to convert a few hundred bytes of
+C++ code into Assembly Language? With a 68000 processor and George's
+GWASS assembler, it was rather simple, and took far less bytes than
+on my Arduino! It was a little more difficult with a 68008 and GWASL
+though.
+
+\section{The Algorithm}
+
+The way to determine the next power of 2 value for a number is reasonably
+simple, but there's a catch, a number might already be a power of
+2. This is ``easy'' to determine as there will be a single set bit
+in the number, so we could count the set bits to determine if the
+number is already a power, and return it if so. Too difficult! 
+\begin{itemize}
+\item Subtract 1 from the number;
+\item Find the most significant set bit;
+\item Work out a value for a number with just that bit set;
+\item Return double the number.
+\end{itemize}
+
+\subsection{How it Works}
+
+Ok, we know what to do, how does it work? And why subtract 1 at the
+start? Let us assume 8 bit values, for simplicity, and to stop me
+typing 32 ones or zeros across the page!
+
+If we take an example of the value 65, this has the binary value 0100
+0001. The highest set bit is bit 6 for a value of 64. But as there
+are other bits set in the number, 65 is obviously greater than 64.
+The next power of 2 greater than 65 is 128. Even though we didn't
+do the required subtraction, we would correctly return $2*64$, or
+128.
+
+If, on the other foot, the value we started with was 64, it has a
+binary value of 0100 0000. Returning $2*64$ would be 128, again,
+but this would be incorrect as 64 is already a power of 2, so the
+correct answer should be 64.
+
+So, adding in the subtraction this time, we start with 64 \textendash{}
+0100 0000 \textendash{} and subtract 1 to give 63, or 0011 1111. The
+highest bit set here is bit 5, for a value of 32. Returning $2*32$
+is indeed 64. But does that work with a higher value?
+
+Taking 65 again, we still have a binary value of 0100 0001. When we
+subtract 1 we get 64 \textendash{} 0100 0000 \textendash{} returning
+$2*64$ does indeed still give the correct result of 128.
+
+The algorithm works. Ok, what about zero? Does that end case work?
+
+Subtracting 1 from zero gives -1, or 1111 1111. The most significant
+bit set is bit 7 or 128. Returning $2*128$ would be 256, which has
+the lower 8 bits clear, or zero. The closest 8 bit power of 2 to zero
+is actually zero. This is incorrect as the closest power of 2 to zero
+is $2^{0}$ or 1. Hmmm.
+
+In my C++ code, I tested for this corner case, and simply returned
+zero. However, in the code in Listing \ref{lis:MC60000-Power2}, it
+actually doesn't need a corner case check as passing zero does correctly
+result in 1 being returned. Spooky!
+
+\section{Easy Version for 68000}
+
+The code in Listing \ref{lis:MC60000-Power2} is the entire routine.
+It is a massive 38 bytes long.
+
+\begin{lstlisting}[caption={MC60000 - Power2\_asm},label={lis:MC60000-Power2},breaklines=true,showstringspaces=false,tabsize=4]
+; This code finds the value of the "Next Power of Two" for any
+; given number. 
+;
+; Call here with one (long) parameter.
+; PRINT PEEK_L(start + 2) for the result.
+
+start   bra.s   doit
+result  ds.l    1
+
+doit    lea result,a1       ; Result address
+        move.l d1,d0        ; Passed parameter
+        subq.l #1,d0        ; D0 might be a power of 2
+        bfffo d0{0:32},d1   ; Find first 1 bit
+
+; If we find a set bit, D1 has the "offset". Bit 31 = offset 0,
+; bit 30 = offset 1 and so on. The bits are numbered from the
+; MSB which is not the normal manner. To convert, subtract the
+; offset from 31 to get the required bit number.
+
+        neg.l d1            ; D1 = -D1
+        add.l #31,d1        ; Same as subtracting!
+        addq.l #1,d1        ; Just because!
+        moveq #0,d2         ; For the result
+        bset d1,d2          ; Set the result bit.
+        move.l d2,(a1)      ; Save the result
+
+done
+        clr.l d0
+        rts
+\end{lstlisting}
+
+The value we pass in will end up in register D1. For some reason,
+I copy that into D0 (I forget why I did that!) but I could have saved
+a couple of bytes here and there by leaving it alone! Silly me.
+
+Anyway, the next step is to subtract 1 from D0 and then look for the
+most significant set bit. On the 68000 we have the ability to use
+bit fields, so that's what the \lstinline[showstringspaces=false,tabsize=4]!bfffo d0{0:32},d1!
+instruction does, it stands for \emph{Bit Fields Find First One}.
+It looks in D0, starting at \emph{offset} 0 for 32 bits, for the first
+set 1 bit. If there are no set bits, the Z flag will be set, and D1
+will take on the bit field width, or 32, as it's value. 
+
+If there is a set bit, its \emph{offset} will be placed in D1, however,
+the offset is not the actual bit number. The offset, as the comments
+indicate, is counted from bit 31 down towards bit 0. Normally we count
+bits from the least significant end but not in a bit field, they count
+from the most significant end. Confusing or what. We can easily convert
+an offset into a bit number simply by subtracting it from 31.
+
+We subtract D1 from 31 in the roundabout way of negating D1 and adding
+31 to it as $-D1+31=31-D1$.
+
+\section{Hard Version for 68008}
+
+That was the easy case, when using the 68000 (and higher) processor's
+useful \lstinline[showstringspaces=false,tabsize=4]!bfffo! instruction,
+what about the original QL's 68008 processor - it doesn't have this
+instruction?
+
+Ok, going back to the examples above with 64 \textendash{} a power
+of 2 already \textendash{} first. If we AND a value with the value
+minus 1, and keep going until we get a zero answer, we have detected
+the leftmost set bit. For example:
+\begin{itemize}
+\item Value = ??
+\item Value = Value - 1 (in case it's already a power of 2)
+\item Repeat loop
+\item If (value and (value - 1)) = 0, return value {*} 2
+\item Else value = (value \& (value - 1))
+\item End repeat loop
+\end{itemize}
+For the initial value of 64, 0100 0000, we have:
+
+\begin{lstlisting}[showstringspaces=false,tabsize=4]
+64 - 1 = 63
+63  = 0011 1111
+62  = 0011 1110
+AND = 0011 1110 = 62
+61  = 0011 1101 
+AND = 0011 1100 = 60
+59  = 0011 1011
+AND = 0011 1000 = 56
+55  = 0011 0111
+AND = 0011 0000 = 48
+47  = 0010 1111
+AND = 0010 0000 = 32
+31  = 0001 1111 
+AND = 0000 0000 = 0.
+\end{lstlisting}
+
+As 32 was the current value when we got zero, we return 64, which
+is the next power of two to 64. Return $2*32=64$.
+
+If you look at the binary values above, you will see that we delete
+one of the lower signifiant 1s each time we AND with $(value-1)$.
+When only a single 1 bit remains, the highest, we are done.
+
+Continuing with the above examples, let's now do 65.
+
+\begin{lstlisting}[showstringspaces=false,tabsize=4]
+65 - 1 = 64
+64  = 0100 0000
+63  = 0011 1111
+AND = 0000 0000 = 0.
+\end{lstlisting}
+
+As before, the current value was 64 when we got a zero from the AND
+operation, so we exit and return the result of 128. That was quick!
+
+Looking good, what about 1?
+
+\begin{lstlisting}[showstringspaces=false,tabsize=4]
+1 - 1 = 0
+0  = 0000 0000
+-1 = 1111 1111
+AND = 0000 0000 = 0.
+\end{lstlisting}
+
+In this example, the value when we hit zero was zero, so returning
+$2*0$ is \emph{not} the correct answer!
+
+It appears that 1 is a special case which the code in Listing \ref{lis:MC68008-Power2}
+must check for at the start.
+
+\begin{lstlisting}[caption={MC68008 - Power2\_asm},label={lis:MC68008-Power2}]
+; This code finds the value of the "Next Power of Two" for any
+; given number. The first few results are:
+;
+; Call here with one (long) parameter.
+; PRINT PEEK_L(start + 2) for the result.
+
+start   bra.s   doit
+result  ds.l    1
+
+doit    lea result,a1       ; Result address
+
+; Special case. If D1 is 1, we expect 2 as the result. But
+; we actually get 0. This is because ANDing D0 with 1-1 = 0.
+
+        move.l d1,d0        ; Passed parameter
+        cmpi.l #1,d0        ; Was it 1?
+        beq.s done          ; Yes, return result (2)
+
+setup
+        subq.l #1,d0        ; D0 might be a power of 2
+        move.l d0,d2        ; TEMP is D2
+
+loop    move.l d0,d1        ; D1 = D0
+        subq.l #1,d1        ; D1 = (D0 - 1)
+        and.l d1,d2         ; TEMP = D0 & (D0 - 1)
+        beq.s done          ; Zero = no more set bits.
+        move.l d2,d0        ; D0 = TEMP
+        bne.s loop          ; Not done yet.
+
+done
+        lsl.l #1,d0         ; D0 = 2 * D0
+        move.l d0,(a1)      ; Save the result
+        clr.l d0
+        rts
+
+\end{lstlisting}
+
+In the code, the comments show the algorithm in use for any non-special
+values \textendash{} basically, anything that isn't 1 \textendash{}
+and uses D2 as the TEMP register, D0 is Value and D1 is Value - 1.
+
+D0 is loaded from D1 and has 1 subtracted in case it is already a
+power of 2. It is then copied into D2 ready for the main loop. In
+the loop, D0 is again copied, this time over to D1, and has 1 subtracted.
+This is ANDed with D2 and if the result is zero, we exit the loop
+and return whatever is in D0 {*} 2.
+
+If the result is not yet zero, we copy D2 into D0 as the new value,
+and try again from the top of the loop. Eventually, we will get a
+zero result and will bale out with a value to return.
+
+If the value passed was 1, then we copy that into D0 as normal, and
+test for the special case. If we find it, we skip over the main processing
+and return $1*2$, which is the correct result.

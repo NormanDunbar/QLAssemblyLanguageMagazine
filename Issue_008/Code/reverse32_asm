@@ -1,0 +1,57 @@
+; A small function to reverse the bits in a long word.
+; So, 1111 1111 0000 0000 1100 1100 1010 1010 will become
+;     0101 0101 0011 0011 0000 0000 1111 1111
+;
+; Norman Dunbar
+; June 25 2020.
+;
+; Enter with D0.L as the value to reverse.
+; Exit with D0.L as the reversed value.
+;
+entry
+    bra.s   start
+saveD0
+    dc.l    1
+
+start
+    move.l  d1,d0
+    bsr.s   reverse32Bits
+    lea     saveD0,a3
+    move.l  d0,(a3)
+    moveq   #0,d0
+    rts
+
+reverse32Bits
+    movem.l d1-d4/a0,-(a7)  ; Save the workers
+    tst.l   d0              ; Zero?
+    beq.s   reverseDone     ; Yes, done
+    lea     maskTable,a0    ; Mask table
+    swap    d0              ; The easy 16 bits are swapped...
+    moveq   #8,d4           ; Shift counter
+
+reverseLoop
+    move.l  (a0)+,d1        ; Get first/next mask
+    beq.s   reverseDone     ; Finished
+    move.l  d1,d2           ; Copy mask
+    not.l   d2              ; Invert mask copy
+    move.l  d0,d3           ; Copy value
+    and.l   d1,d0           ; Mask
+    and.l   d2,d3           ; Inverted mask
+    lsr.l   d4,d0           ; Shift top down
+    lsl.l   d4,d3           ; Shift bottom up
+    or.l    d3,d0           ; Combine the bits
+    lsr.b   #1,d4           ; Reduce shift count
+    bra.s   reverseLoop     ; And again
+
+reverseDone
+    movem.l (a7)+,d1-d4/a0  ; Restore workers
+    rts
+
+maskTable
+    dc.l    $FF00FF00       ; 1111111100000000 1111111100000000
+    dc.l    $F0F0F0F0       ; 1111000011110000 1111000011110000
+    dc.l    $CCCCCCCC       ; 1100110011001100 1100110011001100
+    dc.l    $AAAAAAAA       ; 1010101010101010 1010101010101010
+    dc.l    0
+
+
