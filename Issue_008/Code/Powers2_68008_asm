@@ -1,0 +1,41 @@
+; This code finds the value of the "Next Power of Two" for any
+; given number. The first few results are:
+;
+; Call here with one (long) parameter.
+; PRINT PEEK_L(start + 2) for the result.
+
+start   bra.s   doit
+result  ds.l    1
+
+doit    lea result,a1       ; Result address
+
+; Special case. If D1 is 1, we expect 2 as the result. But
+; we actually get 0. This is because ANDing D0 with 1-1 = 0.
+
+        move.l d1,d0        ; Passed parameter
+        cmpi.l #1,d0        ; Was it 1?
+        beq.s done          ; Yes, return result (2)
+
+setup
+        subq.l #1,d0        ; D0 might be a power of 2
+        move.l d0,d2        ; TEMP is D2
+
+; LOOP
+;   TEMP = D0 & (D0 - 1)
+;   If TEMP = 0, return 2 * D0
+;   D0 = TEMP
+; END LOOP
+
+loop    move.l d0,d1        ; D1 = D0
+        subq.l #1,d1        ; D1 = (D0 - 1)
+        and.l d1,d2         ; TEMP = D0 & (D0 - 1)
+        beq.s done          ; Zero = no more set bits.
+        move.l d2,d0        ; D0 = TEMP
+        bne.s loop          ; Not done yet.
+
+done
+        lsl.l #1,d0         ; D0 = 2 * D0
+        move.l d0,(a1)      ; Save the result
+        clr.l d0
+        rts
+
