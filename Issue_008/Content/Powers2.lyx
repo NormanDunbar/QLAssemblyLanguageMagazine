@@ -244,9 +244,9 @@ I managed to get this task accomplished – it was for a circular buffer which
 \begin_layout Standard
 As I'm a bit short on ideas for stuff to write about for this eComic, I
  wondered how easy it would be to convert a few hundred bytes of C++ code
- into Assembly Language? With a 68000 processor and George's GWASS assembler,
- it was rather simple, and took far less bytes than on my Arduino! It was
- a little more difficult with a 68008 and GWASL though.
+ into Assembly Language? With a 68020 processor, or QPC2, and George's GWASS
+ assembler, it was rather simple, and took far less bytes than on my Arduino!
+ It was a little more difficult with a 68008 and GWASL though.
 \end_layout
 
 \begin_layout Section
@@ -369,7 +369,7 @@ In my C++ code, I tested for this corner case, and simply returned zero.
  However, in the code in Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "lis:MC60000-Power2"
+reference "lis:MC60020-Power2"
 
 \end_inset
 
@@ -379,14 +379,14 @@ reference "lis:MC60000-Power2"
 \end_layout
 
 \begin_layout Section
-Easy Version for 68000
+Easy Version for 68020
 \end_layout
 
 \begin_layout Standard
 The code in Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "lis:MC60000-Power2"
+reference "lis:MC60020-Power2"
 
 \end_inset
 
@@ -549,10 +549,10 @@ done
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-MC60000 - Power2_asm
+MC60020 - Power2_asm
 \begin_inset CommandInset label
 LatexCommand label
-name "lis:MC60000-Power2"
+name "lis:MC60020-Power2"
 
 \end_inset
 
@@ -579,16 +579,16 @@ The value we pass in will end up in register D1.
 \begin_layout Standard
 Anyway, the next step is to subtract 1 from D0 and then look for the most
  significant set bit.
- On the 68000 we have the ability to use bit fields, so that's what the
+ On the 68020 we have the ability to use bit fields, so that's what the
  
 \begin_inset listings
-lstparams "showstringspaces=false,tabsize=4"
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
 inline true
 status open
 
 \begin_layout Plain Layout
 
-bfffo d0{0:32},d1
+BFFFO D0{0:32},D1
 \end_layout
 
 \end_inset
@@ -637,16 +637,15 @@ Hard Version for 68008
 \end_layout
 
 \begin_layout Standard
-That was the easy case, when using the 68000 (and higher) processor's useful
- 
+That was the easy case, when using the 68020 processor's useful 
 \begin_inset listings
-lstparams "showstringspaces=false,tabsize=4"
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
 inline true
 status open
 
 \begin_layout Plain Layout
 
-bfffo
+BFFFO
 \end_layout
 
 \end_inset
@@ -692,7 +691,7 @@ For the initial value of 64, 0100 0000, we have:
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "showstringspaces=false,tabsize=4"
+lstparams "showstringspaces=false,tabsize=0,numbers=none"
 inline false
 status open
 
@@ -783,7 +782,7 @@ As 32 was the current value when we got zero, we return 64, which is the
 
 \begin_layout Standard
 If you look at the binary values above, you will see that we delete one
- of the lower signifiant 1s each time we AND with 
+ of the lower significant 1s each time we AND with 
 \begin_inset Formula $(value-1)$
 \end_inset
 
@@ -797,7 +796,7 @@ Continuing with the above examples, let's now do 65.
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "showstringspaces=false,tabsize=4"
+lstparams "showstringspaces=false,tabsize=4,numbers=none"
 inline false
 status open
 
@@ -838,7 +837,7 @@ Looking good, what about 1?
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "showstringspaces=false,tabsize=4"
+lstparams "showstringspaces=false,tabsize=4,numbers=none"
 inline false
 status open
 
@@ -888,6 +887,15 @@ reference "lis:MC68008-Power2"
 \end_inset
 
  must check for at the start.
+ This code assembles to a massive 44 bytes – slightly larger than the 68020
+ code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:MC60020-Power2"
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -1121,6 +1129,45 @@ If the value passed was 1, then we copy that into D0 as normal, and test
 \end_inset
 
 , which is the correct result.
+\end_layout
+
+\begin_layout Section*
+Make a Procedure?
+\end_layout
+
+\begin_layout Standard
+It shouldn't be too hard to convert one of the two listings above into a
+ working SuperBASIC function:
+\end_layout
+
+\begin_layout Itemize
+Fetch one parameter as a long integer into D1;
+\end_layout
+
+\begin_layout Itemize
+Call the code to do the working out, but grab D0 at the end as opposed to
+ storing it;
+\end_layout
+
+\begin_layout Itemize
+Allocate 2 extra bytes of maths stack for the result – there's 4 on there
+ already;
+\end_layout
+
+\begin_layout Itemize
+Convert D0.L to a float and save on the maths stack;
+\end_layout
+
+\begin_layout Itemize
+Set D3 for a float;
+\end_layout
+
+\begin_layout Itemize
+Clear D0;
+\end_layout
+
+\begin_layout Itemize
+Done.
 \end_layout
 
 \end_body

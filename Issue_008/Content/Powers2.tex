@@ -13,10 +13,10 @@ case you were wondering!
 
 As I'm a bit short on ideas for stuff to write about for this eComic,
 I wondered how easy it would be to convert a few hundred bytes of
-C++ code into Assembly Language? With a 68000 processor and George's
-GWASS assembler, it was rather simple, and took far less bytes than
-on my Arduino! It was a little more difficult with a 68008 and GWASL
-though.
+C++ code into Assembly Language? With a 68020 processor, or QPC2,
+and George's GWASS assembler, it was rather simple, and took far less
+bytes than on my Arduino! It was a little more difficult with a 68008
+and GWASL though.
 
 \section{The Algorithm}
 
@@ -68,16 +68,16 @@ is actually zero. This is incorrect as the closest power of 2 to zero
 is $2^{0}$ or 1. Hmmm.
 
 In my C++ code, I tested for this corner case, and simply returned
-zero. However, in the code in Listing \ref{lis:MC60000-Power2}, it
+zero. However, in the code in Listing \ref{lis:MC60020-Power2}, it
 actually doesn't need a corner case check as passing zero does correctly
 result in 1 being returned. Spooky!
 
-\section{Easy Version for 68000}
+\section{Easy Version for 68020}
 
-The code in Listing \ref{lis:MC60000-Power2} is the entire routine.
+The code in Listing \ref{lis:MC60020-Power2} is the entire routine.
 It is a massive 38 bytes long.
 
-\begin{lstlisting}[caption={MC60000 - Power2\_asm},label={lis:MC60000-Power2},breaklines=true,showstringspaces=false,tabsize=4]
+\begin{lstlisting}[caption={MC60020 - Power2\_asm},label={lis:MC60020-Power2},breaklines=true,showstringspaces=false,tabsize=4]
 ; This code finds the value of the "Next Power of Two" for any
 ; given number. 
 ;
@@ -114,8 +114,8 @@ I copy that into D0 (I forget why I did that!) but I could have saved
 a couple of bytes here and there by leaving it alone! Silly me.
 
 Anyway, the next step is to subtract 1 from D0 and then look for the
-most significant set bit. On the 68000 we have the ability to use
-bit fields, so that's what the \lstinline[showstringspaces=false,tabsize=4]!bfffo d0{0:32},d1!
+most significant set bit. On the 68020 we have the ability to use
+bit fields, so that's what the \lstinline[basicstyle={\ttfamily}]!BFFFO D0{0:32},D1!
 instruction does, it stands for \emph{Bit Fields Find First One}.
 It looks in D0, starting at \emph{offset} 0 for 32 bits, for the first
 set 1 bit. If there are no set bits, the Z flag will be set, and D1
@@ -133,10 +133,9 @@ We subtract D1 from 31 in the roundabout way of negating D1 and adding
 
 \section{Hard Version for 68008}
 
-That was the easy case, when using the 68000 (and higher) processor's
-useful \lstinline[showstringspaces=false,tabsize=4]!bfffo! instruction,
-what about the original QL's 68008 processor - it doesn't have this
-instruction?
+That was the easy case, when using the 68020 processor's useful \lstinline[basicstyle={\ttfamily},showstringspaces=false,tabsize=4]!BFFFO!
+instruction, what about the original QL's 68008 processor - it doesn't
+have this instruction?
 
 Ok, going back to the examples above with 64 \textendash{} a power
 of 2 already \textendash{} first. If we AND a value with the value
@@ -152,7 +151,7 @@ the leftmost set bit. For example:
 \end{itemize}
 For the initial value of 64, 0100 0000, we have:
 
-\begin{lstlisting}[showstringspaces=false,tabsize=4]
+\begin{lstlisting}[numbers=none]
 64 - 1 = 63
 63  = 0011 1111
 62  = 0011 1110
@@ -173,12 +172,12 @@ As 32 was the current value when we got zero, we return 64, which
 is the next power of two to 64. Return $2*32=64$.
 
 If you look at the binary values above, you will see that we delete
-one of the lower signifiant 1s each time we AND with $(value-1)$.
+one of the lower significant 1s each time we AND with $(value-1)$.
 When only a single 1 bit remains, the highest, we are done.
 
 Continuing with the above examples, let's now do 65.
 
-\begin{lstlisting}[showstringspaces=false,tabsize=4]
+\begin{lstlisting}[showstringspaces=false,tabsize=4,numbers=none]
 65 - 1 = 64
 64  = 0100 0000
 63  = 0011 1111
@@ -190,7 +189,7 @@ operation, so we exit and return the result of 128. That was quick!
 
 Looking good, what about 1?
 
-\begin{lstlisting}[showstringspaces=false,tabsize=4]
+\begin{lstlisting}[showstringspaces=false,tabsize=4,numbers=none]
 1 - 1 = 0
 0  = 0000 0000
 -1 = 1111 1111
@@ -201,7 +200,8 @@ In this example, the value when we hit zero was zero, so returning
 $2*0$ is \emph{not} the correct answer!
 
 It appears that 1 is a special case which the code in Listing \ref{lis:MC68008-Power2}
-must check for at the start.
+must check for at the start. This code assembles to a massive 44 bytes
+\textendash{} slightly larger than the 68020 code in Listing \ref{lis:MC60020-Power2}.
 
 \begin{lstlisting}[caption={MC68008 - Power2\_asm},label={lis:MC68008-Power2}]
 ; This code finds the value of the "Next Power of Two" for any
@@ -258,3 +258,20 @@ zero result and will bale out with a value to return.
 If the value passed was 1, then we copy that into D0 as normal, and
 test for the special case. If we find it, we skip over the main processing
 and return $1*2$, which is the correct result.
+
+\section*{Make a Procedure?}
+
+It shouldn't be too hard to convert one of the two listings above
+into a working SuperBASIC function:
+\begin{itemize}
+\item Fetch one parameter as a long integer into D1;
+\item Call the code to do the working out, but grab D0 at the end as opposed
+to storing it;
+\item Allocate 2 extra bytes of maths stack for the result \textendash{}
+there's 4 on there already;
+\item Convert D0.L to a float and save on the maths stack;
+\item Set D3 for a float;
+\item Clear D0;
+\item Done.
+\end{itemize}
+
