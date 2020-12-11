@@ -1,0 +1,1274 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Random Stuff
+\end_layout
+
+\begin_layout Standard
+Ever needed some randomisation in your assembly code? No, neither have I
+ until recently when I suddenly had a need to generate random numbers from
+ 1 to 6 inclusive.
+ How is this possible, given that there are no apparent vectors or traps
+ to grab hold of a random number?
+\end_layout
+
+\begin_layout Standard
+I could have cheated and had a look through my copies of 68000 coding books
+ – but that would have been in breach of copyright, probably, and best avoided.
+ So I did the next best thing, I stole some code from the SMSQ sources!
+\end_layout
+
+\begin_layout Standard
+Almost nothing in the following is my own work, I have stolen it, and only
+ slightly modified it to suit what I needed it for.
+ It does work though, I'm happily generating numbers from 1 to 6 inclusive,
+ and no, it is not a dice (die) that I'm emulating even if the same numbers
+ are involved!
+\end_layout
+
+\begin_layout Section
+Random Seed
+\end_layout
+
+\begin_layout Standard
+The code I was working on is to be used in a job, so I have a storage location
+ for my random seed which is an offset from the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A6
+\end_layout
+
+\end_inset
+
+ register.
+ The following code takes that into consideration.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=1"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+; In job code, this is an offset from the A6 register.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+myRandSeed  equ     0
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; The job code starts here
+\end_layout
+
+\begin_layout Plain Layout
+
+start       bra.s   myCode
+\end_layout
+
+\begin_layout Plain Layout
+
+            dc.l    0
+\end_layout
+
+\begin_layout Plain Layout
+
+            dc.w    $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+fname
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    fname_e-fname-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b    "My Job's Name"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+fname_e
+\end_layout
+
+\begin_layout Plain Layout
+
+    equ     *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+myCode
+\end_layout
+
+\begin_layout Plain Layout
+
+    adda.l  a4,a6               ; A6 points to our data
+\end_layout
+
+\begin_layout Plain Layout
+
+    clr.l   d1                  ; Randomise the date
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr     randomise           ; Do it
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+                         ; Do stuff
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr     rnd                 ; Generate a word 1 to 6 inclusive
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+                         ; Do more stuff
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+The random seed
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The purpose of the job code is not relevant here, it will become apparent,
+ I hope, when I get it finished – either in this edition or a future one.
+ Coming soon
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Given my record, for certain values of 
+\begin_inset Quotes eld
+\end_inset
+
+soon
+\begin_inset Quotes erd
+\end_inset
+
+!
+\end_layout
+
+\end_inset
+
+ and all that!
+\end_layout
+
+\begin_layout Standard
+I could have used the system random seed for my own numbers, but I thought
+ about it and didn't want to mess up any other programs that could be running
+ but which depend on a certain set of random numbers based on a starting
+ random seed.
+ Unlikely, perhaps, but I decided to avoid the problem.
+\end_layout
+
+\begin_layout Section
+Randomisation
+\end_layout
+
+\begin_layout Standard
+Now that we have the seed variable, we will need a manner of initialising
+ it with a new value.
+ SuperBASIC does this by taking the clock's value in seconds if we don't
+ supply a value ourselves, so that's good enough for me too.
+ You will note from the comments that this code is stolen and only amended
+ in a minor manner for my own needs.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=24"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; This is effectively ramdomise(date).
+ The code is exactly as
+\end_layout
+
+\begin_layout Plain Layout
+
+; per the SBasic RANDOMISE function.
+ I stole the code! 
+\end_layout
+
+\begin_layout Plain Layout
+
+; (sbsext/ext/rnd.asm)
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Enter with D1.L = 0 to randomise(date) or with D1.L = some
+\end_layout
+
+\begin_layout Plain Layout
+
+; specified value to randomise(D1).
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Preserves all registers.
+\end_layout
+
+\begin_layout Plain Layout
+
+;------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+randomise
+\end_layout
+
+\begin_layout Plain Layout
+
+    movem.l d0-d2/a0,-(a7)      ; Save workers
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d1                  ; D1 passed with a value?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   randomise_d1        ; Yes, skip the date
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #mt_rclck,d0        ; Read clock into D1
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #1                  ; No errors, no need to
+\end_layout
+
+\begin_layout Plain Layout
+
+;                               ; call doTrap1.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+randomise_d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d1,d2               ; D1 = D2 = HHHH LLLL
+\end_layout
+
+\begin_layout Plain Layout
+
+    swap    d1                  ; D1 = LLLL HHHH
+\end_layout
+
+\begin_layout Plain Layout
+
+    add.l   d2,d1               ; D1 = (LLLL+HHHH) (HHHH+LLLL)
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d1,myRandSeed(a6)   ; Save random seed
+\end_layout
+
+\begin_layout Plain Layout
+
+    movem.l (a7)+,d0-d2/a0      ; restore workers
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Randomise function
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code should call the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+randomise
+\end_layout
+
+\end_inset
+
+ entry point either with 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.L
+\end_layout
+
+\end_inset
+
+ holding zero, or the required starting value for our seed.
+ If we passed zero in D1, then the current date, in seconds, is read from
+ the system and used as a starting point.
+\end_layout
+
+\begin_layout Standard
+Arriving a label 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+randomise_d1
+\end_layout
+
+\end_inset
+
+, we have a non-zero value in D1.L and can use it to randomise the system.
+ The value is copied into 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.L
+\end_layout
+
+\end_inset
+
+ for safety, then D1 is swapped over to put the low word into the high word
+ and vice versa.
+ If we started with 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.L
+\end_layout
+
+\end_inset
+
+ holding $12345678 we end up with $56781234.
+ This value is then added to the original seed value in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.L
+\end_layout
+
+\end_inset
+
+ to give, in this example, $68AC68AC.
+\end_layout
+
+\begin_layout Standard
+Whenever 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+randomise
+\end_layout
+
+\end_inset
+
+ is called, we end up with a new random seed which has the high and low
+ words identical.
+ However, as soon as we begin using the seed, that changes.
+ Read on.
+\end_layout
+
+\begin_layout Section
+Random Generation
+\end_layout
+
+\begin_layout Standard
+Before we continue, can I just point out that I am by no means a mathematician
+ and while I can look at what the code is doing, I have no idea what formula
+ it is using to do it! 
+\end_layout
+
+\begin_layout Standard
+The first problem is to generate a random number from the random seed and
+ to update the seed.
+ We need to do this to avoid generating the same value over and over again!
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=49"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; This is effectively RND(1 TO 6).
+ The code does exactly as
+\end_layout
+
+\begin_layout Plain Layout
+
+; per the SuperBASIC RND() function.
+ I stole the code!
+\end_layout
+
+\begin_layout Plain Layout
+
+; (sbsext/ext/rnd.asm)
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D1 = Bottom of range = 1.
+\end_layout
+
+\begin_layout Plain Layout
+
+; D2 = Top of range + 1 = 7.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Returns D1.W as RND(1 to 6) and obviously trashes D1.
+\end_layout
+
+\begin_layout Plain Layout
+
+;------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+rnd
+\end_layout
+
+\begin_layout Plain Layout
+
+    movem.l d0/d2/d4,-(a7)      ; Save workers
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  myRandSeed(a6),d0   ; Get seed value
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d0,d4               ; Copy low word ???? LLLL
+\end_layout
+
+\begin_layout Plain Layout
+
+    swap    d0                  ; LLLL HHHH
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    #$c12d,d0           ; D0.L = HHHH * 49453
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    #$712d,d4           ; D4.L = LLLL * 28973
+\end_layout
+
+\begin_layout Plain Layout
+
+    swap    d0                  ; HHHH LLLL
+\end_layout
+
+\begin_layout Plain Layout
+
+    clr.w   d0                  ; HHHH 0000
+\end_layout
+
+\begin_layout Plain Layout
+
+    add.l   d0,d4               ; I have no idea!
+\end_layout
+
+\begin_layout Plain Layout
+
+    addq.l  #1,d4               ; New seed
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d4,myRandSeed(a6)   ; Save seed
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Rnd 1 to 6 function - Part 1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After saving the registers we will be working with, except 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+ which we use to return the random number later, we grab hold of the random
+ seed and start messing about with it to generate a new seed.
+ 
+\end_layout
+
+\begin_layout Standard
+The high word of the seed, in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+, is multiplied by 49,453 and the low word, in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+, by 28,973 neither of which are prime.
+ Both are divisible by 7 if you don't fancy working it out! The resulting
+ long word is 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ is swapped and added to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ before 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ is incremented.
+ This is our new random seed and is saved accordingly ready for the next
+ call to the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+rnd
+\end_layout
+
+\end_inset
+
+ routine.
+\end_layout
+
+\begin_layout Standard
+If you want to work through an example:
+\end_layout
+
+\begin_layout Standard
+The original seed, $68AC68AC, is copied to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+.
+ After swapping 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+, which has no real effect on the first call after a call to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+randomise
+\end_layout
+
+\end_inset
+
+, we end up with 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+ = $68AC68AC and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4.L
+\end_layout
+
+\end_inset
+
+ = $xxxx68AC.
+ We are going to multiply so the high word of 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ is of no interest.
+\end_layout
+
+\begin_layout Standard
+After the two multiplications, we now have 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0.L
+\end_layout
+
+\end_inset
+
+ = $68AC * $C12D = $4EFC123C and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4.L
+\end_layout
+
+\end_inset
+
+ = $68AC * $712D = $2E46523C.
+\end_layout
+
+\begin_layout Standard
+Swapping 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D0
+\end_layout
+
+\end_inset
+
+ and clearing the low word gives $123C0000 which we then add to 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ to get $4082523C which is then incremented to $4082523D and used as the
+ next random seed.
+\end_layout
+
+\begin_layout Standard
+After all that, we are now, 
+\emph on
+finally
+\emph default
+, ready to generate the random integer between 1 and 6 that we want.
+\end_layout
+
+\begin_layout Standard
+The code below is designed
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+For certain values of 
+\begin_inset Quotes eld
+\end_inset
+
+designed
+\begin_inset Quotes erd
+\end_inset
+
+!
+\end_layout
+
+\end_inset
+
+ to only generate a random number between 1 and 6, inclusive, and these
+ two values are hard coded into registers 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2
+\end_layout
+
+\end_inset
+
+.
+ Should you wish to generalise the following code to pass your own ranges,
+ it should be quite simple.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=71"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+rndOneToSix
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #1,d1               ; Bottom of range
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #6+1,d2             ; Top of range + 1
+\end_layout
+
+\begin_layout Plain Layout
+
+    sub.w   d1,d2               ; Size of range
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Rnd 1 to 6 function - Part 2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+First we work out the range of values that we need.
+ This is 
+\begin_inset Formula $\left(D2+1\right)-D1$
+\end_inset
+
+ which in this case, always works out as 
+\begin_inset Formula $\left(6+1\right)-1$
+\end_inset
+
+ giving a range of 6.
+ At this point we have a random
+\end_layout
+
+\begin_layout Standard
+long integer in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ and a range in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=75"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+    swap    d4                  ; LLLL HHHH of seed
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    d2,d4               ; D4.HHHH * top
+\end_layout
+
+\begin_layout Plain Layout
+
+    swap    d4                  ; Take top word
+\end_layout
+
+\begin_layout Plain Layout
+
+    add.w   d4,d1               ; Add range bottom
+\end_layout
+
+\begin_layout Plain Layout
+
+;                               ; D1 = RND(1 to 6)
+\end_layout
+
+\begin_layout Plain Layout
+
+    movem.l (a7)+,d0/d2/d4      ; Restore workers.
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Rnd 1 to 6 function - Part 3
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Now, for some unknown reason, we swap 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+, our new random number and seed, and multiply the previous high word by
+ the range of values we are looking for, and swap it back again.
+ After this, we add the bottom value of the range to the low word of 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ and this is our value between 1 and 6.
+ We then restore the working registers and return the value in 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.W
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Continuing the worked example from previously, D4 starts off as $2E46523D
+ and we multiply the high word, $2E46, by the range, 6, to get $000115A4.
+ After swapping 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+ back to get $15A40001, we add on the base of the range, 1, to get our actual
+ random number, $0002 in this case.
+\end_layout
+
+\begin_layout Standard
+Any mathematicians out there fancy writing up an explanation of 
+\emph on
+exactly
+\emph default
+ what the hell is going on there?
+\end_layout
+
+\end_body
+\end_document
