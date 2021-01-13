@@ -254,7 +254,12 @@ myCode
 
 \begin_layout Plain Layout
 
-    bsr     rnd                 ; Generate a word 1 to 6 inclusive
+    bsr     rnd                 ; Generate a word 1 to 6
+\end_layout
+
+\begin_layout Plain Layout
+
+inclusive
 \end_layout
 
 \begin_layout Plain Layout
@@ -430,17 +435,17 @@ randomise_d1
 
 \begin_layout Plain Layout
 
-    move.l  d1,d2               ; D1 = D2 = HHHH LLLL
+    move.l  d1,d2               ; Copy HHHH LLLL
 \end_layout
 
 \begin_layout Plain Layout
 
-    swap    d1                  ; D1 = LLLL HHHH
+    swap    d1                  ; LLLL HHHH
 \end_layout
 
 \begin_layout Plain Layout
 
-    add.l   d2,d1               ; D1 = (LLLL+HHHH) (HHHH+LLLL)
+    add.l   d2,d1               ; LLLL = HHHH
 \end_layout
 
 \begin_layout Plain Layout
@@ -676,7 +681,7 @@ rnd
 
 \begin_layout Plain Layout
 
-    move.w  d0,d4               ; Copy low word ???? LLLL
+    move.w  d0,d4               ; Copy low word LLLL
 \end_layout
 
 \begin_layout Plain Layout
@@ -686,12 +691,12 @@ rnd
 
 \begin_layout Plain Layout
 
-    mulu    #$c12d,d0           ; D0.L = HHHH * 49453
+    mulu    #$c12d,d0           ; HHHH * 49453
 \end_layout
 
 \begin_layout Plain Layout
 
-    mulu    #$712d,d4           ; D4.L = LLLL * 28973
+    mulu    #$712d,d4           ; LLLL * 28973
 \end_layout
 
 \begin_layout Plain Layout
@@ -701,12 +706,12 @@ rnd
 
 \begin_layout Plain Layout
 
-    clr.w   d0                  ; HHHH 0000
+    clr.w   d0                  ; HHHH 0000 (Divide by 65536)
 \end_layout
 
 \begin_layout Plain Layout
 
-    add.l   d0,d4               ; I have no idea!
+    add.l   d0,d4               ; I have no idea!!!
 \end_layout
 
 \begin_layout Plain Layout

@@ -87,9 +87,9 @@ randomise
 ;                               ; call doTrap1.
 
 randomise_d1
-    move.l  d1,d2               ; D1 = D2 = HHHH LLLL
-    swap    d1                  ; D1 = LLLL HHHH
-    add.l   d2,d1               ; D1 = (LLLL+HHHH) (HHHH+LLLL)
+    move.l  d1,d2               ; Copy HHHH LLLL
+    swap    d1                  ; LLLL HHHH
+    add.l   d2,d1               ; LLLL = HHHH
     move.l  d1,myRandSeed(a6)   ; Save random seed
     movem.l (a7)+,d0-d2/a0      ; restore workers
     rts
@@ -137,13 +137,13 @@ same value over and over again!
 rnd
     movem.l d0/d2/d4,-(a7)      ; Save workers
     move.l  myRandSeed(a6),d0   ; Get seed value
-    move.w  d0,d4               ; Copy low word ???? LLLL
+    move.w  d0,d4               ; Copy low word LLLL
     swap    d0                  ; LLLL HHHH
-    mulu    #$c12d,d0           ; D0.L = HHHH * 49453
-    mulu    #$712d,d4           ; D4.L = LLLL * 28973
+    mulu    #$c12d,d0           ; HHHH * 49453
+    mulu    #$712d,d4           ; LLLL * 28973
     swap    d0                  ; HHHH LLLL
-    clr.w   d0                  ; HHHH 0000
-    add.l   d0,d4               ; I have no idea!
+    clr.w   d0                  ; HHHH 0000 (Divide by 65536)
+    add.l   d0,d4               ; I have no idea!!!
     addq.l  #1,d4               ; New seed
     move.l  d4,myRandSeed(a6)   ; Save seed
 
@@ -156,6 +156,7 @@ random seed and start messing about with it to generate a new seed.
 The high word of the seed, in \lstinline!D0!, is multiplied by 49,453
 and the low word, in \lstinline!D4!, by 28,973 neither of which are
 prime. Both are divisible by 7 if you don't fancy working it out!
+
 The resulting long word is \lstinline!D0! is swapped and added to
 \lstinline!D4! before \lstinline!D4! is incremented. This is our
 new random seed and is saved accordingly ready for the next call to

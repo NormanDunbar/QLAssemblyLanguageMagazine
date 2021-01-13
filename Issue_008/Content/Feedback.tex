@@ -1,6 +1,6 @@
 \chapter{Feedback on Issue 5}
 
-While looking at something else, I noticed that in Issue 4, Page 28, Section 4.2.1 the following text:
+While looking at something else, I noticed that in Issue 5, Page 28, Section 4.2.1 the following text:
 
 
 \emph{For example, in many opcodes, the size of the operand - .B, .W or .L - is specified in bits 5 and 6 of the opcode instruction word in memory.This is therefore a 2 bit wide bit field, starting at bit $31-5=26$ and would be represented as follows:}
@@ -15,6 +15,8 @@ For example, in many opcodes, the size of the operand - .B, .W or .L - is specif
 	\opcode{\{25:2\}}
 
 I had of course specified a bit field for bits 5 and 4 and not for bits 6 and 5. I did mention that there was a certain amount of confusion in bit field specifications!
+
+You can download a \href{https://github.com/NormanDunbar/QLAssemblyLanguageMagazine/releases/tag/Issue_5}{corrected version of Issue 5} from GitHub\footnote{https://github.com/NormanDunbar/QLAssemblyLanguageMagazine/releases/tag/Issue\_5}.
 
 
 \chapter{Feedback on Issue 7}
@@ -42,7 +44,7 @@ Well now, here's a thing. Very quickly after Issue 7 "hit the streets" I got fee
 
 \section{Feedback from Marcel Kilgus}
 
-[MK] As a pedantic ass I have to object so sentences like these:
+[MK] As a pedantic ass I have to object to sentences like these:
 
 \emph{The UK Pound symbol is character 96 (\$60) on the QL, but in ASCII
 it is character 163 (\$A3)" (etc.)}
@@ -58,11 +60,11 @@ before they adopted UTF-8, on Windows you will mostly find the
 comes to the Euro sign for example (ISO 8859-1 is too old to have a
 Euro sign and the others have adopted it in different places).
 
-[ND] Technically, I agree, ASCII is indeed 7 bit and 163 is definitely not 7 bit. But let's face it, there have been 8 bit "ASCII" characters for many years, even when I was at college back in the, ahem, early eighties, ASCII was (at least, considered) 8 bit - whether pedantically correct or not. However, true ASCII is 7 bit.
+[ND] I agree with you, ASCII is indeed 7 bit and 163 is definitely not 7 bit. However, there have been 8 bit "ASCII" characters for many years, even when I was at college back in the, ahem, early eighties, ASCII was (at least, considered) 8 bit - whether pedantically correct or not. Old habits and all that, that's my excuse! \emph{True} ASCII is indeed only 7 bits.
 
-[ND] I remember many occasions, back when \url{config.txt} was still a thing, trying to set up the correct code page for a system. A nightmare as there was no Google back then to help out, just the manual for whatever system I was installing or working with.
+I remember many occasions, back when \url{config.txt} was still a thing, trying to set up the correct code page for a system. A nightmare as there was no Google back then to help out, just the manual for whatever system I was installing or working with.
 
-[ND] I am led to understand, however, that ISO/IEC 4873 introduced some extra control codes ``characters'', in the \$80 to \$9F hexadecimal range, as part of extending the 7-bit ASCII encoding to become an 8-bit system.\footnote{The Unicode Consortium (October 27, 2006). "Chapter 13: Special Areas and Format Characters" (PDF). In Allen, Julie D. (ed.). The Unicode standard, Version 5.0. Upper Saddle River, New Jersey, US: Addison-Wesley Professional. p. 314. ISBN 978-0-321-48091-0. Retrieved March 13, 2015.} However, I sit corrected on the 7/8 bit point. Thanks.
+I am led to understand, however, that ISO/IEC 4873 introduced some extra control codes ``characters'', in the \$80 to \$9F hexadecimal range, as part of extending the 7-bit ASCII encoding to become an 8-bit system.\footnote{The Unicode Consortium (October 27, 2006). "Chapter 13: Special Areas and Format Characters" (PDF). In Allen, Julie D. (ed.). The Unicode standard, Version 5.0. Upper Saddle River, New Jersey, US: Addison-Wesley Professional. p. 314. ISBN 978-0-321-48091-0. Retrieved March 13, 2015.} However, I sit corrected on the 7/8 bit point. Thanks.
 
 
 [MK] But, and that is the important thing, Unicode was made to unify them
@@ -78,21 +80,21 @@ data storage UTF-8 is the way to go these days, always!
 
 [ND] It sure is a mess, and yes, UTF-8 is the way to go. As I mentioned XML files depend on it, the web is pretty much full of it in all those HTML files etc. And, once you get your head around the difference between a ``code point'' and the character's actual bytes, it's pretty easy to understand.
 
-[ND] I'm not so sure that Windows is missing out or behind the times though. At work, my files are all pretty much UTF-8 (I write my documents in  \texttt{ASCIIDOCTOR}\footnote{Now that's ironic!} format and convert them to PDF files using  \texttt{asciidoctor-pdf} - if I need Office flavoured docs, I use  \texttt{pandoc} to convert to something in DOCX format - but I almost never use those.  \texttt{Asciidoctor} files are plain text, and very easy to version control!  \texttt{Notepad++} or  \texttt{VSCodium} are my text editors of choice and both save in UTF-8 with no problems. Even Notepad itself can read the files - and I suspect Windows 10 will be better, I'm on Windows 7. (Currently)
+I'm not so sure that Windows is missing out or behind the times though. At work, my files are all pretty much UTF-8 (I write my documents in  \texttt{ASCIIDOCTOR}\footnote{Now that's ironic!} format and convert them to PDF files using  \texttt{asciidoctor-pdf} - if I need Office flavoured docs, I use  \texttt{pandoc} to convert to something in DOCX format - but I almost never use those.  \texttt{Asciidoctor} files are plain text, and very easy to version control!  \texttt{Notepad++} or  \texttt{VSCodium} are my text editors of choice and both save in UTF-8 with no problems. Even Notepad itself can read the files - and I suspect Windows 10 will be better, I'm on Windows 7. (Currently)
 
-[ND] Mind you, those damned so-called "smart" quotes that Office documents insist on using mess things up truly. It's the first thing I turn off with my Office stuff, and every slight update or patch seems to turn them back on! So annoying.
+Mind you, those damned so-called "smart" quotes that Office documents insist on using mess things up truly. It's the first thing I turn off with my Office stuff, and every slight update or patch seems to turn them back on! So annoying.
 
 [MK] For QPC I already implemented these translations 20 years ago when
 copying text to/from the clipboard. But well done for bringing UTF-8
 to the QL 
 
-[ND] Well, thanks for the reminder of how old I'm getting! The reason I did the utilities was simple, I had one of those itches to scratch. When I did a bit of work with Jan on his updated QL Monitor, I used a Linux system to do the typing - it's what I'm used to - and those arrow characters caused me no end of grief, as did the copyright and the pound signs. I messed about there using actual, ahem, ASCII codes (sorry!) but now, I don't have to.
+[ND] Well, thanks for the reminder of how old I'm getting! The reason I did the utilities was simple, I had one of those itches to scratch. When I did a bit of work with Jan on his updated QL Monitor, I used a Linux system to do the typing - it's what I'm used to - and those arrow characters caused me no end of grief, as did the copyright and the pound signs. I messed about back then using actual, ahem, ASCII codes (sorry!) but now, I don't have to.
 
-[ND] Oh, and \emph{thank you} for  \texttt{QPC2}, it's my favourite QL program of all time, and it simply "just" works on Linux under  \texttt{Wine}. I did have some problems recently with it not working, but I traced that to a mix and match installation with bits of  \texttt{Wine 3} and bits of  \texttt{Wine 4} living together in sin. 
+Oh, and \emph{thank you} for \texttt{QPC2}, it's my favourite QL program of all time, and it simply "just" works on Linux under  \texttt{Wine}. I did have some problems recently with it not working, but I traced that to a mix and match installation with bits of  \texttt{Wine 3} and bits of  \texttt{Wine 4} living in sin together. 
 
 \texttt{QPC2} is what has kept me in the QL scene for as long as I can remember - I always got somewhat tired of the QL, the cables, the hard drive, the noise, the length of table I needed with limited space in my flat (apartment) and so on. With  \texttt{QPC2} it's all on my laptop. Nice and compact.
 
-[ND] And, by the way, \emph{I am a pedant's baddest nightmare!}
+And, finally, \emph{I am a pedant's baddest nightmare!}
 
 
 \section{\emph{More} Feedback from Wolfgang Lenerz}
@@ -361,6 +363,12 @@ Otherwise you are forcing bit 4 of D2 to always be a zero. However, that minor n
 [ND] No, I don't mind and in fact I welcome comments on anything printed in this ePeriodical. If you have a problem with my writing style, code etc, I'm happy to hear from you. From anyone that is!
 
 \section{A Better Ql2utf8}
+
+Following on from Wolfgang's comments and suggested improvements, I now present the improved versions of the UTF8 routines from the last issue. 
+
+In case you are wondering about the use of UTF8 on the QL, I was pleased to send Dilwyn Jones a copy of these two improved routines a wee while back as he is working with Tim Swenson on a new Internet Relay Chat (IRC) application for the QL. 
+
+It's called \emph{QLirc} and needs to use UTF8. You can read all about it on \href{https://qlforum.co.uk/viewtopic.php?f=3\&t=3517}{The QL Forum}\footnote{https://qlforum.co.uk/viewtopic.php?f=3\&t=3517}.
 
 \begin{lstlisting}[firstnumber=1, caption={Wolfgang's improved ql2utf8 Utility}]
 ;--------------------------------------------------------------------
