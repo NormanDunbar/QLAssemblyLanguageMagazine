@@ -1,0 +1,259 @@
+\chapter{Random Stuff}
+
+Ever needed some randomisation in your assembly code? No, neither
+have I until recently when I suddenly had a need to generate random
+numbers from 1 to 6 inclusive. How is this possible, given that there
+are no apparent vectors or traps to grab hold of a random number?
+
+I could have cheated and had a look through my copies of 68000 coding
+books \textendash{} but that would have been in breach of copyright,
+probably, and best avoided. So I did the next best thing, I stole
+some code from the SMSQ sources!
+
+Almost nothing in the following is my own work, I have stolen it,
+and only slightly modified it to suit what I needed it for. It does
+work though, I'm happily generating numbers from 1 to 6 inclusive,
+and no, it is not a dice (die) that I'm emulating even if the same
+numbers are involved!
+
+\section{Random Seed}
+
+The code I was working on is to be used in a job, so I have a storage
+location for my random seed which is an offset from the \lstinline!A6!
+register. The following code takes that into consideration.
+
+\begin{lstlisting}[caption={The random seed},firstnumber=1]
+; In job code, this is an offset from the A6 register.
+
+myRandSeed  equ     0
+
+; The job code starts here
+start       bra.s   myCode
+            dc.l    0
+            dc.w    $4afb
+
+fname
+    dc.w    fname_e-fname-2
+    dc.b    "My Job's Name"
+
+fname_e
+    equ     *
+
+myCode
+    adda.l  a4,a6               ; A6 points to our data
+    clr.l   d1                  ; Randomise the date
+    bsr     randomise           ; Do it
+    ...                         ; Do stuff
+    bsr     rnd                 ; Generate a word 1 to 6
+inclusive
+    ...                         ; Do more stuff
+\end{lstlisting}
+
+The purpose of the job code is not relevant here, it will become apparent,
+I hope, when I get it finished \textendash{} either in this edition
+or a future one. Coming soon\footnote{Given my record, for certain values of ``soon''!}
+and all that!
+
+I could have used the system random seed for my own numbers, but I
+thought about it and didn't want to mess up any other programs that
+could be running but which depend on a certain set of random numbers
+based on a starting random seed. Unlikely, perhaps, but I decided
+to avoid the problem.
+
+\section{Randomisation}
+
+Now that we have the seed variable, we will need a manner of initialising
+it with a new value. SuperBASIC does this by taking the clock's value
+in seconds if we don't supply a value ourselves, so that's good enough
+for me too. You will note from the comments that this code is stolen
+and only amended in a minor manner for my own needs.
+
+\begin{lstlisting}[caption={Randomise function},firstnumber=24]
+;------------------------------------------------------------
+; This is effectively ramdomise(date). The code is exactly as
+; per the SBasic RANDOMISE function. I stole the code! 
+; (sbsext/ext/rnd.asm)
+;
+; Enter with D1.L = 0 to randomise(date) or with D1.L = some
+; specified value to randomise(D1).
+;
+; Preserves all registers.
+;------------------------------------------------------------
+randomise
+    movem.l d0-d2/a0,-(a7)      ; Save workers
+    tst.l   d1                  ; D1 passed with a value?
+    bne.s   randomise_d1        ; Yes, skip the date
+    moveq   #mt_rclck,d0        ; Read clock into D1
+    trap    #1                  ; No errors, no need to
+;                               ; call doTrap1.
+
+randomise_d1
+    move.l  d1,d2               ; Copy HHHH LLLL
+    swap    d1                  ; LLLL HHHH
+    add.l   d2,d1               ; LLLL = HHHH
+    move.l  d1,myRandSeed(a6)   ; Save random seed
+    movem.l (a7)+,d0-d2/a0      ; restore workers
+    rts
+
+\end{lstlisting}
+
+The code should call the \lstinline!randomise! entry point either
+with \lstinline!D1.L! holding zero, or the required starting value
+for our seed. If we passed zero in D1, then the current date, in seconds,
+is read from the system and used as a starting point.
+
+Arriving a label \lstinline!randomise_d1!, we have a non-zero value
+in D1.L and can use it to randomise the system. The value is copied
+into \lstinline!D2.L! for safety, then D1 is swapped over to put
+the low word into the high word and vice versa. If we started with
+\lstinline!D1.L! holding \$12345678 we end up with \$56781234. This
+value is then added to the original seed value in \lstinline!D2.L!
+to give, in this example, \$68AC68AC.
+
+Whenever \lstinline!randomise! is called, we end up with a new random
+seed which has the high and low words identical. However, as soon
+as we begin using the seed, that changes. Read on.
+
+\section{Random Generation}
+
+Before we continue, can I just point out that I am by no means a mathematician
+and while I can look at what the code is doing, I have no idea what
+formula it is using to do it! 
+
+The first problem is to generate a random number from the random seed
+and to update the seed. We need to do this to avoid generating the
+same value over and over again!
+
+\begin{lstlisting}[caption={Rnd 1 to 6 function - Part 1},firstnumber=49]
+;------------------------------------------------------------
+; This is effectively RND(1 TO 6). The code does exactly as
+; per the SuperBASIC RND() function. I stole the code!
+; (sbsext/ext/rnd.asm)
+;
+; D1 = Bottom of range = 1.
+; D2 = Top of range + 1 = 7.
+;
+; Returns D1.W as RND(1 to 6) and obviously trashes D1.
+;------------------------------------------------------------
+rnd
+    movem.l d0/d2/d4,-(a7)      ; Save workers
+    move.l  myRandSeed(a6),d0   ; Get seed value
+    move.w  d0,d4               ; Copy low word LLLL
+    swap    d0                  ; LLLL HHHH
+    mulu    #$c12d,d0           ; HHHH * 49453
+    mulu    #$712d,d4           ; LLLL * 28973
+    swap    d0                  ; HHHH LLLL
+    clr.w   d0                  ; HHHH 0000
+    add.l   d0,d4               ; I have no idea!!!
+    addq.l  #1,d4               ; New seed
+    move.l  d4,myRandSeed(a6)   ; Save seed
+
+\end{lstlisting}
+
+After saving the registers we will be working with, except \lstinline!D1!
+which we use to return the random number later, we grab hold of the
+random seed and start messing about with it to generate a new seed. 
+
+The high word of the seed, in \lstinline!D0!, is multiplied by 49,453
+and the low word, in \lstinline!D4!, by 28,973 neither of which are
+prime. Both are divisible by 7 if you don't fancy working it out!
+The resulting long word is \lstinline!D0! is swapped and added to
+\lstinline!D4! before \lstinline!D4! is incremented. This is our
+new random seed and is saved accordingly ready for the next call to
+the \lstinline!rnd! routine.
+
+If you want to work through an example:
+
+The original seed, \$68AC68AC, is copied to \lstinline!D0! and \lstinline!D4!.
+After swapping \lstinline!D0!, which has no real effect on the first
+call after a call to \lstinline!randomise!, we end up with \lstinline!D0.L!
+= \$68AC68AC and \lstinline!D4.L! = \$xxxx68AC. We are going to multiply
+so the high word of \lstinline!D4! is of no interest.
+
+After the two multiplications, we now have \lstinline!D0.L! = \$68AC
+{*} \$C12D = \$4EFC123C and \lstinline!D4.L! = \$68AC {*} \$712D
+= \$2E46523C.
+
+Swapping \lstinline!D0! and clearing the low word gives \$123C0000
+which we then add to \lstinline!D4! to get \$4082523C which is then
+incremented to \$4082523D and used as the next random seed.
+
+After all that, we are now, \emph{finally}, ready to generate the
+random integer between 1 and 6 that we want.
+
+The code below is designed\footnote{For certain values of ``designed''!}
+to only generate a random number between 1 and 6, inclusive, and these
+two values are hard coded into registers \lstinline!D1! and \lstinline!D2!.
+Should you wish to generalise the following code to pass your own
+ranges, it should be quite simple.
+
+\begin{lstlisting}[caption={Rnd 1 to 6 function - Part 2},firstnumber=71]
+rndOneToSix
+    moveq   #1,d1               ; Bottom of range
+    moveq   #6+1,d2             ; Top of range + 1
+    sub.w   d1,d2               ; Size of range
+
+\end{lstlisting}
+
+First we work out the range of values that we need. This is $\left(D2+1\right)-D1$
+which in this case, always works out as $\left(6+1\right)-1$ giving
+a range of 6. At this point we have a random
+
+long integer in \lstinline!D4! and a range in \lstinline!D2!.
+
+\begin{lstlisting}[caption={Rnd 1 to 6 function - Part 3},firstnumber=75]
+    swap    d4                  ; LLLL HHHH of seed
+    mulu    d2,d4               ; D4.HHHH * top
+    swap    d4                  ; Take top word
+    add.w   d4,d1               ; Add range bottom
+;                               ; D1 = RND(1 to 6)
+    movem.l (a7)+,d0/d2/d4      ; Restore workers.
+    rts
+
+\end{lstlisting}
+
+Now, for some unknown reason, we swap \lstinline!D4!, our new random
+number and seed, and multiply the previous high word by the range
+of values we are looking for, and swap it back again. After this,
+we add the bottom value of the range to the low word of \lstinline!D4!
+and this is our value between 1 and 6. We then restore the working
+registers and return the value in \lstinline!D1.W!.
+
+Continuing the worked example from previously, D4 starts off as \$2E46523D
+and we multiply the high word, \$2E46, by the range, 6, to get \$000115A4.
+After swapping \lstinline!D4! back to get \$15A40001, we add on the
+base of the range, 1, to get our actual random number, \$0002 in this
+case.
+
+Any mathematicians out there fancy writing up an explanation of \emph{exactly}
+what the hell is going on there?
+
+Update 16 January 2021: Thanks to Marcel Kilgus, it appears that the
+code in the \lstinline!rnd! routine where we have this:
+
+\begin{lstlisting}[caption={Rnd 1 to 6 function - Part 1},firstnumber=49]
+rnd
+    ...
+    mulu    #$c12d,d0           ; HHHH * 49453
+    mulu    #$712d,d4           ; LLLL * 28973
+	...
+    clr.w   d0                  ; HHHH 0000
+	...
+\end{lstlisting}
+
+could possibly be a typo! He believes that the code should be calculating
+a 32 bit by 16 bit multiplication \textendash{} the expression:
+
+\[
+myRandSeed=myRandSeed*\$712D+1
+\]
+
+However, it seems to be this instead:
+
+\[
+myRandSeed=myRandSeed*\$712D+\left(\left(myRandSeed\&\$F0000\right)*\$5000\right)+1
+\]
+
+Why? Perhaps a typo, perhaps to make it more random. Nobody knows!
+
+Thanks Marcel.

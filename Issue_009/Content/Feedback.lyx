@@ -1,0 +1,254 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Feedback on Issue 8
+\end_layout
+
+\begin_layout Standard
+No long after release, I spotted a bug in the randomisation chapter in Issue
+ 8.
+ On page 49, in 
+\emph on
+Listing 7.3: Rnd 1 to 6 function - Part 1
+\emph default
+, I had a comment on the line 67 which mentioned 
+\begin_inset Quotes eld
+\end_inset
+
+divide by 65536
+\begin_inset Quotes erd
+\end_inset
+
+.
+ That was complete nonsense, as that would have cleared the high word and
+ not the low word.
+ 
+\end_layout
+
+\begin_layout Standard
+Marcel spotted the error and advised me that the code was clearing overflow,
+ not dividing.
+ My mistake.
+\end_layout
+
+\begin_layout Standard
+Marcel also spotted something else in the code I had blatantly stolen from
+ the SMSQ sources.
+\end_layout
+
+\begin_layout Standard
+It appears that the code in the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+rnd
+\end_layout
+
+\end_inset
+
+ routine where we have this extract:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+rnd
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    #$c12d,d0           ; HHHH * 49453
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    #$712d,d4           ; LLLL * 28973
+\end_layout
+
+\begin_layout Plain Layout
+
+	...
+\end_layout
+
+\begin_layout Plain Layout
+
+    clr.w   d0                  ; HHHH 0000 (Divide by 65536)
+\end_layout
+
+\begin_layout Plain Layout
+
+	...
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Rnd 1 to 6 function - Part 1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+could possibly be a typo! He believes that the code should be calculating
+ a 32 bit by 16 bit multiplication – the expression:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+myRandSeed=myRandSeed*\$712D+1
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+However, it seems to be this instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+myRandSeed=myRandSeed*\$712D+\left(\left(myRandSeed\&\$F0000\right)*\$5000\right)+1
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Why both halves of the 32 bit random seed are not being multiplied by $712d
+ is unknown, perhaps the used of $c12d is a typo, perhaps it's deliberate
+ to make it more random.
+ Nobody knows!
+\end_layout
+
+\begin_layout Standard
+Thanks Marcel.
+\end_layout
+
+\end_body
+\end_document
