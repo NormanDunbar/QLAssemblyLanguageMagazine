@@ -44,7 +44,8 @@ myCode
     clr.l   d1                  ; Randomise the date
     bsr     randomise           ; Do it
     ...                         ; Do stuff
-    bsr     rnd                 ; Generate a word 1 to 6 inclusive
+    bsr     rnd                 ; Generate a word 1 to 6
+inclusive
     ...                         ; Do more stuff
 \end{lstlisting}
 
@@ -142,7 +143,7 @@ rnd
     mulu    #$c12d,d0           ; HHHH * 49453
     mulu    #$712d,d4           ; LLLL * 28973
     swap    d0                  ; HHHH LLLL
-    clr.w   d0                  ; HHHH 0000 (Divide by 65536)
+    clr.w   d0                  ; HHHH 0000
     add.l   d0,d4               ; I have no idea!!!
     addq.l  #1,d4               ; New seed
     move.l  d4,myRandSeed(a6)   ; Save seed
@@ -156,7 +157,6 @@ random seed and start messing about with it to generate a new seed.
 The high word of the seed, in \lstinline!D0!, is multiplied by 49,453
 and the low word, in \lstinline!D4!, by 28,973 neither of which are
 prime. Both are divisible by 7 if you don't fancy working it out!
-
 The resulting long word is \lstinline!D0! is swapped and added to
 \lstinline!D4! before \lstinline!D4! is incremented. This is our
 new random seed and is saved accordingly ready for the next call to
@@ -227,3 +227,33 @@ case.
 
 Any mathematicians out there fancy writing up an explanation of \emph{exactly}
 what the hell is going on there?
+
+Update 16 January 2021: Thanks to Marcel Kilgus, it appears that the
+code in the \lstinline!rnd! routine where we have this:
+
+\begin{lstlisting}[caption={Rnd 1 to 6 function - Part 1},firstnumber=49]
+rnd
+    ...
+    mulu    #$c12d,d0           ; HHHH * 49453
+    mulu    #$712d,d4           ; LLLL * 28973
+	...
+    clr.w   d0                  ; HHHH 0000
+	...
+\end{lstlisting}
+
+could possibly be a typo! He believes that the code should be calculating
+a 32 bit by 16 bit multiplication \textendash{} the expression:
+
+\[
+myRandSeed=myRandSeed*\$712D+1
+\]
+
+However, it seems to be this instead:
+
+\[
+myRandSeed=myRandSeed*\$712D+\left(\left(myRandSeed\&\$F0000\right)*\$5000\right)+1
+\]
+
+Why? Perhaps a typo, perhaps to make it more random. Nobody knows!
+
+Thanks Marcel.

@@ -706,7 +706,7 @@ rnd
 
 \begin_layout Plain Layout
 
-    clr.w   d0                  ; HHHH 0000 (Divide by 65536)
+    clr.w   d0                  ; HHHH 0000
 \end_layout
 
 \begin_layout Plain Layout
@@ -1273,6 +1273,165 @@ Any mathematicians out there fancy writing up an explanation of
 exactly
 \emph default
  what the hell is going on there?
+\end_layout
+
+\begin_layout Standard
+Update 16 January 2021: Thanks to Marcel Kilgus, it appears that the code
+ in the 
+\begin_inset listings
+inline true
+status open
+
+\begin_layout Plain Layout
+
+rnd
+\end_layout
+
+\end_inset
+
+ routine where we have this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=49"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+rnd
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    #$c12d,d0           ; HHHH * 49453
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu    #$712d,d4           ; LLLL * 28973
+\end_layout
+
+\begin_layout Plain Layout
+
+	...
+\end_layout
+
+\begin_layout Plain Layout
+
+    clr.w   d0                  ; HHHH 0000
+\end_layout
+
+\begin_layout Plain Layout
+
+	...
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Rnd 1 to 6 function - Part 1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+could possibly be a typo! He believes that the code should be calculating
+ a 32 bit by 16 bit multiplication – the expression:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+myRandSeed=myRandSeed*\$712D+1
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+However, it seems to be this instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+myRandSeed=myRandSeed*\$712D+\left(\left(myRandSeed\&\$F0000\right)*\$5000\right)+1
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Why? Perhaps a typo, perhaps to make it more random.
+ Nobody knows!
+\end_layout
+
+\begin_layout Standard
+Thanks Marcel.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+From the QL Forum:
+\end_layout
+
+\begin_layout Plain Layout
+Basically what you see here is a simple 32x16 bit multiplication with one
+ change.
+\end_layout
+
+\begin_layout Plain Layout
+Normally you multiply both 16-bit halves with the same factor and add the
+ results after shifting back the upper word.
+ So the the clr.w in line 67 is there to remove any overflow, not to divide
+ by 65536.
+ The code is basically:
+\end_layout
+
+\begin_layout Plain Layout
+myRandSeed = myRandSeed * $712d + 1 
+\end_layout
+
+\begin_layout Plain Layout
+If it wasn't for the fact that he upper factor is slightly different.
+ I think the real formula is:
+\end_layout
+
+\begin_layout Plain Layout
+myRandSeed = myRandSeed * $712d + ((myRandSeed & $F0000) * $5000) + 1 
+\end_layout
+
+\begin_layout Plain Layout
+Not sure why, maybe a typo, maybe to make it more "random" :lol:
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_body
