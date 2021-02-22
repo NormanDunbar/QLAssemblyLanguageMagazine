@@ -108,7 +108,7 @@ No long after release, I spotted a bug in the randomisation chapter in Issue
 \emph on
 Listing 7.3: Rnd 1 to 6 function - Part 1
 \emph default
-, I had a comment on the line 67 which mentioned 
+, I had a comment on line 67 which mentioned 
 \begin_inset Quotes eld
 \end_inset
 
@@ -195,7 +195,7 @@ rnd
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-Rnd 1 to 6 function - Part 1
+Rnd 1 to 6 function
 \end_layout
 
 \end_inset
