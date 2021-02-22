@@ -1,0 +1,517 @@
+
+\chapter{QL2WIN}
+
+From time to time I have to use Windows, or at least, attempt to open
+a file created on a Windows box while using my QL\footnote{Don't ask!}.
+Usually, I open the file in a text editor of some kind, change the
+line endings setting and save the file that way, or I can use a myriad
+of Linux utilities to do the conversion. There are quite a few. However,
+this wouldn't be an ePeriodical on the use of QL Assembly Language
+if I didn't do it on a QL!
+
+Given the above, I present for your wonderment and amazement, a small
+utility to convert a QL file to Windows format. Yes! I know! I said
+that I had occasion to open a Windows file on my QL, but check out
+the next chapter.....
+
+\section{The Code}
+
+It has been at least one issue, also known as ``over a year'', since
+I last wrote a YAF\footnote{Yet Another Filter} utility. If you have
+missed them, then this is indeed a YAF. To convert a file from QL
+format with \lstinline[basicstyle={\ttfamily},showstringspaces=false]!CHR$(10)!
+(linefeed) line endings to Windows \lstinline[basicstyle={\ttfamily},showstringspaces=false]!CHR$(13)!/\lstinline[basicstyle={\ttfamily},showstringspaces=false]!CHR$(10)!
+(carriage return/linefeed) line endings, you simply have to:
+
+\begin{lstlisting}[basicstyle={\ttfamily},showstringspaces=false,tabsize=1,numbers=none]
+EX ram1_ql2win_bin, ram1_ql_text_file, ram1_windows_txt_file
+\end{lstlisting}
+
+Listing \ref{lis:Ql2win:-Equates} is the start of the code and covers
+a few equates and such like that I will be using through the code.
+As with many of my YAFs, there are only two channels required to be
+passed; the input QL file and the output Windows file. As I will not
+be faffing around in subroutines \textendash{} given the extreme briefness
+of the code \textendash{} the input channel id will be on the stack
+at 2(A7) while the output channel id ill be on the stack at 6(A7).
+The word at the top of the stack will hopefully be 2 for the number
+of opened channels passed.
+
+\begin{lstlisting}[caption={Ql2win: Equates},label={lis:Ql2win:-Equates},firstnumber=1]
+;--------------------------------------------------------------
+; QL2WIN:
+;
+; This filter converts QL or Linux line endings to Windows 
+; format.
+;
+; EX ql2win_bin, input_file, output_file_or_channel
+;--------------------------------------------------------------
+; 21/02/2021 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------
+; (c) Norman Dunbar, 2021. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+; How many channels do I want?
+;--------------------------------------------------------------
+numchans    equ     2         ; How many channels required?
+
+;--------------------------------------------------------------
+; Stack stuff.
+;--------------------------------------------------------------
+sourceId    equ     $02       ; Offset(A7) to input file id
+destId      equ     $06       ; Offset(A7) to output file id
+
+;--------------------------------------------------------------
+; Other Variables
+;--------------------------------------------------------------
+err_bp      equ     -15
+err_eof     equ     -10
+me          equ     -1
+timeout     equ     -1
+lf          equ     $0a
+cr          equ     $0d
+
+\end{lstlisting}
+
+Following on, we have Listing \ref{lis:Ql2win:-Job-Header} which
+is the standard QDOSMSQ job header. There's nothing much of interest
+to see here, and further discussion would be fruitless. Lets move
+on!
+
+\begin{lstlisting}[caption={Ql2win: Job Header},label={lis:Ql2win:-Job-Header},firstnumber=35]
+;==============================================================
+; Here begins the code.
+;--------------------------------------------------------------
+; Stack on entry:
+;
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;==============================================================
+start
+    bra.s   checkStack
+    dc.l    $00
+    dc.w    $4afb
+name
+    dc.w    name_end-name-2
+    dc.b    'QL2WIN'
+name_end    equ       *
+
+version
+    dc.w    vers_end-version-2
+    dc.b    'Version 1.00'
+vers_end    equ       *
+\end{lstlisting}
+
+Listing \ref{lis:Ql2win:-Parameter-checks} is where we check the
+parameters passed on the stack. We should have been passed 2 channels
+and a word informing us of same. The code checks that all is well,
+and if not, we exit with a bad parameter error.
+
+\begin{lstlisting}[caption={Ql2win: Parameter checks},label={lis:Ql2win:-Parameter-checks},firstnumber=57]
+;--------------------------------------------------------------
+; Check the stack on entry. We only require NUMCHAN channels. 
+; Anything other than NUMCHANS will result in a BAD PARAMETER 
+; error on exit from EW (but not from EX).
+;--------------------------------------------------------------
+checkStack
+    cmpi.w  #numchans,(a7)    ; Two channels is a must
+    beq.s   ql2win            ; Ok, skip error bit
+
+bad_parameter
+    moveq   #err_bp,d0        ; Guess!
+    bra     errorExit         ; Die horribly
+\end{lstlisting}
+
+Continuing on from Listing \ref{lis:Ql2win:-Parameter-checks}, we
+have a number of constants. These are values that will be needed at
+various places in the code, but which are stored in spare registers
+to speed up the code by not having to worry about getting stuff out
+of buffers; or from the stack; and such like. Listing \ref{lis:Ql2win:-Constants},
+which follows, shows that the utility is written to hold the read
+and write timeout in register \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D3!,
+the read/write buffer size in \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D4!,
+the buffer address which is used for reading and writing is held in
+\lstinline[basicstyle={\ttfamily},showstringspaces=false]!A3! while
+\lstinline[basicstyle={\ttfamily},showstringspaces=false]!A4! and
+\lstinline[basicstyle={\ttfamily},showstringspaces=false]!A5! hold
+the channel ids for the source and destination channels respectively.
+
+\begin{lstlisting}[caption={Ql2win: Constants},label={lis:Ql2win:-Constants},firstnumber=69]
+;--------------------------------------------------------------
+; Initialise a couple of registers that will keep their values 
+; all through the rest of the code. These are:
+;
+; D3 holds the read and write timeout value, -1.
+; D4 holds the buffer size for reading into, buffSize.
+; A3 holds the buffer for reading and writing.
+; A4 holds the source channel id.
+; A5 holds the destination channel id.
+;--------------------------------------------------------------
+ql2win
+    moveq   #timeout,d3       ; Timeout
+    moveq   #buffSize,d4      ; Storage for buffer size for D2
+    lea     buffer,a3         ; Start of (write) buffer
+    move.l  sourceID(a7),a4   ; Source channel id
+    move.l  destId(a7),a5     ; Destination channel id
+\end{lstlisting}
+
+These constants will be swapped into the registers that need them
+as the code progresses. Why bother with this? Well register to register
+access is much faster than memory to register access, and while it
+might not speed things up for the sizes of the files I use, on the
+odd occasions, it might be useful in bigger programs where there needs
+to be a lot of this sort of thing.
+
+\begin{lstlisting}[caption={Ql2win: readLoop},label={lis:Ql2win:-readLoop},firstnumber=85]
+;--------------------------------------------------------------
+; The main loop starts here. Read a single byte, check for EOF.
+;
+; D0 = 2 (io_fline)         Error code
+; D1.W                      Bytes read into buffer
+; D2.W = Buffer Size        Preserved
+; D3.W = timeout.           Preserved
+; A0.L = Channel ID.        Preserved
+; A1.L = Start of buffer.   Updated buffer (A1 + D2.W)
+;--------------------------------------------------------------
+readLoop
+    moveq   #io_fline,d0      ; Fetch lines ending with LF
+    move.w  d4,d2             ; Buffer size
+    movea.l a4,a0             ; Channel to read
+    movea.l a3,a1             ; Read buffer start
+    trap    #3                ; Read a line from input file
+    tst.l   d0                ; OK?
+    beq.s   gotLine           ; Yes
+    cmpi.l  #ERR_EOF,d0       ; All done yet?
+    beq     allDone           ; Yes.
+    bra     errorExit         ; Oops!
+\end{lstlisting}
+
+The top of the main loop for the utility is shown in Listing \ref{lis:Ql2win:-readLoop}.
+Here we see the use of the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!io_fline!
+function to read a string of bytes, from a channel, into a buffer.
+The string of bytes is terminated by a linefeed character, and the
+maximum number of bytes to be read is determined by the value in \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D2.W!.
+
+Don't do as I did, and use \lstinline[basicstyle={\ttfamily},showstringspaces=false]!io_sstrg!
+instead. Because that one fills the buffer regardless of where it
+finds a linefeed in the bytes being read. I spent ages looking for
+a bug in my code and had my QDOS Companion open at the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!io_sstrg!
+page instead of \lstinline[basicstyle={\ttfamily},showstringspaces=false]!io_fline!.
+Sigh!
+
+The code in Listing \ref{lis:Ql2win:-readLoop} sets up the registers
+to read from the source file and reads it. If the read was successful,
+we skip to the code in Listing \ref{lis:Ql2win:-gotLine} to process
+the bytes just read, otherwise we have to check for End Of File. If
+we find EOF, we can bale out and close the file on the way, otherwise
+we have an error and exit the utility via the error handling code.
+
+\begin{lstlisting}[caption={Ql2win: gotLine},label={lis:Ql2win:-gotLine},firstnumber=106]
+;--------------------------------------------------------------
+; At this point, we have a string and a clean read with no
+; errors. Check if we have read an entire line before we try to
+; convert this to Windows format.
+;
+; D1.W = bytes read into buffer, inc LF.
+; A1.L = one past where the LF should be.
+; If -1(a1) == lf we have a whole string.
+; Else write out what we have and read more of the same string.
+;--------------------------------------------------------------
+gotLine
+    move.w  d1,d2             ; Bytes read, required for write
+    cmpi.b  #lf,-1(a1)        ; Did we read the whole line?
+    bne.s  putLine            ; No, write out what we got
+\end{lstlisting}
+
+The number of bytes read into the buffer is copied from \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D1.W!
+to \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D2.W!
+as we need \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D2.W!
+to be correctly set for writing the bytes back out to the destination
+channel. 
+
+\lstinline[basicstyle={\ttfamily},showstringspaces=false]!A1.L! has
+been adjusted to point at the character above the trailing linefeed,
+if there is one, so we can check the character previous to that one.
+If that character is not a linefeed, then our buffer is too small
+to be able to read the entire line from the input channel. In this
+case, we simply skip to Listing \ref{lis:Ql2win:-putLine} where we
+will write the data we have in the buffer, unchanged, to the destination
+channel.
+
+If we have found a linefeed character, we drop into Listing \ref{lis:Ql2win:-Adding-CR}
+to process the line further, if necessary.
+
+\begin{lstlisting}[caption={Ql2win: Adding a CR},label={lis:Ql2win:-Adding-CR},firstnumber=120]
+;--------------------------------------------------------------
+; We have read at least the end of a line and have the LF at 
+; the correct place in the buffer. If the character before it
+; is a CR ignore it and write out, otherwise insert a CR before
+; the LF and write it all out.
+;--------------------------------------------------------------
+    cmpi.b  #cr,-2(a1)        ; Already Windows format?
+    beq.s   putLine           ; Yes, ignore CR and write out
+    move.b  #cr,-1(a1)        ; Insert CR
+    move.b  #lf,(a1)          ; Needs LF also
+    addq.w  #1,d2             ; Update count for the CR
+\end{lstlisting}
+
+It is possible that the file we are reading is already in Windows
+format. Before we go ahead and write a carriage return character just
+before the linefeed, we better check! If the character is a carriage
+return, we jump off to Listing \ref{lis:Ql2win:-putLine} to write
+the line out unchanged.
+
+Assuming the file is not already in Windows format, we replace the
+linefeed at \lstinline[basicstyle={\ttfamily},showstringspaces=false]!-1(A1)!
+with a carriage return and then add in a new linefeed at \lstinline[basicstyle={\ttfamily},showstringspaces=false]!(A1)!.
+This is why we made the buffer big enough for an extra 2 characters,
+to give us room to add in the required carriage return.
+
+As we have added in an additional character to the buffer, we need
+to update \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D2.W!
+which currently holds the number of bytes we read in. This is used
+to determine how many bytes will be written to the destination file,
+which coincidentally enough, happens to be where we drop in next;
+to Listing \ref{lis:Ql2win:-putLine}.
+
+\begin{lstlisting}[caption={Ql2win: putLine},label={lis:Ql2win:-putLine},firstnumber=131]
+;--------------------------------------------------------------
+; Write out the contents of the buffer.
+;
+; D0 = 7 (io_sstrg)         Error code
+; D1.W                      Bytes written to channel
+; D2.W = Buffer Size        Preserved
+; D3.W = timeout.           Preserved
+; A0.L = Channel ID.        Preserved
+; A1.L = Start of buffer.   Updated buffer (A1 + D2.W)
+;--------------------------------------------------------------
+putLine
+    moveq   #io_sstrg,d0      ; Send strings
+    movea.l  a5,a0            ; Dest channel id
+    movea.l  a3,a1            ; Write buffer
+    trap    #3                ; Do it
+    tst.l   d0                ; OK?
+    beq.s   readLoop          ; Yes, keep going 
+    bra.s   errorExit         ; No.
+\end{lstlisting}
+
+The code at \lstinline[basicstyle={\ttfamily},showstringspaces=false]!putLine!
+uses \lstinline[basicstyle={\ttfamily},showstringspaces=false]!io_sstrg!
+to write data from a buffer to a channel. The number of bytes is determined
+by \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D2.W!.
+The required registers are set up by copying in those required from
+our constants where they have been sitting, waiting their turn of
+action! The remainder of the code, as seen in Listing \ref{lis:Ql2win:-exit},
+handles errors and exiting from the utility when all is done.
+
+\begin{lstlisting}[caption={Ql2win: Exit},label={lis:Ql2win:-exit},firstnumber=149]
+;--------------------------------------------------------------
+; No errors, exit quietly back to SuperBASIC.
+;--------------------------------------------------------------
+allDone
+    moveq   #0,d0
+
+;--------------------------------------------------------------
+; We have hit an error so we copy the code to D3 then exit via 
+; a forced removal of this job. EXEC_W/EW will display the 
+; error in SuperBASIC, but EXEC/EX will not.
+;--------------------------------------------------------------
+errorExit
+    move.l  d0,d3             ; Error code we want to return
+
+;--------------------------------------------------------------
+; Kill myself when an error was detected, or at EOF.
+;--------------------------------------------------------------
+suicide
+    moveq   #mt_frjob,d0      ; This job will die soon
+    moveq   #me,d1
+    trap    #1
+\end{lstlisting}
+
+There's not much to see here. We arrive at \lstinline[basicstyle={\ttfamily},showstringspaces=false]!allDone!
+when we hit End Of File on the input file and at \lstinline[basicstyle={\ttfamily},showstringspaces=false]!errorExit!
+if any errors were detected. The job then commits suicide by removing
+itself from the system, returning any error codes in \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D3!
+as required. These errors will be seen only if you executed the utility
+with the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!EXEC_W!
+or \lstinline[basicstyle={\ttfamily},showstringspaces=false]!EW!
+commands. \lstinline[basicstyle={\ttfamily},showstringspaces=false]!EXEC!
+and \lstinline[basicstyle={\ttfamily},showstringspaces=false]!EW!
+do not wait for the job to complete so cannot know in advance what,
+if any, errors will occur.
+
+Finally, we have Listing \ref{lis:Ql2win:-buffer}, which is where
+we define the buffer which will be used to read data into from the
+source file, and write data out of to the destination file.
+
+As previously mentioned, the buffer is two bytes larger (although
+it only needs one) than we tell QDOSMSQ as we need that extra one
+byte to insert a carriage return character, if necessary.
+
+\begin{lstlisting}[caption={Ql2win: Buffer},label={lis:Ql2win:-buffer},firstnumber=170]
+;--------------------------------------------------------------
+; Read/write buffer. The buffer is 2 bytes longer than we need
+; as there needs to be room to insert the required CRLF in 
+; place of the LF.
+;--------------------------------------------------------------
+buffSize    equ     64*2        ; Buffer Size
+buffer      ds.b    buffSize+2  ; Buffer
+\end{lstlisting}
+
+
+\section{Filter Chains}
+
+As mentioned already, this is a YAF. It checks that you supply exactly
+two channels or file names on the command line and if it doesn't find
+exactly two, it will exit with a bad parameter error. I was thinking
+``what if I wanted to check my code was working and pass the output
+to another filter, would that work?'' I just tried it out just to
+see. 
+
+I was working on the assumption that Tony Tebby et al, had been smart
+enough\footnote{And, indeed, they \emph{were} smart enough!} to ensure
+that chains of filter programs would be set up correctly by the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!EXEC_W!
+or \lstinline[basicstyle={\ttfamily},showstringspaces=false]!EW!
+commands and things would just work. My first attempt was this:
+
+\begin{lstlisting}[basicstyle={\ttfamily},showstringspaces=false,tabsize=1,numbers=none]
+EX ram1_ql2win_bin, ram1_ql_text_file TO ram1_hexdump_bin, #1
+\end{lstlisting}
+
+It did indeed work as expected, the input file, \lstinline[basicstyle={\ttfamily},showstringspaces=false,breaklines=false]!ram1_ql_text_file!,
+was passed into the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!ql2win!
+filter and had carriage returns added where necessary. The output
+from that filter was written directly to the input channel of the
+\lstinline[basicstyle={\ttfamily},showstringspaces=false]!hexdump!
+filter, thanks to the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!TO!
+separator, from where, the output was displayed on screen in channel
+2.
+
+This was extremely handy for testing as I could see the carriage returns
+added in the correct places without having to create and open additional
+files.
+
+Of course, lots of YAFs can be strung together to create the final
+output. Here's another silly example:
+
+\begin{lstlisting}[basicstyle={\ttfamily},showstringspaces=false,tabsize=1,numbers=none]
+EX ram1_ql2win_bin, ram1_ql_text_file TO ram1_win2ql_bin TO ram1_hexdump_bin, #1
+\end{lstlisting}
+
+That's all one command by the way. The text file in QL format is filtered
+to Windows format and then passed through YAF to remove the newly
+added carriage returns and finally, for now, displayed on screen in
+hexadecimal. I used this to ensure that the output file from my two
+filters was identical to the text file used as the input to the test. 
+
+Once again, the \lstinline[basicstyle={\ttfamily},showstringspaces=false]!TO!
+separator has made sure that there are at least an input and an output
+channel for the filter in the chain, even though there appears to
+be none.
+
+\chapter{Win2QL}
+
+So that's a utility to convert files created on the QL (or Linux!)
+into a format that Windows is happy with. Admittedly, even Notepad
+these days is able to cope with QL/Linux line endings, but it's nice
+to have the correct format I suppose.
+
+Win2ql is a utility, a YAF, to convert from Windows format text files
+to QL format text files. It reads each line of the input file, strips
+off the carriage returns that it finds immediately prior to a linefeed,
+and writes out the adjusted buffer to the output file.
+
+The vast majority of the code is exactly the same as discussed in
+the previous chapter so most of what was described there is the same
+and is not discussed further.
+
+The code in the download is obviously the full utility, but for the
+rest of this chapter, only the changes in the file \lstinline[basicstyle={\ttfamily},showstringspaces=false]!win2ql_asm!
+will be discussed.
+
+\section{Changes From Ql2win}
+
+The first difference is in the comments at the top of the code file.
+Listing \ref{lis:Ql2win:-Equates} in the previous chapter has been
+slightly amended, but only as far as the comments are concerned, none
+of the equates are affected. Listing \ref{lis:Win2ql:-Comments} shows
+the new comments.
+
+\begin{lstlisting}[caption={Win2ql: Comments},label={lis:Win2ql:-Comments},firstnumber=1]
+;--------------------------------------------------------------
+; WIN2QL:
+;
+; This filter converts Windows line endings to QL or Linux  
+; format.
+;
+; EX win2ql_bin, input_file, output_file_or_channel
+;--------------------------------------------------------------
+; 21/02/2021 NDunbar Created for QDOSMSQ Assembly Mailing List
+;--------------------------------------------------------------
+; (c) Norman Dunbar, 2021. Permission granted for unlimited use
+; or abuse, without attribution being required. Just enjoy!
+;--------------------------------------------------------------
+
+\end{lstlisting}
+
+The next change is in the job name. Listing \ref{lis:Win2ql:-Job-Header}
+shows the new job header with the amended job name. The line numbers
+should, \emph{hopefully}, match those in the listings being changed,
+those from Ql2win.
+
+\begin{lstlisting}[caption={Win2ql: Job Header},label={lis:Win2ql:-Job-Header},firstnumber=35]
+;==============================================================
+; Here begins the code.
+;--------------------------------------------------------------
+; Stack on entry:
+;
+; $06(a7) = Output file channel id.
+; $02(a7) = Source file channel id.
+; $00(a7) = How many channels? Should be $02.
+;==============================================================
+start
+    bra.s   checkStack
+    dc.l    $00
+    dc.w    $4afb
+name
+    dc.w    name_end-name-2
+    dc.b    'WIN2QL'
+name_end    equ       *
+
+version
+    dc.w    vers_end-version-2
+    dc.b    'Version 1.00'
+vers_end    equ       *
+\end{lstlisting}
+
+There's a large gap before we hit the next change. Listing \ref{lis:Ql2win:-Adding-CR}
+changes to the code shown in Listing \ref{lis:Win2ql:-Removing-CR}.
+
+\begin{lstlisting}[caption={Win2ql: Removing a CR},label={lis:Win2ql:-Removing-CR},firstnumber=120]
+;--------------------------------------------------------------
+; We have read at least the end of a line and have the LF at 
+; the correct place in the buffer. If the character before the
+; LF is a CR remove it and write out, otherwise just write out
+; what we have, it's not in Windows format.
+;--------------------------------------------------------------
+    cmpi.b  #cr,-2(a1)        ; Windows format?
+    bne.s   putLine           ; No, write out what we have
+    move.b  #lf,-2(a1)        ; Replace CR with LF
+    subq.w  #1,d2             ; Update count for the missing CR
+
+\end{lstlisting}
+
+As before, in Ql2win, we check if the character prior to the trailing
+linefeed is a carriage return. In this case, we are expecting it to
+be found, but if not, we can assume that this line, at least, is not
+in Windows format and skip off to writing the line to the output channel.
+
+If we did find a carriage return, all we have to do is overwrite it
+with a linefeed and adjust the line length in \lstinline[basicstyle={\ttfamily},showstringspaces=false]!D2.W!
+to account for a single character less in the buffer.
+
+The rest of the code is identical to Ql2win and has been discussed
+already.

@@ -1,0 +1,2675 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+QL2WIN
+\end_layout
+
+\begin_layout Standard
+From time to time I have to use Windows, or at least, attempt to open a
+ file created on a Windows box while using my QL
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Don't ask!
+\end_layout
+
+\end_inset
+
+.
+ Usually, I open the file in a text editor of some kind, change the line
+ endings setting and save the file that way, or I can use a myriad of Linux
+ utilities to do the conversion.
+ There are quite a few.
+ However, this wouldn't be an ePeriodical on the use of QL Assembly Language
+ if I didn't do it on a QL!
+\end_layout
+
+\begin_layout Standard
+Given the above, I present for your wonderment and amazement, a small utility
+ to convert a QL file to Windows format.
+ Yes! I know! I said that I had occasion to open a Windows file on my QL,
+ but check out the next chapter.....
+\end_layout
+
+\begin_layout Section
+The Code
+\end_layout
+
+\begin_layout Standard
+It has been at least one issue, also known as 
+\begin_inset Quotes eld
+\end_inset
+
+over a year
+\begin_inset Quotes erd
+\end_inset
+
+, since I last wrote a YAF
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Yet Another Filter
+\end_layout
+
+\end_inset
+
+ utility.
+ If you have missed them, then this is indeed a YAF.
+ To convert a file from QL format with 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CHR$(10)
+\end_layout
+
+\end_inset
+
+ (linefeed) line endings to Windows 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CHR$(13)
+\end_layout
+
+\end_inset
+
+/
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+CHR$(10)
+\end_layout
+
+\end_inset
+
+ (carriage return/linefeed) line endings, you simply have to:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=1,numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+EX ram1_ql2win_bin, ram1_ql_text_file, ram1_windows_txt_file
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Equates"
+
+\end_inset
+
+ is the start of the code and covers a few equates and such like that I
+ will be using through the code.
+ As with many of my YAFs, there are only two channels required to be passed;
+ the input QL file and the output Windows file.
+ As I will not be faffing around in subroutines – given the extreme briefness
+ of the code – the input channel id will be on the stack at 2(A7) while
+ the output channel id ill be on the stack at 6(A7).
+ The word at the top of the stack will hopefully be 2 for the number of
+ opened channels passed.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=1"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; QL2WIN:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; This filter converts QL or Linux line endings to Windows 
+\end_layout
+
+\begin_layout Plain Layout
+
+; format.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; EX ql2win_bin, input_file, output_file_or_channel
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; 21/02/2021 NDunbar Created for QDOSMSQ Assembly Mailing List
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; (c) Norman Dunbar, 2021.
+ Permission granted for unlimited use
+\end_layout
+
+\begin_layout Plain Layout
+
+; or abuse, without attribution being required.
+ Just enjoy!
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; How many channels do I want?
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+numchans    equ     2         ; How many channels required?
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Stack stuff.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+sourceId    equ     $02       ; Offset(A7) to input file id
+\end_layout
+
+\begin_layout Plain Layout
+
+destId      equ     $06       ; Offset(A7) to output file id
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Other Variables
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+err_bp      equ     -15
+\end_layout
+
+\begin_layout Plain Layout
+
+err_eof     equ     -10
+\end_layout
+
+\begin_layout Plain Layout
+
+me          equ     -1
+\end_layout
+
+\begin_layout Plain Layout
+
+timeout     equ     -1
+\end_layout
+
+\begin_layout Plain Layout
+
+lf          equ     $0a
+\end_layout
+
+\begin_layout Plain Layout
+
+cr          equ     $0d
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Ql2win: Equates
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-Equates"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Following on, we have Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Job-Header"
+
+\end_inset
+
+ which is the standard QDOSMSQ job header.
+ There's nothing much of interest to see here, and further discussion would
+ be fruitless.
+ Lets move on!
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=35"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+; Here begins the code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Stack on entry:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; $06(a7) = Output file channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; $02(a7) = Source file channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; $00(a7) = How many channels? Should be $02.
+\end_layout
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    $00
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+name
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    name_end-name-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b    'QL2WIN'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end    equ       *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b    'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end    equ       *
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: Job Header
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-Job-Header"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Parameter-checks"
+
+\end_inset
+
+ is where we check the parameters passed on the stack.
+ We should have been passed 2 channels and a word informing us of same.
+ The code checks that all is well, and if not, we exit with a bad parameter
+ error.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=57"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Check the stack on entry.
+ We only require NUMCHAN channels.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+; Anything other than NUMCHANS will result in a BAD PARAMETER 
+\end_layout
+
+\begin_layout Plain Layout
+
+; error on exit from EW (but not from EX).
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.w  #numchans,(a7)    ; Two channels is a must
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   ql2win            ; Ok, skip error bit
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bad_parameter
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #err_bp,d0        ; Guess!
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit         ; Die horribly
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: Parameter checks
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-Parameter-checks"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Continuing on from Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Parameter-checks"
+
+\end_inset
+
+, we have a number of constants.
+ These are values that will be needed at various places in the code, but
+ which are stored in spare registers to speed up the code by not having
+ to worry about getting stuff out of buffers; or from the stack; and such
+ like.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Constants"
+
+\end_inset
+
+, which follows, shows that the utility is written to hold the read and
+ write timeout in register 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D3
+\end_layout
+
+\end_inset
+
+, the read/write buffer size in 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D4
+\end_layout
+
+\end_inset
+
+, the buffer address which is used for reading and writing is held in 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A3
+\end_layout
+
+\end_inset
+
+ while 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A4
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A5
+\end_layout
+
+\end_inset
+
+ hold the channel ids for the source and destination channels respectively.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=69"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Initialise a couple of registers that will keep their values 
+\end_layout
+
+\begin_layout Plain Layout
+
+; all through the rest of the code.
+ These are:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D3 holds the read and write timeout value, -1.
+\end_layout
+
+\begin_layout Plain Layout
+
+; D4 holds the buffer size for reading into, buffSize.
+\end_layout
+
+\begin_layout Plain Layout
+
+; A3 holds the buffer for reading and writing.
+\end_layout
+
+\begin_layout Plain Layout
+
+; A4 holds the source channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; A5 holds the destination channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+ql2win
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #buffSize,d4      ; Storage for buffer size for D2
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     buffer,a3         ; Start of (write) buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  sourceID(a7),a4   ; Source channel id
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  destId(a7),a5     ; Destination channel id
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: Constants
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-Constants"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+These constants will be swapped into the registers that need them as the
+ code progresses.
+ Why bother with this? Well register to register access is much faster than
+ memory to register access, and while it might not speed things up for the
+ sizes of the files I use, on the odd occasions, it might be useful in bigger
+ programs where there needs to be a lot of this sort of thing.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=85"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; The main loop starts here.
+ Read a single byte, check for EOF.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D0 = 2 (io_fline)         Error code
+\end_layout
+
+\begin_layout Plain Layout
+
+; D1.W                      Bytes read into buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+; D2.W = Buffer Size        Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+; D3.W = timeout.
+           Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+; A0.L = Channel ID.
+        Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+; A1.L = Start of buffer.
+   Updated buffer (A1 + D2.W)
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_fline,d0      ; Fetch lines ending with LF
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d4,d2             ; Buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a4,a0             ; Channel to read
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a3,a1             ; Read buffer start
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3                ; Read a line from input file
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0                ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_EOF,d0       ; All done yet?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq     allDone           ; Yes.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit         ; Oops!
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: readLoop
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-readLoop"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The top of the main loop for the utility is shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-readLoop"
+
+\end_inset
+
+.
+ Here we see the use of the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+io_fline
+\end_layout
+
+\end_inset
+
+ function to read a string of bytes, from a channel, into a buffer.
+ The string of bytes is terminated by a linefeed character, and the maximum
+ number of bytes to be read is determined by the value in 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.W
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Don't do as I did, and use 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+io_sstrg
+\end_layout
+
+\end_inset
+
+ instead.
+ Because that one fills the buffer regardless of where it finds a linefeed
+ in the bytes being read.
+ I spent ages looking for a bug in my code and had my QDOS Companion open
+ at the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+io_sstrg
+\end_layout
+
+\end_inset
+
+ page instead of 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+io_fline
+\end_layout
+
+\end_inset
+
+.
+ Sigh!
+\end_layout
+
+\begin_layout Standard
+The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-readLoop"
+
+\end_inset
+
+ sets up the registers to read from the source file and reads it.
+ If the read was successful, we skip to the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-gotLine"
+
+\end_inset
+
+ to process the bytes just read, otherwise we have to check for End Of File.
+ If we find EOF, we can bale out and close the file on the way, otherwise
+ we have an error and exit the utility via the error handling code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=106"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; At this point, we have a string and a clean read with no
+\end_layout
+
+\begin_layout Plain Layout
+
+; errors.
+ Check if we have read an entire line before we try to
+\end_layout
+
+\begin_layout Plain Layout
+
+; convert this to Windows format.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D1.W = bytes read into buffer, inc LF.
+\end_layout
+
+\begin_layout Plain Layout
+
+; A1.L = one past where the LF should be.
+\end_layout
+
+\begin_layout Plain Layout
+
+; If -1(a1) == lf we have a whole string.
+\end_layout
+
+\begin_layout Plain Layout
+
+; Else write out what we have and read more of the same string.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+gotLine
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d1,d2             ; Bytes read, required for write
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #lf,-1(a1)        ; Did we read the whole line?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s  putLine            ; No, write out what we got
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: gotLine
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-gotLine"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The number of bytes read into the buffer is copied from 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D1.W
+\end_layout
+
+\end_inset
+
+ to 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.W
+\end_layout
+
+\end_inset
+
+ as we need 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.W
+\end_layout
+
+\end_inset
+
+ to be correctly set for writing the bytes back out to the destination channel.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+A1.L
+\end_layout
+
+\end_inset
+
+ has been adjusted to point at the character above the trailing linefeed,
+ if there is one, so we can check the character previous to that one.
+ If that character is not a linefeed, then our buffer is too small to be
+ able to read the entire line from the input channel.
+ In this case, we simply skip to Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-putLine"
+
+\end_inset
+
+ where we will write the data we have in the buffer, unchanged, to the destinati
+on channel.
+\end_layout
+
+\begin_layout Standard
+If we have found a linefeed character, we drop into Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Adding-CR"
+
+\end_inset
+
+ to process the line further, if necessary.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=120"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We have read at least the end of a line and have the LF at 
+\end_layout
+
+\begin_layout Plain Layout
+
+; the correct place in the buffer.
+ If the character before it
+\end_layout
+
+\begin_layout Plain Layout
+
+; is a CR ignore it and write out, otherwise insert a CR before
+\end_layout
+
+\begin_layout Plain Layout
+
+; the LF and write it all out.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #cr,-2(a1)        ; Already Windows format?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   putLine           ; Yes, ignore CR and write out
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #cr,-1(a1)        ; Insert CR
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #lf,(a1)          ; Needs LF also
+\end_layout
+
+\begin_layout Plain Layout
+
+    addq.w  #1,d2             ; Update count for the CR
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: Adding a CR
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-Adding-CR"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It is possible that the file we are reading is already in Windows format.
+ Before we go ahead and write a carriage return character just before the
+ linefeed, we better check! If the character is a carriage return, we jump
+ off to Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-putLine"
+
+\end_inset
+
+ to write the line out unchanged.
+\end_layout
+
+\begin_layout Standard
+Assuming the file is not already in Windows format, we replace the linefeed
+ at 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+-1(A1)
+\end_layout
+
+\end_inset
+
+ with a carriage return and then add in a new linefeed at 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+(A1)
+\end_layout
+
+\end_inset
+
+.
+ This is why we made the buffer big enough for an extra 2 characters, to
+ give us room to add in the required carriage return.
+\end_layout
+
+\begin_layout Standard
+As we have added in an additional character to the buffer, we need to update
+ 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.W
+\end_layout
+
+\end_inset
+
+ which currently holds the number of bytes we read in.
+ This is used to determine how many bytes will be written to the destination
+ file, which coincidentally enough, happens to be where we drop in next;
+ to Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-putLine"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=131"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Write out the contents of the buffer.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D0 = 7 (io_sstrg)         Error code
+\end_layout
+
+\begin_layout Plain Layout
+
+; D1.W                      Bytes written to channel
+\end_layout
+
+\begin_layout Plain Layout
+
+; D2.W = Buffer Size        Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+; D3.W = timeout.
+           Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+; A0.L = Channel ID.
+        Preserved
+\end_layout
+
+\begin_layout Plain Layout
+
+; A1.L = Start of buffer.
+   Updated buffer (A1 + D2.W)
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+putLine
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_sstrg,d0      ; Send strings
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l  a5,a0            ; Dest channel id
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l  a3,a1            ; Write buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3                ; Do it
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0                ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   readLoop          ; Yes, keep going 
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   errorExit         ; No.
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: putLine
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-putLine"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code at 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+putLine
+\end_layout
+
+\end_inset
+
+ uses 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+io_sstrg
+\end_layout
+
+\end_inset
+
+ to write data from a buffer to a channel.
+ The number of bytes is determined by 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.W
+\end_layout
+
+\end_inset
+
+.
+ The required registers are set up by copying in those required from our
+ constants where they have been sitting, waiting their turn of action! The
+ remainder of the code, as seen in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-exit"
+
+\end_inset
+
+, handles errors and exiting from the utility when all is done.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=149"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; No errors, exit quietly back to SuperBASIC.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+allDone
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #0,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We have hit an error so we copy the code to D3 then exit via 
+\end_layout
+
+\begin_layout Plain Layout
+
+; a forced removal of this job.
+ EXEC_W/EW will display the 
+\end_layout
+
+\begin_layout Plain Layout
+
+; error in SuperBASIC, but EXEC/EX will not.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+errorExit
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l  d0,d3             ; Error code we want to return
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Kill myself when an error was detected, or at EOF.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+suicide
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #mt_frjob,d0      ; This job will die soon
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #me,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #1
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: Exit
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-exit"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There's not much to see here.
+ We arrive at 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+allDone
+\end_layout
+
+\end_inset
+
+ when we hit End Of File on the input file and at 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+errorExit
+\end_layout
+
+\end_inset
+
+ if any errors were detected.
+ The job then commits suicide by removing itself from the system, returning
+ any error codes in 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D3
+\end_layout
+
+\end_inset
+
+ as required.
+ These errors will be seen only if you executed the utility with the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+EXEC_W
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+EW
+\end_layout
+
+\end_inset
+
+ commands.
+ 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+EXEC
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+EW
+\end_layout
+
+\end_inset
+
+ do not wait for the job to complete so cannot know in advance what, if
+ any, errors will occur.
+\end_layout
+
+\begin_layout Standard
+Finally, we have Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-buffer"
+
+\end_inset
+
+, which is where we define the buffer which will be used to read data into
+ from the source file, and write data out of to the destination file.
+\end_layout
+
+\begin_layout Standard
+As previously mentioned, the buffer is two bytes larger (although it only
+ needs one) than we tell QDOSMSQ as we need that extra one byte to insert
+ a carriage return character, if necessary.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=170"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Read/write buffer.
+ The buffer is 2 bytes longer than we need
+\end_layout
+
+\begin_layout Plain Layout
+
+; as there needs to be room to insert the required CRLF in 
+\end_layout
+
+\begin_layout Plain Layout
+
+; place of the LF.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+buffSize    equ     64*2        ; Buffer Size
+\end_layout
+
+\begin_layout Plain Layout
+
+buffer      ds.b    buffSize+2  ; Buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Ql2win: Buffer
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Ql2win:-buffer"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Filter Chains
+\end_layout
+
+\begin_layout Standard
+As mentioned already, this is a YAF.
+ It checks that you supply exactly two channels or file names on the command
+ line and if it doesn't find exactly two, it will exit with a bad parameter
+ error.
+ I was thinking 
+\begin_inset Quotes eld
+\end_inset
+
+what if I wanted to check my code was working and pass the output to another
+ filter, would that work?
+\begin_inset Quotes erd
+\end_inset
+
+ I just tried it out just to see.
+ 
+\end_layout
+
+\begin_layout Standard
+I was working on the assumption that Tony Tebby et al, had been smart enough
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+And, indeed, they 
+\emph on
+were
+\emph default
+ smart enough!
+\end_layout
+
+\end_inset
+
+ to ensure that chains of filter programs would be set up correctly by the
+ 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+EXEC_W
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+EW
+\end_layout
+
+\end_inset
+
+ commands and things would just work.
+ My first attempt was this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=1,numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+EX ram1_ql2win_bin, ram1_ql_text_file TO ram1_hexdump_bin, #1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+It did indeed work as expected, the input file, 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,breaklines=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+ram1_ql_text_file
+\end_layout
+
+\end_inset
+
+, was passed into the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+ql2win
+\end_layout
+
+\end_inset
+
+ filter and had carriage returns added where necessary.
+ The output from that filter was written directly to the input channel of
+ the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+hexdump
+\end_layout
+
+\end_inset
+
+ filter, thanks to the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+TO
+\end_layout
+
+\end_inset
+
+ separator, from where, the output was displayed on screen in channel 2.
+\end_layout
+
+\begin_layout Standard
+This was extremely handy for testing as I could see the carriage returns
+ added in the correct places without having to create and open additional
+ files.
+\end_layout
+
+\begin_layout Standard
+Of course, lots of YAFs can be strung together to create the final output.
+ Here's another silly example:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=1,numbers=none"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+EX ram1_ql2win_bin, ram1_ql_text_file TO ram1_win2ql_bin TO ram1_hexdump_bin,
+ #1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+That's all one command by the way.
+ The text file in QL format is filtered to Windows format and then passed
+ through YAF to remove the newly added carriage returns and finally, for
+ now, displayed on screen in hexadecimal.
+ I used this to ensure that the output file from my two filters was identical
+ to the text file used as the input to the test.
+ 
+\end_layout
+
+\begin_layout Standard
+Once again, the 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+TO
+\end_layout
+
+\end_inset
+
+ separator has made sure that there are at least an input and an output
+ channel for the filter in the chain, even though there appears to be none.
+\end_layout
+
+\begin_layout Chapter
+Win2QL
+\end_layout
+
+\begin_layout Standard
+So that's a utility to convert files created on the QL (or Linux!) into
+ a format that Windows is happy with.
+ Admittedly, even Notepad these days is able to cope with QL/Linux line
+ endings, but it's nice to have the correct format I suppose.
+\end_layout
+
+\begin_layout Standard
+Win2ql is a utility, a YAF, to convert from Windows format text files to
+ QL format text files.
+ It reads each line of the input file, strips off the carriage returns that
+ it finds immediately prior to a linefeed, and writes out the adjusted buffer
+ to the output file.
+\end_layout
+
+\begin_layout Standard
+The vast majority of the code is exactly the same as discussed in the previous
+ chapter so most of what was described there is the same and is not discussed
+ further.
+\end_layout
+
+\begin_layout Standard
+The code in the download is obviously the full utility, but for the rest
+ of this chapter, only the changes in the file 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+win2ql_asm
+\end_layout
+
+\end_inset
+
+ will be discussed.
+\end_layout
+
+\begin_layout Section
+Changes From Ql2win
+\end_layout
+
+\begin_layout Standard
+The first difference is in the comments at the top of the code file.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Equates"
+
+\end_inset
+
+ in the previous chapter has been slightly amended, but only as far as the
+ comments are concerned, none of the equates are affected.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Win2ql:-Comments"
+
+\end_inset
+
+ shows the new comments.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=1"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; WIN2QL:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; This filter converts Windows line endings to QL or Linux  
+\end_layout
+
+\begin_layout Plain Layout
+
+; format.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; EX win2ql_bin, input_file, output_file_or_channel
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; 21/02/2021 NDunbar Created for QDOSMSQ Assembly Mailing List
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; (c) Norman Dunbar, 2021.
+ Permission granted for unlimited use
+\end_layout
+
+\begin_layout Plain Layout
+
+; or abuse, without attribution being required.
+ Just enjoy!
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Win2ql: Comments
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Win2ql:-Comments"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The next change is in the job name.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Win2ql:-Job-Header"
+
+\end_inset
+
+ shows the new job header with the amended job name.
+ The line numbers should, 
+\emph on
+hopefully
+\emph default
+, match those in the listings being changed, those from Ql2win.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=35"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+; Here begins the code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Stack on entry:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; $06(a7) = Output file channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; $02(a7) = Source file channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; $00(a7) = How many channels? Should be $02.
+\end_layout
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s   checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l    $00
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+name
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    name_end-name-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b    'WIN2QL'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end    equ       *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w    vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b    'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end    equ       *
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Win2ql: Job Header
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Win2ql:-Job-Header"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There's a large gap before we hit the next change.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Ql2win:-Adding-CR"
+
+\end_inset
+
+ changes to the code shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Win2ql:-Removing-CR"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "firstnumber=120"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We have read at least the end of a line and have the LF at 
+\end_layout
+
+\begin_layout Plain Layout
+
+; the correct place in the buffer.
+ If the character before the
+\end_layout
+
+\begin_layout Plain Layout
+
+; LF is a CR remove it and write out, otherwise just write out
+\end_layout
+
+\begin_layout Plain Layout
+
+; what we have, it's not in Windows format.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.b  #cr,-2(a1)        ; Windows format?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   putLine           ; No, write out what we have
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.b  #lf,-2(a1)        ; Replace CR with LF
+\end_layout
+
+\begin_layout Plain Layout
+
+    subq.w  #1,d2             ; Update count for the missing CR
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Win2ql: Removing a CR
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Win2ql:-Removing-CR"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As before, in Ql2win, we check if the character prior to the trailing linefeed
+ is a carriage return.
+ In this case, we are expecting it to be found, but if not, we can assume
+ that this line, at least, is not in Windows format and skip off to writing
+ the line to the output channel.
+\end_layout
+
+\begin_layout Standard
+If we did find a carriage return, all we have to do is overwrite it with
+ a linefeed and adjust the line length in 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+D2.W
+\end_layout
+
+\end_inset
+
+ to account for a single character less in the buffer.
+\end_layout
+
+\begin_layout Standard
+The rest of the code is identical to Ql2win and has been discussed already.
+\end_layout
+
+\end_body
+\end_document
