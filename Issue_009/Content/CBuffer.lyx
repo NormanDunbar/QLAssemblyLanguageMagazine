@@ -1,0 +1,1351 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 508
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+% Added by lyx2lyx
+\renewcommand{\textendash}{--}
+\renewcommand{\textemdash}{---}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Circular Buffers
+\end_layout
+
+\begin_layout Standard
+A circular buffer is a useful thing in some applications.
+ I had to learn about them when writing an interrupt driven USART module
+ for my Arduinos.
+ The application code can write data to the buffer, and as long as it doesn't
+ get full, the USART code can be pulling data out of the same buffer and
+ sending it out onto the serial interface pins.
+ Is this useful for the QL I hear you think? Who knows, but I thought it
+ would be an interesting exercise to convert from C++ to Assembly Language,
+ just for fun
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Or certain values of 
+\begin_inset Quotes eld
+\end_inset
+
+fun
+\begin_inset Quotes erd
+\end_inset
+
+ perhaps!
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Section
+How They Work
+\end_layout
+
+\begin_layout Standard
+The buffer is allocated as a chunk of memory where the size asked for by
+ the user must be adjusted to the next power of two upwards.
+ This could be dangerous if the user asks for 32,770 bytes as the next power
+ of two up from there is 65,536 – however, it's a documented thing that
+ powers of two are required so more fool the developer in that case, maybe?
+\end_layout
+
+\begin_layout Standard
+In addition to the space requested, an additional 6 byte headre is added
+ at the front of the space to hold:
+\end_layout
+
+\begin_layout Itemize
+A record of the data size, to the nearest power of two.
+ This is the actual size of the data area allocated for the buffer.
+\end_layout
+
+\begin_layout Itemize
+A 
+\begin_inset Quotes eld
+\end_inset
+
+head
+\begin_inset Quotes erd
+\end_inset
+
+ pointer.
+ This defines the address within the data area where the most recent byte
+ was 
+\emph on
+written
+\emph default
+ to the buffer's data area.
+ The head will be adjusted to the next byte position when a new byte is
+ to be added to the buffer.
+\end_layout
+
+\begin_layout Itemize
+A 
+\begin_inset Quotes eld
+\end_inset
+
+tail
+\begin_inset Quotes erd
+\end_inset
+
+ pointer.
+ This defines the address within the data area where the most recent byte
+ was 
+\emph on
+read
+\emph default
+ to the buffer's data area.
+ The tail will be adjusted to locate the next unread byte in the buffer,
+ when the next request for a byte is processed.
+\end_layout
+
+\begin_layout Subsection
+Buffer Structure
+\end_layout
+
+\begin_layout Standard
+The structure of our circular buffers will be as shown in Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Circular-Buffer-structure"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top" width="55text%">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+cbSize
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+cbHead
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+cbTail
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+cbData
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Circular Buffer structure
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Circular-Buffer-structure"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The various code functions we will create for this article will expect a
+ buffer address to be passed in 
+\family typewriter
+A3.L
+\family default
+ and it is required that the address pointed top by 
+\family typewriter
+A3.L
+\family default
+ is that of the 
+\family typewriter
+cbSize
+\family default
+ field in the buffer.
+ The start address in other words.
+ However, as the initialisation of each function will retrieve the fields
+ required from the buffer header, 
+\family typewriter
+A3.L
+\family default
+ will end up pointing at the start of the data area for the body of the
+ function.
+ Because of this, I need to use some negative offsets when the code needs
+ to refer to the header fields.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+cbSize equ -6    ; Actual allocated size of buffer data area.
+\end_layout
+
+\begin_layout Plain Layout
+
+cbHead equ -4    ; Head offset within data area.
+\end_layout
+
+\begin_layout Plain Layout
+
+cbTail equ -2    ; Tail offset within data area.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+How Big is my Buffer?
+\end_layout
+
+\begin_layout Standard
+You might think that a buffer is as big as requested? Assuming the request
+ was for a valid power of two in size of course.
+ A foible of circular buffers of this format is that they always end up
+ losing a single byte of storage.
+ Why is this?
+\end_layout
+
+\begin_layout Standard
+Imagine a brand new empty buffer, let's say it's only two bytes in size
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Because that means I have less typing to do in explaining it!
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+As the buffer has just been allocated, 
+\begin_inset Formula $head=tail=0$
+\end_inset
+
+ and the buffer is officially empty.
+ Nothing has been written to the buffer and nothing is available to be read.
+ So far so good!
+\end_layout
+
+\begin_layout Standard
+The application wants to write a byte to the buffer, so:
+\end_layout
+
+\begin_layout Itemize
+Increment the head offset by 1.
+ 
+\begin_inset Formula $Head=1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $Head\ MOD\ 2$
+\end_inset
+
+, which is required to account for any wrap around, leaves 
+\begin_inset Formula $Head=1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+Compare with the tail offset, 0.
+ They are different, so the buffer has space available.
+\end_layout
+
+\begin_layout Itemize
+Store the data byte at offset 1.
+\end_layout
+
+\begin_layout Itemize
+Update the head offset in the buffer header.
+\end_layout
+
+\begin_layout Standard
+This executes successfully and on return, 
+\begin_inset Formula $head=1$
+\end_inset
+
+ and 
+\begin_inset Formula $tail=0$
+\end_inset
+
+.
+ The buffer has one byte in the data area.
+ As you can see, the head pointer was incremented before storing the data
+ byte and the new byte stored at that location.
+ This means that currently, byte zero in the data area has been skipped
+ over.
+ Bear this in mind.
+\end_layout
+
+\begin_layout Standard
+The application now wants to write a second byte to the buffer.
+ The execution of this proceeds as follows:
+\end_layout
+
+\begin_layout Itemize
+Increment the head offset by 1.
+ 
+\begin_inset Formula $Head=2$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Formula $Head\ MOD\ 2$
+\end_inset
+
+, leaves 
+\begin_inset Formula $Head=0$
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Compare with the tail offset, 0.
+ They are equal, so the buffer has no space available!
+\end_layout
+
+\begin_layout Itemize
+The second byte cannot be stored in the buffer!
+\end_layout
+
+\begin_layout Standard
+So, we allocated a two byte buffer by can only store a single byte in it.
+ There are other buffer structures which store the count of data bytes written
+ and adjust this on each read or write, these buffers have the full compliment
+ of space available for the overhead of a bit of extra processing.
+\end_layout
+
+\begin_layout Standard
+Ok, why are we comparing the incremented head offset with the unincremented
+ tail offset? If we didn't, then the test would have to be whether the two
+ offsets were equal, which means we can't tell if the buffer is empty or
+ full.
+\end_layout
+
+\begin_layout Subsection
+Is the Buffer Empty?
+\end_layout
+
+\begin_layout Standard
+This is rather easy.
+ If the head pointer equals the tail pointer, then the buffer is currently
+ empty.
+ For a brand new buffer, both offsets are zero and the buffer is definitely
+ empty.
+\end_layout
+
+\begin_layout Standard
+If, on the other hand, 10 bytes had been added since new, and none read
+ back yet, the head will be 10 while the tail will be still zero.
+ Don't I mean 9 for the head? No, definitely 10 because while the head (and
+ tail) starts at zero in a new buffer, it is incremented by 1 
+\emph on
+before
+\emph default
+ storing a new byte as explained above.
+ The first byte added will be at offset 1 for a new buffer, the second at
+ offset 2 and so the tenth will be at offset 10.
+\end_layout
+
+\begin_layout Standard
+After reading back the 10 bytes, the tail offset will also be at 10, so
+ both are equal and the buffer is indeed empty.
+\end_layout
+
+\begin_layout Standard
+Interestingly, a new, empty, buffer need not have the head and tail offsets
+ set to zero, it makes no difference where they both point, provided they
+ point at the same offset.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Can I now do this then?
+\end_layout
+
+\begin_layout Plain Layout
+Note that -cbHead is actually cbTail and -cbTail is actually cbHead when
+ using those as offsets from the buffer start.
+ But it still works out! Thankfully.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+isEmpty
+\end_layout
+
+\begin_layout Plain Layout
+
+        cmp.w -cbHead(a3),-cbTail(a3)    ; Head = Tail? 
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s ieEmpty                    ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #0,d0                      ; No
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ieEmpty
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #1,d0                      ; No
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Is the Buffer Full?
+\end_layout
+
+\begin_layout Standard
+The buffer is full up whenever the tail pointer is one byte larger than
+ the head.
+ This is because 
+\begin_inset Formula $head+1$
+\end_inset
+
+ is where the next data byte will be written to the buffer.
+ The tail offset, whatever it currently happens to be, is where the most
+ recent byte was read from the buffer.
+ As previously explained, we have to compare the incremented head offset
+ with the current tail offset or we will be unable to determine if the buffer
+ is empty or full when both are equal.
+\end_layout
+
+\begin_layout Standard
+It is this increment to the head offset which causes the loss of a single
+ byte of storage in the buffer.
+\end_layout
+
+\begin_layout Subsection
+How Much Space is Used?
+\end_layout
+
+\begin_layout Standard
+This is calculated as 
+\begin_inset Formula $(buffer\_size+head-tail)\ MOD\ buffer\_size$
+\end_inset
+
+.
+ If we assume a status as shown in Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Circular-Buffer-space-used-simple-example"
+
+\end_inset
+
+ we can see a simple example where data have been written by nothing read
+ back yet.
+ The first byte is unknown as it was never written to since the buffer was
+ created.
+ The 4 bytes written are A, B C and D.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="2" columns="11">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbSize
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbHead
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbTail
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbData
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+?
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+tail
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+B
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+head
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+?
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+?
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+?
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Circular Buffer space used - simple example 
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Circular-Buffer-space-used-simple-example"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is an obvious one, there are 4 bytes used, we can see that plainly.
+ And the calculation gives the correct result:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(8+4-0\right)\ MOD\ 8
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+12\ MOD\ 8
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And 
+\begin_inset Formula $12\ MOD\ 8$
+\end_inset
+
+ is indeed 4.
+\end_layout
+
+\begin_layout Standard
+How about when the buffer has been used for a while and the situation resembles
+ Figure ?
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="2" columns="11">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbSize
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbHead
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbTail
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\family typewriter
+\series bold
+cbData
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Y
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Z
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+E
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+F
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+G
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Circular Buffer space used - complex example 
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Circular-Buffer-space-used-comples-example"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In this example, the last byte written was at offset 2 (
+\begin_inset Formula $head=2$
+\end_inset
+
+), the 'A', while the last byte read back was at offset 5 (tail = 5), the
+ 'E'.
+ We can plainly see that the bytes F, G, Y, Z and A have yet to be read
+ and so must be included in the count, while the data bytes C, D and E have
+ already been read back and are thus classed as free space now.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(8+2-5\right)\ MOD\ 8
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+5\ MOD\ 8
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And 
+\begin_inset Formula $5\ MOD\ 8$
+\end_inset
+
+ is 5 and there are 5, as yet, unread bytes in the buffer – F, G, Y, Z and
+ A.
+\end_layout
+
+\begin_layout Subsection
+Incrementing Head and Tail Offsets
+\end_layout
+
+\begin_layout Standard
+Incrementing an offset is a simple case of 
+\begin_inset Formula $\left(offset+1\right)\ MOD\ buffer\_size$
+\end_inset
+
+.
+ We need the MOD function as the offset has to wrap from 
+\begin_inset Formula $buffersize-1$
+\end_inset
+
+ to zero.
+\end_layout
+
+\begin_layout Subsection
+How Much Space is Available?
+\end_layout
+
+\begin_layout Standard
+The space available in a buffer is 
+\begin_inset Formula $buffer\_size-1-space\_used$
+\end_inset
+
+.
+ Alternatively, 
+\begin_inset Formula $buffer\_size-1-\left(\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size\right)$
+\end_inset
+
+.
+\end_layout
+
+\end_body
+\end_document
