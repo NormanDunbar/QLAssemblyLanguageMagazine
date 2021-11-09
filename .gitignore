@@ -11,7 +11,7 @@
 *.toc
 M68000PM.pdf
 *.lyx~
-
+*.lyx#
 *.bbl
 *.blg
 *.sed.bkp
