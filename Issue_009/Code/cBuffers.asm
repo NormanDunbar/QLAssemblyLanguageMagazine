@@ -288,11 +288,13 @@ gbExit
 ; All other registers are preserved.
 ;--------------------------------------------------------------
 isFull
-        movem.l d4/a3,-(a7)     ; Save the workers
-        addq.l #2,a3            ; Skip over the size, not used
-        move.w (a3)+,d4         ; Head
-        addq.w #1,d4            ; Head + 1
-        cmpi.w (a3)+,d4         ; Same as tail?
+        movem.l d4-d5/a3,-(a7)  ; Save the workers
+        move.w (a3)+,d4         ; Get the buffer size
+        subq.w #1,d4            ; Minus 1 for MOD
+        move.w (a3)+,d5         ; Get the head offset
+        addq.w #1,d5            ; Next head offset
+        and.w d4,d5             ; MOD buffer size
+        cmp.w (a3),d5           ; Same as tail?
         beq.s ifFull            ; Buffer is full
         moveq #1,d0             ; Not full
         bra.s ifExit            ; Bale out
@@ -301,7 +303,7 @@ ifFull
         moveq #0,d0             ; Buffer is full
 
 ifExit
-        movem.l (a7)+,d4/a3     ; Restore the workers
+        movem.l (a7)+,d4-d5/a3  ; Restore the workers
         rts
 
 
@@ -382,9 +384,8 @@ guExit
 ;
 ; EXIT:
 ;
-; D0.L = Used space.
-;      = 0 if the buffer is empty. Z set.
-;      <> 0 = used space. Z clear.
+; D0.L = Space used in the buffer. 
+;      Z set if buffer is full.
 ;
 ; All other registers are preserved.
 ;--------------------------------------------------------------
@@ -400,4 +401,3 @@ gfIsEmpty
 gfExit
         move.l (a7)+,a3         ; Restore the worker
         rts
-

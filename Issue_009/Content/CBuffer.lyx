@@ -409,7 +409,7 @@ cbHead
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -1496,7 +1496,11 @@ reference "lis:Writing-data-to-a-buffer"
 
 \end_inset
 
- has the full details.
+ shows the code for the 
+\family typewriter
+addByte
+\family default
+ procedure..
 \end_layout
 
 \begin_layout Standard
@@ -1790,21 +1794,73 @@ A3
 .
 \end_layout
 
-\begin_layout Subsection
-Read Data from a Buffer
-\end_layout
-
 \begin_layout Standard
-\begin_inset Note Note
+The sharp eyed and quick brained amongst you may be thinking, 
+\begin_inset Quotes eld
+\end_inset
+
+
+\emph on
+Hmmmm, what about that 
+\emph default
+
+\begin_inset listings
+inline true
 status open
 
 \begin_layout Plain Layout
-YOU ARE HERE
+
+move.b d1,(a3,d4.w)
 \end_layout
 
 \end_inset
 
 
+\emph on
+ instruction, to store the new data byte, as the index register is a word,
+ surely it will be sign extended? The maximum buffer is 32768 after all
+ and that's got a sign bit of 1 after all.
+\emph default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Funnily enough, I thought that too for a bit, however, the absolute maximum
+ value that the head or tail offsets can take is one less than the buffer
+ size – buffer offsets are from zero – so that makes 32767 or $7FFF the
+ maximum, and that doesn't have a leading 1 in the sign bit, so all is well.
+\end_layout
+
+\begin_layout Subsection
+Read Data from a Buffer
+\end_layout
+
+\begin_layout Standard
+Reading data from a buffer is quite simple.
+ If the buffer is empty, then there's nothing to do as there's nothing to
+ actually read.
+ Assuming the buffer does have data, then the tail offset is incremented,
+ wrapping around if necessary, and the byte at that offset is obtained.
+ The new tail pointer is then stored in the buffer header.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Reading-data-from-a-buffer"
+
+\end_inset
+
+ shows the 
+\family typewriter
+getByte
+\family default
+ code.
 \end_layout
 
 \begin_layout Standard
@@ -2060,15 +2116,59 @@ name "lis:Reading-data-from-a-buffer"
 
 \end_layout
 
+\begin_layout Standard
+The code begins by calling out to 
+\family typewriter
+isEmpty
+\family default
+ and if the buffer is empty, bales out setting 
+\family typewriter
+D0
+\family default
+ to 1 to show a read from an empty buffer was attempted.
+\end_layout
+
+\begin_layout Standard
+The buffer size is copied into 
+\family typewriter
+D5.W
+\family default
+ and decremented.
+ This is used later to MOD the new tail offset to make sure it wraps around,
+ if required.
+ The head offset is not required so is skipped over leaving 
+\family typewriter
+A3.L
+\family default
+ pointing at the tail, which is read into 
+\family typewriter
+D6
+\family default
+.W.
+ The tail offset is then incremented, wrapping as appropriate to give the
+ offset into the data area that we will read from.
+ 
+\end_layout
+
+\begin_layout Standard
+The data byte at the calculated offset is copied into D1 and the new tail
+ offset stored in the buffer's header.
+ 
+\family typewriter
+D0
+\family default
+ is cleared to show that no errors occurred.
+\end_layout
+
 \begin_layout Subsection
 Is the Buffer Full?
 \end_layout
 
 \begin_layout Standard
-The buffer is full up whenever the tail pointer is one byte larger than
- the head.
+The buffer is full up whenever the tail offset is 1 byte larger than the
+ head.
  This is because 
-\begin_inset Formula $head+1$
+\begin_inset Formula $head+1\ MOD\ buffer\_size$
 \end_inset
 
  is where the next data byte will be written to the buffer.
@@ -2113,7 +2213,7 @@ status open
 
 \begin_layout Plain Layout
 
-; when (Head + 1) == Tail.
+; when (Head + 1) MOD size == Tail.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2191,27 +2291,37 @@ isFull
 
 \begin_layout Plain Layout
 
-        movem.l d4/a3,-(a7)     ; Save the workers
+        movem.l d4-d5/a3,-(a7)  ; Save the workers
 \end_layout
 
 \begin_layout Plain Layout
 
-        addq.l #2,a3            ; Skip over the size, not used
+        move.w (a3)+,d4         ; Get the buffer size
 \end_layout
 
 \begin_layout Plain Layout
 
-        move.w (a3)+,d4         ; Head
+        subq.w #1,d4            ; Minus 1 for MOD
 \end_layout
 
 \begin_layout Plain Layout
 
-        addq.w #1,d4            ; Head + 1
+        move.w (a3)+,d5         ; Get the head offset
 \end_layout
 
 \begin_layout Plain Layout
 
-        cmpi.w (a3)+,d4         ; Same as tail?
+        addq.w #1,d5            ; Next head offset
+\end_layout
+
+\begin_layout Plain Layout
+
+        and.w d4,d5             ; MOD buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+        cmp.w (a3),d5           ; Same as tail?
 \end_layout
 
 \begin_layout Plain Layout
@@ -2254,7 +2364,7 @@ ifExit
 
 \begin_layout Plain Layout
 
-        movem.l (a7)+,d4/a3     ; Restore the workers
+        movem.l (a7)+,d4-d5/a3  ; Restore the workers
 \end_layout
 
 \begin_layout Plain Layout
@@ -2285,6 +2395,37 @@ name "lis:Is-buffer-full"
 \end_inset
 
 
+\end_layout
+
+\begin_layout Standard
+The code is simple enough, the buffer's size is copied into 
+\family typewriter
+D4.W
+\family default
+ and decremented ready for the MOD to take place.
+ The head offset is copied into 
+\family typewriter
+D5.W
+\family default
+ and incremented.
+ The new value is ANDed with 
+\family typewriter
+D4.W
+\family default
+ to cope with t he new value needing to wrap around to the beginning of
+ the buffer.
+ The new value is compared with the tail offset and if they are equal, the
+ buffer is full.
+ This is indicated by a return value of zero in 
+\family typewriter
+D0
+\family default
+.
+ Returning 1 in 
+\family typewriter
+D0
+\family default
+ indicates that the buffer is not full.
 \end_layout
 
 \begin_layout Subsection
@@ -2514,11 +2655,43 @@ reference "fig:Circular-Buffer-space-used-simple-example"
 
 \end_inset
 
- we can see a simple example where data have been written by nothing read
- back yet.
- The first byte is unknown as it was never written to since the buffer was
- created.
- The 4 bytes written are A, B C and D.
+ we can see a simple example where 4 bytes of data have been written to
+ a new buffer but nothing has been read back yet.
+ The first byte has an unknown value as it was never written to since the
+ buffer was created.
+ The 4 bytes written are 
+\begin_inset Quotes els
+\end_inset
+
+A
+\begin_inset Quotes ers
+\end_inset
+
+, 
+\begin_inset Quotes ers
+\end_inset
+
+B
+\begin_inset Quotes ers
+\end_inset
+
+, 
+\begin_inset Quotes ers
+\end_inset
+
+C
+\begin_inset Quotes ers
+\end_inset
+
+ and 
+\begin_inset Quotes ers
+\end_inset
+
+D
+\begin_inset Quotes ers
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Standard
@@ -2570,7 +2743,7 @@ cbHead
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -2677,7 +2850,7 @@ cbData
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -2817,31 +2990,11 @@ This is an obvious one, there are 4 bytes used, we can see that plainly.
 
 \begin_layout Standard
 \begin_inset Formula 
-\[
-\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size
-\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-\left(8+4-0\right)\ MOD\ 8
-\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-12\ MOD\ 8
-\]
+\begin{align*}
+\left(buffer\_size+head-tail\right) & \ MOD\ buffer\_size\\
+\left(8+4-0\right) & \ MOD\ 8\\
+12 & \ MOD\ 8
+\end{align*}
 
 \end_inset
 
@@ -2910,7 +3063,7 @@ cbHead
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3012,12 +3165,12 @@ cbData
 \begin_inset Text
 
 \begin_layout Plain Layout
-1
+2
 \end_layout
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -3146,31 +3299,11 @@ In this example, the last byte written was at offset 2 (
 
 \begin_layout Standard
 \begin_inset Formula 
-\[
-\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size
-\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-\left(8+2-5\right)\ MOD\ 8
-\]
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-5\ MOD\ 8
-\]
+\begin{align*}
+\left(buffer\_size+head-tail\right) & \ MOD\ buffer\_size\\
+\left(8+2-5\right) & \ MOD\ 8\\
+5 & \ MOD\ 8
+\end{align*}
 
 \end_inset
 
@@ -3182,8 +3315,18 @@ And
 \begin_inset Formula $5\ MOD\ 8$
 \end_inset
 
- is 5 and there are 5, as yet, unread bytes in the buffer – F, G, Y, Z and
- A.
+ is 5 and there are 5 unread bytes in the buffer – F, G, Y, Z and A.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Buffer-space-used"
+
+\end_inset
+
+ shows the code to work out how much data is available in a buffer.
 \end_layout
 
 \begin_layout Standard
@@ -3256,7 +3399,7 @@ status open
 
 \begin_layout Plain Layout
 
-; D0.L = Used space.
+; D0.W = Used space.
 \end_layout
 
 \begin_layout Plain Layout
@@ -3398,6 +3541,51 @@ name "lis:Buffer-space-used"
 
 \end_layout
 
+\begin_layout Standard
+If the buffer is empty, then we exit from the code with 
+\family typewriter
+D0
+\family default
+ holding zero.
+ The buffer size is copied into 
+\family typewriter
+D0.W
+\family default
+ and 
+\family typewriter
+D5.W
+\family default
+.
+ 
+\family typewriter
+D5.W
+\family default
+ is then decremented ready for the MOD operation later.
+ The current head offset is added to D0.W and the tail offset is subtracted.
+ 
+\family typewriter
+D0.W
+\family default
+ is finally ANDed with 
+\family typewriter
+D5.W
+\family default
+ to obtain the final result for 
+\begin_inset Formula $(buffer\_size+head-tail)\ MOD\ buffer\_size$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Can the results ever overflow a word sized register? No.
+ The biggest buffer allowed is 32768 which is $8000, in that buffer the
+ maximum head offset to add on is 32767 or $7FFF, this gives 65535 or $FFFF
+ – so it all fits into a word before subtracting the tail offset, the smallest
+ of which is zero.
+ The result must always fit into a word sized register, so we are good.
+\end_layout
+
 \begin_layout Subsection
 How Much Space is Free?
 \end_layout
@@ -3408,11 +3596,19 @@ The space available in a buffer is
 \end_inset
 
 .
- Alternatively, 
+ The code below in Listing
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Buffer-free-space"
+
+\end_inset
+
+ does exactly this.
+ It could also use the full formula of 
 \begin_inset Formula $buffer\_size-1-\left(\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size\right)$
 \end_inset
 
-.
+ but when half the work has been done already, it's a shame to repeat it!
 \end_layout
 
 \begin_layout Standard
@@ -3480,19 +3676,13 @@ status open
 
 \begin_layout Plain Layout
 
-; D0.L = Used space.
+; D0.L = Space used in the buffer.
+ 
 \end_layout
 
 \begin_layout Plain Layout
 
-;      = 0 if the buffer is empty.
- Z set.
-\end_layout
-
-\begin_layout Plain Layout
-
-;      <> 0 = used space.
- Z clear.
+;      Z set if buffer is full.
 \end_layout
 
 \begin_layout Plain Layout
@@ -3594,8 +3784,33 @@ name "lis:Buffer-free-space"
 
 \end_layout
 
+\begin_layout Standard
+The code is quite simple here as well.
+ 
+\family typewriter
+D0.W
+\family default
+ is set to the amount of space used in the buffer, this is then negated
+ and the buffer size is added on.
+ The single unusable byte is then subtracted to get the final result.
+ 
+\end_layout
+
 \begin_layout Subsection
 Incrementing Head and Tail Offsets
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+YOU ARE HERE
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
