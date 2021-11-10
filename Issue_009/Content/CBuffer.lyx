@@ -4396,17 +4396,17 @@ DIVU
 \end_layout
 
 \begin_layout Standard
-Had the division been a valid one, it would have resulted in a result of
- 
+Had the division been a valid one, it would have resulted in a quotient
+ of 
 \family typewriter
 $0001 FFFF
 \family default
  and no remainder.
- The result is larger than a word, so wouldn't have fitted in 
+ The quotient is larger than a word, so wouldn't have fitted in 
 \family typewriter
 D5.W
 \family default
- where the result should go.
+ where it should go.
  The overflow was detected and dealt with 
 \emph on
 exactly
@@ -4425,7 +4425,7 @@ knew
 \family typewriter
 $0001 FFFF
 \family default
-, I didn't twig the the obvious fact that the result was 
+, I didn't twig the the obvious fact that the quotient was 
 \emph on
 bigger than a word
 \emph default
@@ -4436,6 +4436,34 @@ bigger than a word
 \begin_layout Standard
 So, don't be like me, watch the flags when something goes weird on you,
  and make sure you haven't done, or missed, anything silly!
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+NOTE
+\series default
+: As I'm running QPC2, I have the benefit of the 68020 CPU rather than the
+ 68008.
+ The 68020 has a 
+\family typewriter
+DIVU.L <ea>,Dq:Dr
+\family default
+ instruction which takes a 32 bit value in the effective address, divides
+ by the 
+\family typewriter
+Dq
+\family default
+ register and places a 32 bit quotient in 
+\family typewriter
+Dq
+\family default
+ with the remainder in 
+\family typewriter
+Dr
+\family default
+.
+ This will not work on a bare bones QL of course.
 \end_layout
 
 \begin_layout Section
