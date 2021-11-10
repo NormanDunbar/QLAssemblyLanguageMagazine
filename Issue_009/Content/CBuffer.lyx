@@ -818,7 +818,6 @@ abExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Allocating a circular buffer
 \begin_inset CommandInset label
 LatexCommand label
@@ -1239,7 +1238,6 @@ csExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Adjusting a buffer's size
 \begin_inset CommandInset label
 LatexCommand label
@@ -1446,7 +1444,6 @@ fbExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Freeing a circular buffer
 \begin_inset CommandInset label
 LatexCommand label
@@ -1738,7 +1735,6 @@ abExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Writing data to a buffer
 \begin_inset CommandInset label
 LatexCommand label
@@ -2108,7 +2104,6 @@ gbExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Reading data from a buffer
 \begin_inset CommandInset label
 LatexCommand label
@@ -2630,7 +2625,6 @@ ieEmpty
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Is buffer empty
 \begin_inset CommandInset label
 LatexCommand label
@@ -3558,7 +3552,6 @@ guExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Buffer space used
 \begin_inset CommandInset label
 LatexCommand label
@@ -3801,7 +3794,6 @@ gfExit
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Buffer free space
 \begin_inset CommandInset label
 LatexCommand label
@@ -3946,7 +3938,6 @@ incHead
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Incrementing an offset using AND
 \begin_inset CommandInset label
 LatexCommand label
@@ -4053,7 +4044,6 @@ incHead
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Incrementing an offset using DIVU
 \begin_inset CommandInset label
 LatexCommand label
@@ -4080,8 +4070,9 @@ We have to take care here not to increment the head pointer until
 after
 \emph default
  it has been sign extended to a long – if the value happened to be 32767,
- $7FFF, and it was incremented to $8000, it would be sign extended to $FFFF8000
- and after the division, the new head pointer would be wrong! Listing 
+ $7FFF, and it was incremented to $8000, it would be sign extended to $FFFF
+ 8000 and after the division, the new head pointer would be wrong! Listing
+ 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "lis:Correct-offset-incrementing-with-DIVU"
@@ -4152,7 +4143,6 @@ incHead
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Correct offset incrementing with DIVU
 \begin_inset CommandInset label
 LatexCommand label
@@ -4226,12 +4216,12 @@ incHead
 
 \begin_layout Plain Layout
 
-        divu d4,d5              ; D5 = 0001 FFFF
+        divu d4,d5              ; D5 = FFFF 8000
 \end_layout
 
 \begin_layout Plain Layout
 
-        swap d5                 ; Remainder = 0001
+        swap d5                 ; Remainder = FFFF !!!!!!!
 \end_layout
 
 \begin_layout Plain Layout
@@ -4248,7 +4238,6 @@ incHead
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Incorrect offset incrementing with DIVU
 \begin_inset CommandInset label
 LatexCommand label
@@ -4270,32 +4259,23 @@ name "lis:Incorrect-offset-incrementing-with-DIVU"
 \end_layout
 
 \begin_layout Standard
-We expected the remainder to be zero, and yet it's actually 1.
- This is, as noted, incorrect.
+We expected the remainder to be zero, and yet it's actually 65535.
+ This is, as noted, 
+\emph on
+slightly
+\emph default
+ incorrect.
 \end_layout
 
 \begin_layout Subsection
-QPC2 Bug?
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-This might need to come out if it's not a bug.
-\end_layout
-
-\end_inset
-
-
+QPC2 Bug? Or My Mistake?
 \end_layout
 
 \begin_layout Standard
 In Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "lis:Incorrect-offset-incrementing-with-DIVU"
+reference "lis:Correct-offset-incrementing-with-DIVU"
 
 \end_inset
 
@@ -4305,7 +4285,7 @@ DIVU
 \family default
  instruction as 
 \family typewriter
-D5 = 0001 FFFF
+D5 = $0001 FFFF
 \family default
  which is correct.
  When I was making sure that I wasn't talking rubbish again
@@ -4318,25 +4298,144 @@ it happens
 
 \end_inset
 
+ regarding Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Incorrect-offset-incrementing-with-DIVU"
+
+\end_inset
+
 , I traced the code through with QMON2.
- Interestingly enough, I got the 
-\emph on
-wrong
-\emph default
- answer.
- The 
+ I could see that the 
 \family typewriter
 DIVU
 \family default
  instruction gave the result as 
 \family typewriter
-D5 = FFFF 8000
+D5 = $FFFF 8000
 \family default
  which is completely wrong!
 \end_layout
 
 \begin_layout Standard
-I mentioned this problem on the QLForum and ............................
+I mentioned this problem on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "this topic on QLForum"
+target "https://qlforum.co.uk/viewtopic.php?f=19&t=3966&p=44307#p44295"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+The URL is https://qlforum.co.uk/viewtopic.php?f=19&t=3966&p=44307#p44295 if
+ you have printed out a copy of this issue of the eMagazine.
+\end_layout
+
+\end_inset
+
+ as I thought I might have found a corner case bug in QPC2.
+ I hadn't of course.
+\end_layout
+
+\begin_layout Standard
+The problem was, when I traced the code, and saw the result of the division
+ being so obviously wrong, I leapt to the conclusion that it had to be a
+ bug.
+ Unfortunately, what I had neglected to do was 
+\emph on
+look at the flags
+\emph default
+.
+ Had I done so, I would have noticed the 
+\family typewriter
+V
+\family default
+ flag, overflow, was set after the division.
+ Duh!
+\end_layout
+
+\begin_layout Standard
+The error of my ways was pointed out by Marcel and Tobias.
+ Thanks to them, for being gentle with me!
+\end_layout
+
+\begin_layout Standard
+The manual for the 68008 says that 
+\begin_inset Quotes eld
+\end_inset
+
+
+\emph on
+Overflow may be detected and set before the instruction completes.
+ If the instruction detects an overflow, it sets the overflow condition
+ code and the operands are unaffected.
+\emph default
+
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Look at the values in the 
+\family typewriter
+D5.L
+\family default
+ register just before and after the 
+\family typewriter
+DIVU
+\family default
+ instruction? They are exactly the same.
+ 
+\end_layout
+
+\begin_layout Standard
+Had the division been a valid one, it would have resulted in a result of
+ 
+\family typewriter
+$0001 FFFF
+\family default
+ and no remainder.
+ The result is larger than a word, so wouldn't have fitted in 
+\family typewriter
+D5.W
+\family default
+ where the result should go.
+ The overflow was detected and dealt with 
+\emph on
+exactly
+\emph default
+ as specified in the manual.
+ And I missed it, completely! Even though I used a couple of hex calculators
+ to check what the answer 
+\emph on
+should
+\emph default
+ have been and 
+\emph on
+knew
+\emph default
+ something was wrong with 
+\family typewriter
+$0001 FFFF
+\family default
+, I didn't twig the the obvious fact that the result was 
+\emph on
+bigger than a word
+\emph default
+.
+ Not that it wasn't staring me in the face!
+\end_layout
+
+\begin_layout Standard
+So, don't be like me, watch the flags when something goes weird on you,
+ and make sure you haven't done, or missed, anything silly!
 \end_layout
 
 \begin_layout Section
