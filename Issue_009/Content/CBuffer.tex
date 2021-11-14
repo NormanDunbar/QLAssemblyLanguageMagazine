@@ -1,0 +1,1184 @@
+\chapter{Circular Buffers}
+
+A circular buffer is a device whereby data are written to it in order
+and removed from it in the same order -- it's a \emph{First In, First
+Out} queue, or FIFO, in other words. It is named \emph{circular} because
+when data are written to the last location, the next byte stored will
+be at the beginning -- as if the two ends of the buffer are joined
+together in, well, a circle! Wikipedia has a good description at \href{https://en.wikipedia.org/wiki/Circular_buffer}{https://en.wikipedia.org/wiki/Circular\_buffer}
+if you wish to read further.
+
+I learned about them when writing my book \emph{Arduino Software Internals}\footnote{\emph{\href{https://www.apress.com/gb/book/9781484257890}{https://www.apress.com/gb/book/9781484257890}
+and \href{https://www.amazon.co.uk/Arduino-Software-Internals-Complete-Language/dp/1484257898}{https://www.amazon.co.uk/Arduino-Software-Internals-Complete-Language/dp/1484257898}}}, while looking at the code for the Serial interface. 
+
+The application code can write data to the buffer, and as long as
+it doesn't get full, the USART code can be pulling data out of the
+same buffer and sending it out onto the serial interface pins. Is
+this useful for the QL I hear you think? Who knows, but I thought
+it would be an interesting exercise to convert from C++ to Assembly
+Language, just for fun\footnote{For certain values of ``fun'' perhaps!}. 
+
+The plan is, that a buffer can be allocated at a certain size, and
+then used and abused as required. As the code is required to use the
+Modulus operator to ensure that various calculations wrap around properly,
+the only restrictions of these buffers are:
+\begin{itemize}
+\item The size requested must be a power of two;
+\item The size requested must be a minimum of 2 bytes;
+\item The size requested must be a maximum of 32768 bytes;
+\end{itemize}
+Other than that, the sky is the limit!
+
+\section{How Big is my Buffer?}
+
+You might think that a buffer is as big as requested? Assuming the
+request was for a valid power of two in size of course. A foible of
+circular buffers of this format is that they always end up losing
+a single byte of storage. Why is this?
+
+Imagine a brand new empty buffer, let's say it's only two bytes in
+size\footnote{Because that means I have less typing to do in explaining it!}. 
+
+As the buffer has just been allocated, $head=tail=0$ and the buffer
+is officially empty. Nothing has been written to the buffer and nothing
+is available to be read. So far so good!
+
+The application wants to write a byte to the buffer, so:
+\begin{itemize}
+\item Increment the head offset by 1. $Head=1$.
+\item $Head\ MOD\ 2$, which is required to account for any wrap around,
+leaves $Head=1$.
+\item Compare with the tail offset, 0. They are different, so the buffer
+has space available.
+\item Store the data byte at offset 1.
+\item Update the head offset in the buffer header.
+\end{itemize}
+This executes successfully and on return, $head=1$ and $tail=0$.
+The buffer has one byte in the data area. As you can see, the head
+pointer was incremented before storing the data byte and the new byte
+stored at that location. This means that currently, byte zero in the
+data area has been skipped over. Bear this in mind.
+
+The application now wants to write a second byte to the buffer. The
+execution of this proceeds as follows:
+\begin{itemize}
+\item Increment the head offset by 1. $Head=2$.
+\item $Head\ MOD\ 2$, leaves $Head=0$
+\item Compare with the tail offset, 0. They are equal, so the buffer has
+no space available!
+\item The second byte cannot be stored in the buffer!
+\end{itemize}
+So, we allocated a two byte buffer by can only store a single byte
+in it. There are other buffer structures which store the count of
+data bytes written and adjust this on each read or write, these buffers
+have the full compliment of space available for the overhead of a
+bit of extra processing.
+
+Ok, why are we comparing the incremented head offset with the unincremented
+tail offset? If we didn't, then the test would have to be whether
+the two offsets were equal, which means we can't tell if the buffer
+is empty or full.
+
+\section{Buffer Structure}
+
+The buffer is allocated as a chunk of memory where the size asked
+for by the user must be a power of two with a maximum size of 32,768
+bytes which happens to be the largest power that fits into a word.
+Why a word? The buffer is made up of two parts, the data area of the
+requested size and a 10 byte header added to the front of the data
+area. The header is used to hold information about the buffer --
+its size plus the \emph{head} and \emph{tail} offsets into the data
+area -- and these are word sized.
+
+The 10 byte header stores the following information about the buffer:
+\begin{itemize}
+\item A buffer identifier, currently ``cB60'', which is used to identify
+that the address in \texttt{A3.L} is indeed a circular buffer.
+\item The data size. This is the actual size of the data area allocated
+for the buffer and does not include the 10 bytes added for the header.
+In all the code, \texttt{A3.L} points at this address, bit at the
+buffer identifier.
+\item The head offset. This defines the offset into the data area where
+the most recent byte was \emph{written} to the buffer. The head will
+be adjusted to the next offset when a new byte is to be added to the
+buffer.
+\item The tail offset. This defines the offset into the data area where
+the most recent byte was \emph{read} from the buffer. The tail will
+be adjusted to locate the next offset, when the next request for a
+byte is processed.
+\end{itemize}
+The structure of our circular buffers will be as shown in Figure \ref{fig:Circular-Buffer-structure}.
+
+\begin{figure}[!h]
+\begin{tabular}{|c|c|c|c||p{0.55\textwidth}|}
+\hline 
+``cB60'' & cbSize & cbHead & cbTail & cbData\tabularnewline
+\hline 
+\end{tabular}
+\begin{centering}
+\caption{Circular Buffer structure\label{fig:Circular-Buffer-structure}}
+\par\end{centering}
+\end{figure}
+
+You can see the simplicity of the whole thing, it's just the data
+area with the afore mentioned 6 byte header.
+
+\section{The Buffer Handling Code}
+
+The code functions we will create for this article will expect a buffer
+address to be passed in \texttt{A3.L} and it is required that the
+address pointed top by \texttt{A3.L} is that of the \texttt{cbSize}
+field in the buffer. However, as the initialisation of each function
+will retrieve the fields required from the buffer header, \texttt{A3.L}
+will end up pointing at the start of the data area for the body of
+the function. Because of this, I need to use some negative offsets
+when the code needs to refer to the header fields.
+
+\begin{lstlisting}
+cbSize   equ -6     ; How big is my buffer's data area?
+cbHead   equ -4     ; Where is my head? Last byte inserted.
+cbTail   equ -2     ; Where is my tail? Last byte removed.
+
+buffID   equ -4     ; Buffer identifier offset from cbSize.
+hdrSize  equ 10     ; Size of buffer header
+
+bufferID equ "cB60" ; Buffer identifier
+
+; Not required for GWASS/GWASL but maybe for QMAC.
+;MT_ALCHP equ $18    ; Allocate common heap
+;MT_RECHP equ $19    ; Release common heap
+\end{lstlisting}
+
+All the code for this article can be found in the code files supplied
+in the download. The various functions explained below are found in
+\texttt{cBuffer\_asm}.
+
+\subsection{Allocate a New Buffer}
+
+Allocating a new circular buffer is a simple matter of taking the
+requested space, rounding it up to the next power of two, add making
+it a long word to fit into \texttt{D1} and adding the 6 extra bytes
+required for the header. A chunk of common heap is then requested
+from QDOSMSQ and if it was allocated, the header fields are filled
+in.
+
+Listing \ref{lis:Allocating-a-circular-buffer} is the code to allocate
+a new circular buffer. This code calls the \texttt{checkSize} procedure
+to potentially adjust the buffer size to a power of two. That code
+can be seen in Listing \ref{lis:Adjusting-a-buffers-size}.
+
+\begin{lstlisting}[caption={Allocating a circular buffer},label={lis:Allocating-a-circular-buffer},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Allocate Buffer
+;--------------------------------------------------------------
+; Allocates memory for a new circular buffer. The size passed
+; must be a power of 2 and cannot be larger than a word. This
+; limits a buffer to a maximum size of 32,768 bytes. 1 of which
+; will be unusable.
+; 
+; ENTRY:
+;
+; D0.W = Size of buffer. Power of two, 32768 maximum.
+;
+; EXIT:
+;
+; D0.L = Error code. (From MT_ALCHP)
+;      = 0 if the buffer was created.
+;      <>0 if the buffer failed to create.
+;
+; A3.L = Buffer address. (A3 -> cbSize in the buffer.)
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+allocateBuffer
+        movem.l d1-d3/a0-a2,-(a7) ; Save working registers
+		bsr.s checkSize         ; Returns D0.L as a power of 2
+        move.l d0,d1            ; D1.L = space required
+        move.w d1,-(a7)         ; Save rounded requested size
+        addq.l #hdrSize,d1      ; Adjust for header space
+        moveq #mt_alchp,d0      ; Allocate common heap
+        moveq #-1,d2            ; Current job is owner
+        trap #1
+        move.w (a7)+,d1         ; Restore rounded size 
+        tst.l d0                ; Do we allocate some heap?
+        bne.s abExit            ; No       
+
+        move.l a0,a3            ; Buffer address in A3.L
+        move.l #bufferID,(a3)+  ; Buffer identifier at -4(a3)
+        subq.w #hdrSize,d1      ; Size of buffer data area
+        move.w d1,(a3)          ; Set cbSize 
+        clr.l 2(a3)             ; Set cbHead = cbTail = 0           
+
+abExit
+        movem.l (a7)+,d1-d3/a0-a2 ; Restore working registers
+        rts
+
+\end{lstlisting}
+
+All registers except \texttt{D0} and \texttt{A3} are preserved by
+the allocate Buffer routine. The code is called with the required
+buffer size in \texttt{D0.W} and if successful, \texttt{D0} will hold
+zero and \texttt{A3.L} will return the buffer address. In the case
+of an error, \texttt{D0} will return the error code from \texttt{MT\_ALCHP}
+and \texttt{A3} will be unchanged.
+
+Register \texttt{D1.W} is stacked before being adjusted for the header
+size, and is restored after the trap. The trap call to allocate common
+heap returns the number of bytes allocated in \texttt{D1.L}, however,
+this is not necessarily the same as the number of bytes requested
+as the requested size will be rounded up by QDOSMSQ.
+
+When testing, I asked for an 8 byte buffer which works out at 18 bytes
+with the header included, I received a chunk of common heap which
+was 48 bytes in size. That messed up the \texttt{cbSize} field in
+the header and was an interesting bug to track down! By saving \texttt{D1.W}
+I can set the header to the correct buffer size.
+
+\subsection{Buffer Size Adjustments}
+
+In order to protect the programmer from him or herself, the allocation
+of a buffer will check that the size requested is within range. The
+code in the \texttt{checkSize} routine takes the value in \texttt{D0.W}
+and rounds it up to the next power of two, unless its already a power.
+The resulting value, in \texttt{D0.L} is then adjusted to a maximum
+of 32768 or a minimum of 8 bytes.
+
+The code should be reasonably familiar as it was in Issue 8 of this
+somewhat irregular eMagazine. Listing \ref{lis:Adjusting-a-buffers-size}
+shows the code to check and make the adjustments as necessary.
+
+\begin{lstlisting}[caption={Adjusting a buffer's size},label={lis:Adjusting-a-buffers-size},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Check Size
+;--------------------------------------------------------------
+; Check the requested buffer size in D0 and round it up to the
+; next largest power of two if not already a power. If less 
+; than 8 bytes, make it 8. If more than 32768, then make it 
+; 32768.
+; 
+; ENTRY:
+;
+; D0.W = Size of buffer.
+;
+; EXIT:
+;
+; D0.L = Potentially adjusted buffer size.
+; D1.L = D0.L.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+; Algorithm:
+;
+; Value = Value - 1
+; REPEAT LOOP
+;   Temp = Value & (Value - 1)
+;   If Temp = 0, return min(max(2*Value, 8), 32768)
+;   Value = Temp
+; END LOOP
+;
+; D1.L = Value
+; D0.L = Temp
+;--------------------------------------------------------------
+checkSize
+        moveq #0,d1
+        move.w d0,d1        ; D1.L = Value
+
+        subq.l #1,d1        ; In case Value is a power already
+
+csLoop
+        move.l d1,d0        ; Temp = Value
+        subq.l #1,d0        ; Temp = (Value - 1)
+        and.l d1,d0         ; Temp = Value & (Value - 1)
+        beq.s csRange       ; If Temp = Zero = no more set bits
+        move.l d0,d1        ; Value = Temp
+        bne.s csLoop        ; Keep going
+
+csRange
+        lsl.l #1,d1         ; Value = Value * 2
+        move.l d1,d0        ; To return the new value
+
+csMin
+        cmpi.l #7,d0        ; Minimum is 8
+        bhi.s csMax         ; Bigger than 7 is ok
+        moveq #8,d0         ; Result is 8
+        bra.s csExit        ; Done
+
+csMax
+        cmpi.l #$8000,d0    ; Maximum is 32768
+        ble.s csExit        ; Equal/Smaller than 32768
+        move.l #$8000,d0    ; Result is 32768
+
+csExit
+        rts
+
+\end{lstlisting}
+
+In order to test if a number is a power of two, start with one less
+than the number -- in case it's already a power -- then repeatedly
+assign the value with $(value\ AND\ (value-1))$ and when the result
+is zero, you have the power of two \emph{below} the original number,
+to get the next one, multiply by two.
+
+The result, in \texttt{D0.L}, is now a power of two. Given that a
+buffer size of less than 8 is most likely a waste of time, the buffer
+size is rounded up to 8 if smaller. If the size exceeds the maximum
+that a word can hold, 32768, it is adjusted down to 32768.
+
+\subsection{Free a Buffer}
+
+Listing \ref{lis:Freeing-a-circular-buffer} shows the code to free
+a circular buffer after it is no longer required. Obviously in a job,
+this is not strictly necessary as QDOSMSQ will tidy up the jobs allocated
+heaps space on exit, however, it's best to be neat and tidy, plus,
+deallocating the space when no longer needed can free the space for
+other tasks to utilise.
+
+\begin{lstlisting}[caption={Freeing a circular buffer},label={lis:Freeing-a-circular-buffer},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Free Buffer
+;--------------------------------------------------------------
+; Deallocates memory for a circular buffer. The buffer Id is 
+; cleared to hopefully prevent deleted buffers from being used.
+; 
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Error code.
+;      = 0 if the byte was added to the buffer.
+;      = 1 if the buffer is full, so D1 was not added.
+;      = 2 if the buffer address was invalid.
+;
+; A3.L = 0. Buffer now invalid.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+freeBuffer
+        bsr.s bufferCheck       ; Won't return unless valid
+        movem.l d0-d3/a0-a2,-(a7) ; Save working registers
+        move.l #0,buffID(a3)    ; Delete buffer id
+        move.l a3,a0            ; Buffer address to reclaim
+        moveq #MT_RECHP,d0      ; Release common heap
+        trap #1
+
+fbExit
+        movem.l (a7)+,d0-d3/a0-a2 ; Restore working registers
+        move.l #0,a3            ; Buffer deleted.
+        rts
+
+\end{lstlisting}
+
+There's not a lot to explain here, the base address of the buffer
+is passed in \texttt{A3} as usual, and is simply copied to \texttt{A0}
+in order for the trap to release common heap space, to work. releasing
+a heap never fails with any errors, so none are checked for.
+
+All registers, except \texttt{A3}, are preserved by this code.
+
+\subsection{Buffer Check}
+
+Before operating on a buffer, it's wise to attempt a bit of validation
+to try and prevent things going awry when the code starts accessing
+areas of RAM which are not actually circular buffers!
+
+The address of a buffer, as previously discussed, points at the size
+word in the header, however, just before the size word is an identifier
+which is hard coded to be the text ``cB60'' -- for no real reason
+-- and the \texttt{bufferCheck} procedure, shown in Listing \ref{lis:Validating-a-buffer-address},
+checks that this long word does exist in the correct place.
+
+If, for some unknown reason, the identifier is not found, then something
+has gone wrong. \texttt{D0.L} is set to 2 to indicate an invalid buffer,
+and the callers return address is removed from the stack allowing
+the code to return to the caller's caller with the error code.
+
+\begin{lstlisting}[caption={Validating a buffer address},label={lis:Validating-a-buffer-address},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Buffer Check
+;--------------------------------------------------------------
+; A buffer address in A3 is checked for an attempt at validity
+; in that an address of zero is considered invalid, whereas any
+; other value is possibly valid! Hard to determine, I know.
+;
+; Any function that manipulates buffers should (!) BSR to here
+; before doing any register saving etc. Else, carnage will be
+; the result!
+;
+; NOTE: The return is to the previous caller on error. This
+;       code will only return to the caller if the buffer is
+;       non-zero. So:
+;
+;       codeXxx calls addByte, for example.
+;       addByte calls here to check buffer.
+;       If A3 is zero, return to codeXxx with D0 = 2.
+;       Else, return to addByte to add a byte.
+;
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Error code.
+;      = 2 The buffer is invalid.
+;--------------------------------------------------------------
+bufferCheck
+        cmpi.w #bufferID,-4(a3) ; Is this a buffer?
+        beq.s bcExit            ; Buffer ok, return to caller
+        moveq.l #2,d0           ; Buffer is bad
+        addq.l #4,a7            ; Caller address ignored
+
+bcExit
+        rts
+
+\end{lstlisting}
+
+
+\subsection{Write Data to a Buffer}
+
+When adding a byte to a buffer, the buffer cannot be full up, that
+indicates an error condition. If the buffer has free space, then the
+head offset is adjusted to the next free space and the data byte stored
+at that offset into the data area of the buffer.
+
+Listing \ref{lis:Writing-data-to-a-buffer} shows the code for the
+\texttt{addByte} procedure..
+
+\begin{lstlisting}[caption={Writing data to a buffer},label={lis:Writing-data-to-a-buffer},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Add Byte
+;--------------------------------------------------------------
+; Adds one byte to a circular buffer.
+; 
+; ENTRY:
+;
+; D1.B = Byte to be added.
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Error code.
+;      = 0 if the byte was added to the buffer.
+;      = 1 if the buffer is full, so D1 was not added.
+;      = 2 if the buffer address was invalid.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+addByte
+        bsr.s bufferCheck       ; Won't return unless valid
+        movem.l d1/d4-d5/a3,-(a7) ; Save working registers
+
+abIsFull
+        bsr.s isFull            ; Preserves all registers
+        beq.s abFullUp          ; Yes, bale out        
+
+        move.w (a3)+,d5         ; Size of buffer
+        subq.w #1,d5            ; We need one less than size
+        move.w (a3)+,d4         ; Where is the head?
+        addq.l #2,a3            ; Skip over the tail, not used
+        addq.w #1,d4            ; New head pointer
+        and.w d5,d4             ; Wrap around if necessary
+        move.b d1,(a3,d4.w)     ; Store new byte
+        move.w d4,cbHead(a3)    ; New head saved
+        moveq #0,d0             ; One byte added
+        bra.s abExit            ; Done, no errors.
+
+abFullUp
+        moveq #1,d0             ; Buffer full, can't add D1
+
+abExit
+        movem.l (a7)+,d1/d4-d5/a3 ; Restore working registers
+        rts
+
+\end{lstlisting}
+
+The code starts by calling the \texttt{isFull} routine to determine
+if the buffer is full. If \texttt{D0} is returned as zero, then the
+buffer is indeed full and we bale out with an error code in \texttt{D0}.
+We cannot add this byte to the buffer.
+
+\texttt{D5} is then set to the buffer size minus 1. We use this to
+MOD the head offset when it is incremented, to enable it to wrap around
+from the final byte to the start byte, if required. The head offset
+is copied into \texttt{D4} and as we don't need the tail, \texttt{A3}
+is incremented past it to point at the start of the data area of the
+buffer. The data byte in D1 is then stored in the buffer at the new
+head position.
+
+The new head offset is written back to the correct location in the
+buffer header, which is at a negative offset from the current value
+in \texttt{A3}.
+
+The sharp eyed and quick brained amongst you may be thinking, ``\emph{Hmmmm,
+what about that }\lstinline!move.b d1,(a3,d4.w)!\emph{ instruction,
+to store the new data byte, as the index register is a word, surely
+it will be sign extended? The maximum buffer is 32768 after all and
+that's got a sign bit of 1 after all.}''
+
+Funnily enough, I thought that too for a bit, however, the absolute
+maximum value that the head or tail offsets can take is one less than
+the buffer size -- buffer offsets are from zero -- so that makes
+32767 or \$7FFF the maximum, and that doesn't have a leading 1 in
+the sign bit, so all is well.
+
+\subsection{Read Data from a Buffer}
+
+Reading data from a buffer is quite simple. If the buffer is empty,
+then there's nothing to do as there's nothing to actually read. Assuming
+the buffer does have data, then the tail offset is incremented, wrapping
+around if necessary, and the byte at that offset is obtained. The
+new tail pointer is then stored in the buffer header.
+
+Listing \ref{lis:Reading-data-from-a-buffer} shows the \texttt{getByte}
+code.
+
+\begin{lstlisting}[caption={Reading data from a buffer},label={lis:Reading-data-from-a-buffer},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Get Byte
+;--------------------------------------------------------------
+; Gets one byte from a circular buffer.
+; 
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Error code.
+;      = 0 if the byte was retrieved from the buffer.
+;      = 1 if the buffer is empty.
+;      = 2 if the buffer address was invalid.
+;
+; D1.B = The retrieved byte, if the buffer was not empty.
+;      = Preserved if the buffer was empty.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+getByte
+        bsr.s bufferCheck       ; Won't return unless valid
+        movem.l d4-d6/a3,-(a7)  ; Save working registers
+
+gbIsEmpty
+        bsr.s isEmpty           ; Is the buffer empty?
+        beq.s gbEmpty           ; Yes, bale out
+
+        move.w (a3)+,d5         ; Size of buffer
+        subq.w #1,d5            ; We need one less than size
+        addq.l #2,a3            ; Skip over the head
+        move.w (a3)+,d6         ; Get the tail?
+        addq.w #1,d6            ; New tail pointer
+        and.w d5,d6             ; Wrap around if necessary
+        move.b (a3,d6.w),d1     ; Fetch byte
+        move.w d6,cbTail(a3)    ; New tail saved
+        moveq #0,d0             ; One byte retrieved
+        bra.s gbExit            ; Done, no errors
+
+gbEmpty
+        moveq #1,d0             ; Buffer empty, can't retrieve
+
+gbExit
+        movem.l (a7)+,d4-d6/a3  ; Restore working registers
+        rts
+
+\end{lstlisting}
+
+The code begins by calling out to \texttt{isEmpty} and if the buffer
+is empty, bales out setting \texttt{D0} to 1 to show a read from an
+empty buffer was attempted.
+
+The buffer size is copied into \texttt{D5.W} and decremented. This
+is used later to MOD the new tail offset to make sure it wraps around,
+if required. The head offset is not required so is skipped over leaving
+\texttt{A3.L} pointing at the tail, which is read into \texttt{D6}.W.
+The tail offset is then incremented, wrapping as appropriate to give
+the offset into the data area that we will read from. 
+
+The data byte at the calculated offset is copied into D1 and the new
+tail offset stored in the buffer's header. \texttt{D0} is cleared
+to show that no errors occurred.
+
+\subsection{Is the Buffer Full?}
+
+The buffer is full up whenever the tail offset is 1 byte larger than
+the head. The next data byte to be written to the buffer will be stored
+at:
+
+\[
+head+1\ MOD\ buffer\_size
+\]
+
+The tail offset, whatever it currently happens to be, is where the
+most recent byte was read from the buffer. As previously explained,
+we have to compare the \emph{incremented head} offset with the \emph{current
+tail} offset or we will be unable to determine if the buffer is empty
+or full when both are equal.
+
+It is this increment to the head offset which causes the loss of a
+single byte of storage in the buffer.
+
+\begin{lstlisting}[caption={Is buffer full},label={lis:Is-buffer-full},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Is Full?
+;--------------------------------------------------------------
+; Checks if the buffer passed in A3 is full. A buffer is full 
+; when (Head + 1) == Tail.
+; 
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Return code.
+;      = 0 if the buffer is full. Z set.
+;      = 1 if the buffer is not full. Z clear.
+;      = 2 if the buffer address was invalid.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+isFull
+        bsr bufferCheck         ; Won't return unless valid
+        movem.l d4-d5/a3,-(a7)  ; Save the workers
+        move.w (a3)+,d4         ; Get the buffer size
+        subq.w #1,d4            ; Minus 1 for MOD
+        move.w (a3)+,d5         ; Get the head offset
+        addq.w #1,d5            ; Next head offset
+        and.w d4,d5             ; MOD buffer size
+        cmp.w (a3),d5           ; Same as tail?
+        beq.s ifFull            ; Buffer is full
+        moveq #1,d0             ; Not full
+        bra.s ifExit            ; Bale out
+
+ifFull        
+        moveq #0,d0             ; Buffer is full
+
+ifExit
+        movem.l (a7)+,d4-d5/a3  ; Restore the workers
+        rts
+
+\end{lstlisting}
+
+The code is simple enough, the buffer's size is copied into \texttt{D4.W}
+and decremented ready for the MOD to take place. The head offset is
+copied into \texttt{D5.W} and incremented. The new value is ANDed
+with \texttt{D4.W} to cope with t he new value needing to wrap around
+to the beginning of the buffer. The new value is compared with the
+tail offset and if they are equal, the buffer is full. This is indicated
+by a return value of zero in \texttt{D0}. Returning 1 in \texttt{D0}
+indicates that the buffer is not full.
+
+\subsection{Is the Buffer Empty?}
+
+This is rather easy. If the head pointer equals the tail pointer,
+then the buffer is currently empty. For a brand new buffer, both offsets
+are zero and the buffer is definitely empty.
+
+If, on the other hand, 10 bytes had been added since new, and none
+read back yet, the head will be 10 while the tail will be still zero.
+Don't I mean 9 for the head? No, definitely 10 because while the head
+(and tail) starts at zero in a new buffer, it is incremented by 1
+\emph{before} storing a new byte as explained above. The first byte
+added will be at offset 1 for a new buffer, the second at offset 2
+and so the tenth will be at offset 10.
+
+After reading back the 10 bytes, the tail offset will also be at 10,
+so both are equal and the buffer is indeed empty.
+
+Interestingly, a new, empty, buffer need not have the head and tail
+offsets set to zero, it makes no difference where they both point,
+provided they point at the same offset.
+
+\begin{lstlisting}[caption={Is buffer empty},label={lis:Is-buffer-empty},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Is Empty?
+;--------------------------------------------------------------
+; Checks if the buffer passed in A3 is empty. A buffer is empty 
+; when Head == Tail.
+; 
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Return code.
+;      = 0 if the buffer is empty. Z set.
+;      = 1 if the buffer is not empty. Z clear.
+;      = 2 if the buffer address was invalid.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+isEmpty
+        bsr bufferCheck         ; Won't return unless valid
+        move.w 2(a3),d0         ; Head offset
+        cmp.w 4(a3),d0          ; Head = Tail?
+        beq.s ieEmpty           ; Yes
+        moveq #1,d0             ; Not empty
+        rts
+
+ieEmpty
+        moveq #0,d0             ; No
+        rts
+
+\end{lstlisting}
+
+
+\subsection{How Much Space is Used?}
+
+The used space in a buffer is calculated as:
+
+\[
+\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size
+\]
+
+If we assume a buffer state as shown in Figure \ref{fig:Circular-Buffer-space-used-simple-example}
+we can see a simple example where 4 bytes of data have been written
+to a new buffer but nothing has been read back yet. The first byte
+has an unknown value as it was never written to since the buffer was
+created. The 4 bytes written are `A', 'B', 'C' and 'D'.
+
+\begin{figure}[!h]
+\begin{centering}
+\begin{tabular}{|c|c|c||c|c|c|c|c|c|c|c|}
+\hline 
+\texttt{\textbf{cbSize}} & \texttt{\textbf{cbHead}} & \texttt{\textbf{cbTail}} & \multicolumn{8}{c|}{\texttt{\textbf{cbData}}}\tabularnewline
+\hline 
+\hline 
+8 & 4 & 0 & ?\textsubscript{tail} & A & B & C & D\textsubscript{head} & ? & ? & ?\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\centering{}\caption{Circular Buffer space used - simple example \label{fig:Circular-Buffer-space-used-simple-example}}
+\end{figure}
+
+This is an obvious one, there are 4 bytes used, we can see that plainly.
+And the calculation gives the correct result:
+
+\begin{align*}
+\left(buffer\_size+head-tail\right) & \ MOD\ buffer\_size\\
+\left(8+4-0\right) & \ MOD\ 8\\
+12 & \ MOD\ 8
+\end{align*}
+
+And $12\ MOD\ 8$ is indeed 4.
+
+How about when the buffer has been used for a while and the buffer
+state resembles Figure \ref{fig:Circular-Buffer-space-used-comples-example}.
+
+\begin{figure}[!h]
+\begin{centering}
+\begin{tabular}{|c|c|c||c|c|c|c|c|c|c|c|}
+\hline 
+\texttt{\textbf{cbSize}} & \texttt{\textbf{cbHead}} & \texttt{\textbf{cbTail}} & \multicolumn{8}{c|}{\texttt{\textbf{cbData}}}\tabularnewline
+\hline 
+\hline 
+8 & 2 & 5 & Y & Z & A\textsubscript{head} & C & D & E\textsubscript{tail} & F & G\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\centering{}\caption{Circular Buffer space used - complex example \label{fig:Circular-Buffer-space-used-comples-example}}
+\end{figure}
+
+In this example, the last byte written was at offset 2 ($head=2$),
+the 'A', while the last byte read back was at offset 5 (tail = 5),
+the 'E'. We can plainly see that the bytes F, G, Y, Z and A have yet
+to be read and so must be included in the count, while the data bytes
+C, D and E have already been read back and are thus classed as free
+space now.
+
+\begin{align*}
+\left(buffer\_size+head-tail\right) & \ MOD\ buffer\_size\\
+\left(8+2-5\right) & \ MOD\ 8\\
+5 & \ MOD\ 8
+\end{align*}
+
+And $5\ MOD\ 8$ is 5 and there are 5 unread bytes in the buffer --
+F, G, Y, Z and A.
+
+Listing \ref{lis:Buffer-space-used} shows the code to work out how
+much data is available in a buffer.
+
+\begin{lstlisting}[caption={Buffer space used},label={lis:Buffer-space-used},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Get Used
+;--------------------------------------------------------------
+; Returns the space used in a buffer. This is (size + head -
+; tail) MOD size.
+; 
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.W = Used space.
+;      = 0 if the buffer is empty. Z set.
+;      = 2 if the buffer address was invalid.
+;      <> 0 = used space. Z clear.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+getUsed
+        bsr bufferCheck         ; Won't return unless valid
+        movem.l d5/a3,-(a7)     ; Save the workers
+
+guIsEmpty
+        bsr.s isEmpty           ; Is buffer empty?
+        beq.s guExit            ; Yes, D0 = 0, bale out
+
+        move.w (a3)+,d0         ; Buffer size
+        move.w d0,d5            ; Buffer size again
+        subq.w #1,d5            ; For MOD
+        add.w (a3)+,d0          ; Add on head
+        sub.w (a3),d0           ; Minus tail
+        andw.l d5,d0            ; MOD size
+
+guExit
+        movem.l (a7)+,d5/a3     ; Restore the workers
+        rts
+
+\end{lstlisting}
+
+If the buffer is empty, then we exit from the code with \texttt{D0}
+holding zero. The buffer size is copied into \texttt{D0.W} and \texttt{D5.W}.
+\texttt{D5.W} is then decremented ready for the MOD operation later.
+The current head offset is added to \texttt{D0.W} and the tail offset
+is subtracted. \texttt{D0.W} is finally ANDed with \texttt{D5.W} to
+obtain the final result for $(buffer\_size+head-tail)\ MOD\ buffer\_size$.
+
+Can the results ever overflow a word sized register? No. The biggest
+buffer allowed is 32768 which is \$8000, in that buffer the maximum
+head offset to add on is 32767 or \$7FFF, this gives 65535 or \$FFFF
+-- so it all fits into a word before subtracting the tail offset,
+the smallest of which is zero. The result must always fit into a word
+sized register, so we are good.
+
+\subsection{How Much Space is Free?}
+
+The space currently available in a buffer is calculated as:
+
+\[
+buffer\_size-1-space\_used
+\]
+
+Alternatively, substituting the formula for space used:
+
+\[
+buffer\_size-1-\left(\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size\right)
+\]
+
+The code below in Listing\ref{lis:Buffer-free-space} does exactly
+this using the former formula but it could be rewritten to use the
+full formula of course, but when half the work has been done already,
+it's a shame to repeat it!
+
+\begin{lstlisting}[caption={Buffer free space},label={lis:Buffer-free-space},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Get Free
+;--------------------------------------------------------------
+; Returns the space free in a buffer. This is size - 1 - used.
+; 
+; ENTRY:
+;
+; A3.L = Buffer address. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Space used in the buffer. 
+;      = 0 if the buffer is full. Z set also.
+;      = 2 if the buffer address was invalid.
+;
+; All other registers are preserved.
+;--------------------------------------------------------------
+getFree
+        bsr bufferCheck         ; Won't return unless valid
+        move.l a3,-(a7)         ; Save the worker
+
+gfIsEmpty
+        bsr.s getUsed           ; D0.W = used space
+        neg.w d0                ; negative used size
+        add.w (a3),d0           ; Add buffer size
+        subq.w #1,d0            ; Minus the unusable byte
+
+gfExit
+        move.l (a7)+,a3         ; Restore the worker
+        rts
+
+\end{lstlisting}
+
+The code is quite simple here as well. \texttt{D0.W} is set to the
+amount of space used in the buffer, this is then negated and the buffer
+size is added on. The single unusable byte is then subtracted to get
+the final result. 
+
+\subsection{Flushing Buffers}
+
+Listing \ref{lis:Flushing-buffers} shows the code to flush, or empty,
+a buffer if this is required for any reason. The code is very simple,
+it sets the head and tail offsets to zero in the buffer header thus
+quickly emptying the buffer.
+
+\begin{lstlisting}[caption={Flushing buffers},label={lis:Flushing-buffers}]
+;--------------------------------------------------------------
+; Flush Buffer
+;--------------------------------------------------------------
+; Flushes all data from the buffer. Doesn't overwrite it, only 
+; set the Head = Tail = 0. The size remains the same.
+; 
+; ENTRY:
+;
+; A3.L = Buffer to flush. (A3 = cbSize in the buffer.)
+;
+; EXIT:
+;
+; D0.L = Error Code
+;      = 2 if the buffer address was invalid.
+; None.
+;
+; All registers are preserved.
+;--------------------------------------------------------------
+flushBuffer
+        bsr bufferCheck         ; Won't return unless valid
+        move.w #0,-cbHead(a3)   ; -cbHead is actually cbTail!        
+        move.w #0,-cbTail(a3)   ; -cbTail is actually cbHead!
+        rts
+
+\end{lstlisting}
+
+
+\subsection{Incrementing Head and Tail Offsets}
+
+The various procedures explained above all increment their offsets
+for head and tail, on the fly, rather than calling out to another
+subroutine. This is mainly because the increment code is pretty small
+and it's hardly worth calling a sub-routine to do the work.
+
+Incrementing an offset is a simple case of:
+
+\[
+\left(offset+1\right)\ MOD\ buffer\_size
+\]
+
+We need the MOD function as the offset has to wrap back to zero when
+we attempt to increment past the end of the buffer. 
+
+This is another reason why the buffer size is required to be a power
+of two. When those values are used, we can quickly MOD a value by
+ANDing with the buffer size minus 1 -- as the code has been doing
+throughout. 
+
+For example, if our buffer size is 8 bytes, then ANDing with 7 is
+effectively the MOD 8 operation that we need. The offset into the
+buffer, head or tail, will always be from 0 to 7 inclusive. When we
+increment from 7 to 8, we go outside the bounds of the buffer's data
+area so we need to wrap back to the start. 
+
+In binary 8 is 0000 1000 and 7 is 0000 0111. If we AND them together,
+we get 0000 0000 which is exactly where we want to be, back at offset
+zero. Listing \ref{lis:Incrementing-an-offset-using-AND} shows an
+example of this in code form, where we pick up the head pointer and
+increment it.
+
+\begin{lstlisting}[caption={Incrementing an offset using AND},label={lis:Incrementing-an-offset-using-AND},numbers=left,showstringspaces=false,tabsize=4]
+incHead
+        ...
+        move.w (a3)+,d4         ; Get the buffer size
+        subq.w #1,d4            ; Minus 1 for MOD
+        move.w (a3)+,d5         ; Get the head offset
+        addq.w #1,d5            ; Next head offset
+        and.w d4,d5             ; MOD buffer size
+        ...
+
+\end{lstlisting}
+
+If the buffer sizes could be any value, then we would be into the
+realms of having to divide and take the remainder. Not that this is
+a huge problem, in fact, if you wish, you can rewrite the code to
+allow for buffer sizes which are not powers of two, call it homework!
+
+Listing \ref{lis:Incrementing-an-offset-using-DIVU} shows an example
+of incrementing the head offset using the \texttt{DIVU} instruction.
+This requires that a \emph{long} value in the destination register
+be divided by a \emph{word} value in the source register. The high
+word of the destination register will contain the remainder, which
+is what we are after.
+
+\begin{lstlisting}[caption={Incrementing an offset using DIVU},label={lis:Incrementing-an-offset-using-DIVU},numbers=left,showstringspaces=false,tabsize=4]
+incHead
+        ...
+        move.w (a3)+,d4         ; Get the buffer size
+        move.w (a3)+,d5         ; Get the head offset
+        ext.l d5                ; For DIVU
+        addq.l #1,d5            ; Next head offset
+        divu d4,d5              ; Divide by buffer size
+        swap d5                 ; Remainder in low word
+        ...
+
+\end{lstlisting}
+
+We have to take care here not to increment the head pointer until
+\emph{after} it has been sign extended to a long -- if the value
+happened to be 32767, \$7FFF, and it was incremented to \$8000, it
+would be sign extended to \$FFFF 8000 and after the division, the
+new head pointer would be wrong. Listing \ref{lis:Correct-offset-incrementing-with-DIVU}
+shows the code again, but this time, with the register values displayed
+as comments.
+
+\begin{lstlisting}[caption={Correct offset incrementing with DIVU},label={lis:Correct-offset-incrementing-with-DIVU},numbers=left,showstringspaces=false,tabsize=4]
+incHead
+        ...
+        move.w (a3)+,d4         ; D4 = xxxx 8000
+        move.w (a3)+,d5         ; D5 = xxxx 7FFF
+        ext.l d5                ; D5 = 0000 7FFF
+        addq.l #1,d5            ; D5 = 0000 8000
+        divu d4,d5              ; D5 = 0000 0001
+        swap d5                 ; Remainder = 0000
+        ...
+
+\end{lstlisting}
+
+And Listing \ref{lis:Incorrect-offset-incrementing-with-DIVU} is
+the code where we increment the offset \emph{before} we extend the
+register to a long value.
+
+\begin{lstlisting}[caption={Incorrect offset incrementing with DIVU},label={lis:Incorrect-offset-incrementing-with-DIVU},numbers=left,showstringspaces=false,tabsize=4]
+incHead
+        ...
+        move.w (a3)+,d4         ; D4 = xxxx 8000
+        move.w (a3)+,d5         ; D5 = xxxx 7FFF
+        addq.w #1,d5            ; D5 = 0000 8000
+        ext.l d5                ; D5 = FFFF 8000
+        divu d4,d5              ; D5 = FFFF 8000
+        swap d5                 ; Remainder = FFFF !!!!!!!
+        ...
+
+\end{lstlisting}
+
+We expected the remainder to be zero, and yet it actually appears
+to be 65535. This is, as noted, \emph{slightly} incorrect. Read on.
+
+\subsection{QPC2 Bug? My Mistake?}
+
+In Listing \ref{lis:Correct-offset-incrementing-with-DIVU} I show
+the result of the \texttt{DIVU} instruction as \texttt{D5 = \$0001
+FFFF} which is correct. When I was making sure that I wasn't talking
+rubbish again\footnote{It happens} regarding Listing \ref{lis:Incorrect-offset-incrementing-with-DIVU},
+I traced the code through with QMON2. I could see that the \texttt{DIVU}
+instruction gave the result as \texttt{D5 = \$FFFF 8000} which is
+completely wrong!
+
+I mentioned this problem on the \href{https://qlforum.co.uk/viewtopic.php?f=19&t=3966&p=44307\#p44295}{this topic on QLForum}\footnote{The URL is https://qlforum.co.uk/viewtopic.php?f=19\&t=3966\&p=44307\#p44295
+if you have printed out a copy of this issue of the eMagazine.} as I thought I \emph{might} have found a corner case bug in QPC2.
+I hadn't of course.
+
+The problem was, when I traced the code, and saw the result of the
+division being so obviously wrong, I leapt to the conclusion that
+it had to be a bug. Unfortunately, what I had neglected to do was
+\emph{look at the flags}. Had I done so, I would have noticed the
+\texttt{V} flag, overflow, was set after the division. Duh!
+
+The error of my ways was pointed out by Marcel and Tobias. Thanks
+to them, for being gentle with me!
+
+The manual for the 68008 says that ``\emph{Overflow may be detected
+and set before the instruction completes. If the instruction detects
+an overflow, it sets the overflow condition code and the operands
+are unaffected.}''
+
+Look at the values in the \texttt{D5.L} register just before and after
+the \texttt{DIVU} instruction? They are exactly the same. 
+
+Had the division been a valid one, it would have resulted in a quotient
+of \texttt{\$0001 FFFF} and no remainder. The quotient is larger than
+a word, so wouldn't have fitted in \texttt{D5.W} where it should go.
+The overflow was detected and dealt with \emph{exactly} as specified
+in the manual. And I missed it, completely! Even though I used a couple
+of hex calculators to check what the answer \emph{should} have been
+and \emph{knew} something was wrong with \texttt{\$0001 FFFF}, I didn't
+twig the the obvious fact that the quotient was \emph{bigger than
+a word}. Not that it wasn't staring me in the face!
+
+So, don't be like me, watch the flags when something goes weird on
+you, and make sure you haven't done, or missed, anything silly!
+
+\textbf{NOTE}: As I'm running QPC2, I have the benefit of the 68020
+CPU rather than the 68008. The 68020 has a \texttt{DIVU.L <ea>,Dq:Dr}
+instruction which takes a 32 bit value in the effective address, divides
+by the \texttt{Dq} register and places a 32 bit quotient in \texttt{Dq}
+with the remainder in \texttt{Dr}. This will not work on a bare bones
+QL of course.
+
+\section{Test Harness}
+
+So, that's the circular buffer code written. Does it work\footnote{Given who wrote it, probably not!}?
+Listing \ref{lis:Test-harness-for-cbuffer-code} is a small test harness
+to exercise the buffer handling code.
+
+The code begins by asking for a 5 byte buffer. This is not a power
+of two, so it will be rounded up to 8 bytes, 7 of which can be used.
+The buffer will then be filled up with data, the characters `A'
+through `G' and tested to ensure it is indeed full.
+
+After this, the data will be read back, one byte at a time until there
+is no more data whereupon it will be checked for emptiness and then
+deleted. 
+
+\begin{lstlisting}[caption={Test harness for cBuffer code},label={lis:Test-harness-for-cbuffer-code},numbers=left,showstringspaces=false,tabsize=4]
+;--------------------------------------------------------------
+; Test Harness
+;--------------------------------------------------------------
+; A quick and dirty test of the cBuffers_asm code. It will:
+;
+; 1. Request a buffer of 5 bytes, but will get one of 8.
+; 2. Write ABCDEFG to it, filling it up.
+; 3. Test if it is full, D0 = 0 means it is.
+; 4. Read back all the data, ABCDEFG, emptying the buffer.
+; 5. Test if it is empty, D0 = 0 if so.
+; 6. Free the buffer.
+;
+; The code here was simply traced through QMON2 to be sure that
+; everything was working. It was. Error checking is few and far
+; between due to the use of QMON2. 
+;
+; Feel free to use this as a starter if you ever need to use
+; circular buffers (FIFO) in your code.
+;--------------------------------------------------------------
+start
+        moveq #5,d0             ; Will round up to 8
+        bsr allocateBuffer      ; Create buffer
+
+        moveq #'A',d1           ; First byte
+addLoop
+        bsr addByte             ; Add 1 byte
+        bne.s addEnd            ; Buffer full?
+        addq #1,d1              ; No, next byte
+        bra.s addLoop           ; And again
+
+addEnd
+        bsr isFull              ; D0 = 0 then full
+
+getLoop
+        bsr getByte             ; Get 1 byte
+        bne.s getEnd            ; Buffer empty?
+        bra.s getLoop           ; No, next byte
+
+getEnd
+        bsr isEmpty             ; D0 = 0 then empty
+        bsr freeBuffer          ; Delete buffer
+
+        clr.l d0                ; For SuperBASIC
+        rts
+
+        ; Pull in the cBuffer_asm code.
+        in "ram1_cBuffers_asm"
+
+\end{lstlisting}
+
+Obviously, error checking is not a major priority here as the code
+was only ever intended to be used within QMON2 so that return values
+and such like could be checked and the buffer displayed on screen
+as required. Hopefully, it gives you an idea in how to use the buffer
+handling code. I look forward to hearing all about the programs you
+have written that use it. 

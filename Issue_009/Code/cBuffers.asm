@@ -44,8 +44,9 @@ hdrSize  equ 10     ; Size of buffer header
 
 bufferID equ "cB60" ; Buffer identifier
 
-MT_ALCHP equ $18    ; Allocate common heap
-MT_RECHP equ $19    ; Release common heap
+; Not required for GWASS/GWASL but maybe for QMAC.
+;MT_ALCHP equ $18    ; Allocate common heap
+;MT_RECHP equ $19    ; Release common heap
 
 
 
@@ -73,20 +74,24 @@ MT_RECHP equ $19    ; Release common heap
 ;--------------------------------------------------------------
 allocateBuffer
         movem.l d1-d3/a0-a2,-(a7) ; Save working registers
-		bsr.s checkSize         ; Returns D0.L as a power of 2
+        bsr.s checkSize         ; Returns D0.L as a power of 2
         move.l d0,d1            ; D1.L = space required
-        move.w d1,-(a7)         ; Save rounded requested size
-        addq.l #hdrSize,d1      ; Adjust for header space
+        move.w d1,-(a7)         ; Store rounded size
+        add.l #hdrSize,d1       ; Adjust for header space
         moveq #mt_alchp,d0      ; Allocate common heap
         moveq #-1,d2            ; Current job is owner
         trap #1
+;
+; QDOSMSQ will allocate more space than requested. Asking for
+; 8 byte buffer (+ 10 byte header) gets me $30 bytes in D1 after
+; the trap call. That's 48 bytes not 18.
+;
         move.w (a7)+,d1         ; Restore rounded size
         tst.l d0                ; Do we allocate some heap?
         bne.s abExit            ; No       
 
         move.l a0,a3            ; Buffer address in A3.L
         move.l #bufferID,(a3)+  ; Buffer identifier at -4(a3)
-        subq.w #hdrSize,d1      ; Size of buffer data area
         move.w d1,(a3)          ; Set cbSize 
         clr.l 2(a3)             ; Set cbHead = cbTail = 0           
 
@@ -110,7 +115,7 @@ abExit
 ; EXIT:
 ;
 ; D0.L = Potentially adjusted buffer size.
-; D1.L = D0.L.
+; D1.L = D0.L
 ;
 ; All other registers are preserved.
 ;--------------------------------------------------------------
@@ -127,7 +132,6 @@ abExit
 ; D0.L = Temp
 ;--------------------------------------------------------------
 checkSize
-        move.l d1,-(a7)     ; Save the worker
         moveq #0,d1
         move.w d0,d1        ; D1.L = Value
 
@@ -147,7 +151,7 @@ csRange
 
 csMin
         cmpi.l #7,d0        ; Minimum is 8
-        bhi.s csMax         ; Bigger than 7 is ok
+        bhi.s csMax         ; Bigger than 8
         moveq #8,d0         ; Result is 8
         bra.s csExit        ; Done
 
@@ -157,7 +161,6 @@ csMax
         move.l #$8000,d0    ; Result is 32768
 
 csExit
-        move.l (a7)+,d1     ; Restore worker
         rts
 
 
@@ -229,7 +232,7 @@ fbExit
 ;      = 2 The buffer is invalid.
 ;--------------------------------------------------------------
 bufferCheck
-        cmpi.w #bufferID,-4(a3) ; Is this a buffer?
+        cmpi.l #bufferID,-4(a3) ; Is this a buffer?
         beq.s bcExit            ; Buffer ok, return to caller
         moveq.l #2,d0           ; Buffer is bad
         addq.l #4,a7            ; Caller address ignored
@@ -274,12 +277,12 @@ abIsFull
         move.b d1,(a3,d4.w)     ; Store new byte
         move.w d4,cbHead(a3)    ; New head saved
         moveq #0,d0             ; One byte added
-        bra.s abExit            ; Done, no errors.
+        bra.s abExit2           ; Done, no errors.
 
 abFullUp
         moveq #1,d0             ; Buffer full, can't add D1
 
-abExit
+abExit2
         movem.l (a7)+,d1/d4-d5/a3 ; Restore working registers
         rts
 
@@ -393,7 +396,8 @@ ifExit
 ;--------------------------------------------------------------
 isEmpty
         bsr bufferCheck         ; Won't return unless valid
-        cmp.w -cbHead(a3),-cbTail(a3)    ; Head = Tail? 
+        move.w 2(a3),d0         ; Head offset
+        cmp.w 4(a3),d0          ; Head = Tail?
         beq.s ieEmpty           ; Yes
         moveq #1,d0             ; Not empty
         rts
@@ -435,7 +439,7 @@ guIsEmpty
         subq.w #1,d5            ; For MOD
         add.w (a3)+,d0          ; Add on head
         sub.w (a3),d0           ; Minus tail
-        andw.l d5,d0            ; MOD size
+        and.w d5,d0             ; MOD size
 
 guExit
         movem.l (a7)+,d5/a3     ; Restore the workers

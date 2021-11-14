@@ -128,9 +128,45 @@ target "https://en.wikipedia.org/wiki/Circular_buffer"
 \end_layout
 
 \begin_layout Standard
-I had to learn about them when writing an interrupt driven USART module
- for my Arduinos.
- The application code can write data to the buffer, and as long as it doesn't
+I learned about them when writing my book 
+\emph on
+Arduino Software Internals
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\emph on
+\begin_inset CommandInset href
+LatexCommand href
+name "https://www.apress.com/gb/book/9781484257890"
+target "https://www.apress.com/gb/book/9781484257890"
+literal "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset href
+LatexCommand href
+name "https://www.amazon.co.uk/Arduino-Software-Internals-Complete-Language/dp/1484257898"
+target "https://www.amazon.co.uk/Arduino-Software-Internals-Complete-Language/dp/1484257898"
+literal "false"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\emph default
+, while looking at the code for the Serial interface.
+ 
+\end_layout
+
+\begin_layout Standard
+The application code can write data to the buffer, and as long as it doesn't
  get full, the USART code can be pulling data out of the same buffer and
  sending it out onto the serial interface pins.
  Is this useful for the QL I hear you think? Who knows, but I thought it
@@ -330,7 +366,7 @@ The buffer is allocated as a chunk of memory where the size asked for by
  the user must be a power of two with a maximum size of 32,768 bytes which
  happens to be the largest power that fits into a word.
  Why a word? The buffer is made up of two parts, the data area of the requested
- size and a 6 byte header added to the front of the data area.
+ size and a 10 byte header added to the front of the data area.
  The header is used to hold information about the buffer – its size plus
  the 
 \emph on
@@ -344,13 +380,34 @@ tail
 \end_layout
 
 \begin_layout Standard
-The 6 byte header stores the following information about the buffer:
+The 10 byte header stores the following information about the buffer:
+\end_layout
+
+\begin_layout Itemize
+A buffer identifier, currently 
+\begin_inset Quotes eld
+\end_inset
+
+cB60
+\begin_inset Quotes erd
+\end_inset
+
+, which is used to identify that the address in 
+\family typewriter
+A3.L
+\family default
+ is indeed a circular buffer.
 \end_layout
 
 \begin_layout Itemize
 The data size.
  This is the actual size of the data area allocated for the buffer and does
- not include the 6 bytes added for the header.
+ not include the 10 bytes added for the header.
+ In all the code, 
+\family typewriter
+A3.L
+\family default
+ points at this address, bit at the buffer identifier.
 \end_layout
 
 \begin_layout Itemize
@@ -389,6 +446,22 @@ reference "fig:Circular-Buffer-structure"
 \end_layout
 
 \begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+I tried centering the cbData field.
+ It works when previewing in Lyx, but in texStudio, it errors out! Removing
+ the centering makes it work in texStudio.
+ Hmmm.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \begin_inset Float figure
 placement !h
 wide false
@@ -397,13 +470,30 @@ status open
 
 \begin_layout Plain Layout
 \begin_inset Tabular
-<lyxtabular version="3" rows="1" columns="4">
+<lyxtabular version="3" rows="1" columns="5">
 <features tabularvalignment="middle">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
-<column alignment="center" valignment="top" width="55text%">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="55text%">
 <row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Quotes eld
+\end_inset
+
+cB60
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
 <cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
 \begin_inset Text
 
@@ -431,7 +521,7 @@ cbTail
 
 \end_inset
 </cell>
-<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
 \begin_inset Text
 
 \begin_layout Plain Layout
@@ -502,7 +592,6 @@ A3.L
 cbSize
 \family default
  field in the buffer.
- The start address in other words.
  However, as the initialisation of each function will retrieve the fields
  required from the buffer header, 
 \family typewriter
@@ -521,17 +610,59 @@ status open
 
 \begin_layout Plain Layout
 
-cbSize equ -6    ; Actual allocated size of buffer data area.
+cbSize   equ -6     ; How big is my buffer's data area?
 \end_layout
 
 \begin_layout Plain Layout
 
-cbHead equ -4    ; Head offset within data area.
+cbHead   equ -4     ; Where is my head? Last byte inserted.
 \end_layout
 
 \begin_layout Plain Layout
 
-cbTail equ -2    ; Tail offset within data area.
+cbTail   equ -2     ; Where is my tail? Last byte removed.
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+buffID   equ -4     ; Buffer identifier offset from cbSize.
+\end_layout
+
+\begin_layout Plain Layout
+
+hdrSize  equ 10     ; Size of buffer header
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bufferID equ "cB60" ; Buffer identifier
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Not required for GWASS/GWASL but maybe for QMAC.
+\end_layout
+
+\begin_layout Plain Layout
+
+;MT_ALCHP equ $18    ; Allocate common heap
+\end_layout
+
+\begin_layout Plain Layout
+
+;MT_RECHP equ $19    ; Release common heap
 \end_layout
 
 \end_inset
@@ -578,7 +709,7 @@ reference "lis:Allocating-a-circular-buffer"
 \family typewriter
 checkSize
 \family default
- procedure to adjust the buffer size.
+ procedure to potentially adjust the buffer size to a power of two.
  That code can be seen in Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
@@ -594,15 +725,6 @@ reference "lis:Adjusting-a-buffers-size"
 lstparams "numbers=left,showstringspaces=false,tabsize=4"
 inline false
 status open
-
-\begin_layout Plain Layout
-
-MT_ALCHP equ $18    ; Allocate common heap
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
 
 \begin_layout Plain Layout
 
@@ -742,12 +864,17 @@ allocateBuffer
 
 \begin_layout Plain Layout
 
-        addq.l #6,d1            ; Adjust for header space
+        move.w d1,-(a7)         ; Save rounded requested size
 \end_layout
 
 \begin_layout Plain Layout
 
-        moveq #MT_ALCHP,d0      ; Allocate common heap
+        addq.l #hdrSize,d1      ; Adjust for header space
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #mt_alchp,d0      ; Allocate common heap
 \end_layout
 
 \begin_layout Plain Layout
@@ -758,6 +885,11 @@ allocateBuffer
 \begin_layout Plain Layout
 
         trap #1
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w (a7)+,d1         ; Restore rounded size 
 \end_layout
 
 \begin_layout Plain Layout
@@ -781,7 +913,12 @@ allocateBuffer
 
 \begin_layout Plain Layout
 
-        subq.w #6,d1            ; Size of buffer data area
+        move.l #bufferID,(a3)+  ; Buffer identifier at -4(a3)
+\end_layout
+
+\begin_layout Plain Layout
+
+        subq.w #hdrSize,d1      ; Size of buffer data area
 \end_layout
 
 \begin_layout Plain Layout
@@ -811,6 +948,10 @@ abExit
 \begin_layout Plain Layout
 
         rts
+\end_layout
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \begin_layout Plain Layout
@@ -874,6 +1015,38 @@ MT_ALCHP
 A3
 \family default
  will be unchanged.
+\end_layout
+
+\begin_layout Standard
+Register 
+\family typewriter
+D1.W
+\family default
+ is stacked before being adjusted for the header size, and is restored after
+ the trap.
+ The trap call to allocate common heap returns the number of bytes allocated
+ in 
+\family typewriter
+D1.L
+\family default
+, however, this is not necessarily the same as the number of bytes requested
+ as the requested size will be rounded up by QDOSMSQ.
+\end_layout
+
+\begin_layout Standard
+When testing, I asked for an 8 byte buffer which works out at 18 bytes with
+ the header included, I received a chunk of common heap which was 48 bytes
+ in size.
+ That messed up the 
+\family typewriter
+cbSize
+\family default
+ field in the header and was an interesting bug to track down! By saving
+ 
+\family typewriter
+D1.W
+\family default
+ I can set the header to the correct buffer size.
 \end_layout
 
 \begin_layout Subsection
@@ -997,6 +1170,11 @@ status open
 
 \begin_layout Plain Layout
 
+; D1.L = D0.L.
+\end_layout
+
+\begin_layout Plain Layout
+
 ;
 \end_layout
 
@@ -1073,11 +1251,6 @@ status open
 \begin_layout Plain Layout
 
 checkSize
-\end_layout
-
-\begin_layout Plain Layout
-
-        move.l d1,-(a7)     ; Save the worker
 \end_layout
 
 \begin_layout Plain Layout
@@ -1168,12 +1341,12 @@ csMin
 
 \begin_layout Plain Layout
 
-        cmpi.l #8,d0        ; Minimum is 8
+        cmpi.l #7,d0        ; Minimum is 8
 \end_layout
 
 \begin_layout Plain Layout
 
-        bhi.s csMax         ; Bigger than 8
+        bhi.s csMax         ; Bigger than 7 is ok
 \end_layout
 
 \begin_layout Plain Layout
@@ -1217,11 +1390,6 @@ csMax
 \begin_layout Plain Layout
 
 csExit
-\end_layout
-
-\begin_layout Plain Layout
-
-        move.l (a7)+,d1     ; Restore worker
 \end_layout
 
 \begin_layout Plain Layout
@@ -1311,15 +1479,6 @@ status open
 
 \begin_layout Plain Layout
 
-MT_RECHP equ $19    ; Release common heap
-\end_layout
-
-\begin_layout Plain Layout
-
-\end_layout
-
-\begin_layout Plain Layout
-
 ;--------------------------------------------------------------
 \end_layout
 
@@ -1335,8 +1494,13 @@ MT_RECHP equ $19    ; Release common heap
 
 \begin_layout Plain Layout
 
-; deallocates memory for a circular buffer.
- 
+; Deallocates memory for a circular buffer.
+ The buffer Id is 
+\end_layout
+
+\begin_layout Plain Layout
+
+; cleared to hopefully prevent deleted buffers from being used.
 \end_layout
 
 \begin_layout Plain Layout
@@ -1357,7 +1521,7 @@ MT_RECHP equ $19    ; Release common heap
 \begin_layout Plain Layout
 
 ; A3.L = Buffer address.
- (A3 -> cbSize in the buffer.)
+ (A3 = cbSize in the buffer.)
 \end_layout
 
 \begin_layout Plain Layout
@@ -1377,7 +1541,33 @@ MT_RECHP equ $19    ; Release common heap
 
 \begin_layout Plain Layout
 
-; A3.L = Corrupted.
+; D0.L = Error code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 0 if the byte was added to the buffer.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 1 if the buffer is full, so D1 was not added.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 if the buffer address was invalid.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; A3.L = 0.
+ Buffer now invalid.
 \end_layout
 
 \begin_layout Plain Layout
@@ -1402,12 +1592,22 @@ freeBuffer
 
 \begin_layout Plain Layout
 
+        bsr.s bufferCheck       ; Won't return unless valid
+\end_layout
+
+\begin_layout Plain Layout
+
         movem.l d0-d3/a0-a2,-(a7) ; Save working registers
 \end_layout
 
 \begin_layout Plain Layout
 
-        move.l a3,a0            ; Buffer address
+        move.l #0,buffID(a3)    ; Delete buffer id
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l a3,a0            ; Buffer address to reclaim
 \end_layout
 
 \begin_layout Plain Layout
@@ -1436,7 +1636,16 @@ fbExit
 
 \begin_layout Plain Layout
 
+        move.l #0,a3            ; Buffer deleted.
+\end_layout
+
+\begin_layout Plain Layout
+
         rts
+\end_layout
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \begin_layout Plain Layout
@@ -1484,6 +1693,276 @@ All registers, except
 A3
 \family default
 , are preserved by this code.
+\end_layout
+
+\begin_layout Subsection
+Buffer Check
+\end_layout
+
+\begin_layout Standard
+Before operating on a buffer, it's wise to attempt a bit of validation to
+ try and prevent things going awry when the code starts accessing areas
+ of RAM which are not actually circular buffers!
+\end_layout
+
+\begin_layout Standard
+The address of a buffer, as previously discussed, points at the size word
+ in the header, however, just before the size word is an identifier which
+ is hard coded to be the text 
+\begin_inset Quotes eld
+\end_inset
+
+cB60
+\begin_inset Quotes erd
+\end_inset
+
+ – for no real reason – and the 
+\family typewriter
+bufferCheck
+\family default
+ procedure, shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Validating-a-buffer-address"
+
+\end_inset
+
+, checks that this long word does exist in the correct place.
+\end_layout
+
+\begin_layout Standard
+If, for some unknown reason, the identifier is not found, then something
+ has gone wrong.
+ 
+\family typewriter
+D0.L
+\family default
+ is set to 2 to indicate an invalid buffer, and the callers return address
+ is removed from the stack allowing the code to return to the caller's caller
+ with the error code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=left,showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Buffer Check
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; A buffer address in A3 is checked for an attempt at validity
+\end_layout
+
+\begin_layout Plain Layout
+
+; in that an address of zero is considered invalid, whereas any
+\end_layout
+
+\begin_layout Plain Layout
+
+; other value is possibly valid! Hard to determine, I know.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Any function that manipulates buffers should (!) BSR to here
+\end_layout
+
+\begin_layout Plain Layout
+
+; before doing any register saving etc.
+ Else, carnage will be
+\end_layout
+
+\begin_layout Plain Layout
+
+; the result!
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; NOTE: The return is to the previous caller on error.
+ This
+\end_layout
+
+\begin_layout Plain Layout
+
+;       code will only return to the caller if the buffer is
+\end_layout
+
+\begin_layout Plain Layout
+
+;       non-zero.
+ So:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+;       codeXxx calls addByte, for example.
+\end_layout
+
+\begin_layout Plain Layout
+
+;       addByte calls here to check buffer.
+\end_layout
+
+\begin_layout Plain Layout
+
+;       If A3 is zero, return to codeXxx with D0 = 2.
+\end_layout
+
+\begin_layout Plain Layout
+
+;       Else, return to addByte to add a byte.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; ENTRY:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; A3.L = Buffer address.
+ (A3 = cbSize in the buffer.)
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; EXIT:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D0.L = Error code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 The buffer is invalid.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+bufferCheck
+\end_layout
+
+\begin_layout Plain Layout
+
+        cmpi.w #bufferID,-4(a3) ; Is this a buffer?
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s bcExit            ; Buffer ok, return to caller
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq.l #2,d0           ; Buffer is bad
+\end_layout
+
+\begin_layout Plain Layout
+
+        addq.l #4,a7            ; Caller address ignored
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bcExit
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Validating a buffer address
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Validating-a-buffer-address"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Subsection
@@ -1561,8 +2040,8 @@ status open
 
 \begin_layout Plain Layout
 
-; A3.L = Buffer to add to.
- (A3 -> cbSize in the buffer.)
+; A3.L = Buffer address.
+ (A3 = cbSize in the buffer.)
 \end_layout
 
 \begin_layout Plain Layout
@@ -1597,6 +2076,11 @@ status open
 
 \begin_layout Plain Layout
 
+;      = 2 if the buffer address was invalid.
+\end_layout
+
+\begin_layout Plain Layout
+
 ;
 \end_layout
 
@@ -1617,7 +2101,12 @@ addByte
 
 \begin_layout Plain Layout
 
-        movem.w d1/d4-d5/a3,-(a7) ; Save working registers
+        bsr.s bufferCheck       ; Won't return unless valid
+\end_layout
+
+\begin_layout Plain Layout
+
+        movem.l d1/d4-d5/a3,-(a7) ; Save working registers
 \end_layout
 
 \begin_layout Plain Layout
@@ -1718,7 +2207,7 @@ abExit
 
 \begin_layout Plain Layout
 
-        movem.w (a7)+,d1/d4-d5/a3 ; Restore working registers
+        movem.l (a7)+,d1/d4-d5/a3 ; Restore working registers
 \end_layout
 
 \begin_layout Plain Layout
@@ -1915,7 +2404,7 @@ status open
 
 \begin_layout Plain Layout
 
-; A3.L = Buffer to get from.
+; A3.L = Buffer address.
  (A3 = cbSize in the buffer.)
 \end_layout
 
@@ -1947,6 +2436,11 @@ status open
 \begin_layout Plain Layout
 
 ;      = 1 if the buffer is empty.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 if the buffer address was invalid.
 \end_layout
 
 \begin_layout Plain Layout
@@ -1986,7 +2480,12 @@ getByte
 
 \begin_layout Plain Layout
 
-        movem.w d4-d6/a3,-(a7)  ; Save working registers
+        bsr.s bufferCheck       ; Won't return unless valid
+\end_layout
+
+\begin_layout Plain Layout
+
+        movem.l d4-d6/a3,-(a7)  ; Save working registers
 \end_layout
 
 \begin_layout Plain Layout
@@ -2087,7 +2586,7 @@ gbExit
 
 \begin_layout Plain Layout
 
-        movem.w (a7)+,d4-d6/a3  ; Restore working registers
+        movem.l (a7)+,d4-d6/a3  ; Restore working registers
 \end_layout
 
 \begin_layout Plain Layout
@@ -2175,16 +2674,33 @@ Is the Buffer Full?
 \begin_layout Standard
 The buffer is full up whenever the tail offset is 1 byte larger than the
  head.
- This is because 
-\begin_inset Formula $head+1\ MOD\ buffer\_size$
+ The next data byte to be written to the buffer will be stored at:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+head+1\ MOD\ buffer\_size
+\]
+
 \end_inset
 
- is where the next data byte will be written to the buffer.
- The tail offset, whatever it currently happens to be, is where the most
+
+\end_layout
+
+\begin_layout Standard
+The tail offset, whatever it currently happens to be, is where the most
  recent byte was read from the buffer.
- As previously explained, we have to compare the incremented head offset
- with the current tail offset or we will be unable to determine if the buffer
- is empty or full when both are equal.
+ As previously explained, we have to compare the 
+\emph on
+incremented head
+\emph default
+ offset with the 
+\emph on
+current tail
+\emph default
+ offset or we will be unable to determine if the buffer is empty or full
+ when both are equal.
 \end_layout
 
 \begin_layout Standard
@@ -2221,7 +2737,7 @@ status open
 
 \begin_layout Plain Layout
 
-; when (Head + 1) MOD size == Tail.
+; when (Head + 1) == Tail.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2241,8 +2757,8 @@ status open
 
 \begin_layout Plain Layout
 
-; A3.L = Buffer to get from.
- (A3 -> cbSize in the buffer.)
+; A3.L = Buffer address.
+ (A3 = cbSize in the buffer.)
 \end_layout
 
 \begin_layout Plain Layout
@@ -2262,7 +2778,7 @@ status open
 
 \begin_layout Plain Layout
 
-; D0.L = Error code.
+; D0.L = Return code.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2275,6 +2791,11 @@ status open
 
 ;      = 1 if the buffer is not full.
  Z clear.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 if the buffer address was invalid.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2295,6 +2816,11 @@ status open
 \begin_layout Plain Layout
 
 isFull
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr bufferCheck         ; Won't return unless valid
 \end_layout
 
 \begin_layout Plain Layout
@@ -2378,6 +2904,10 @@ ifExit
 \begin_layout Plain Layout
 
         rts
+\end_layout
+
+\begin_layout Plain Layout
+
 \end_layout
 
 \begin_layout Plain Layout
@@ -2521,7 +3051,7 @@ status open
 
 \begin_layout Plain Layout
 
-; A3.L = Buffer to get from.
+; A3.L = Buffer address.
  (A3 = cbSize in the buffer.)
 \end_layout
 
@@ -2542,7 +3072,7 @@ status open
 
 \begin_layout Plain Layout
 
-; D0.L = Error code.
+; D0.L = Return code.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2555,6 +3085,11 @@ status open
 
 ;      = 1 if the buffer is not empty.
  Z clear.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 if the buffer address was invalid.
 \end_layout
 
 \begin_layout Plain Layout
@@ -2579,17 +3114,27 @@ isEmpty
 
 \begin_layout Plain Layout
 
-        cmp.w -cbHead(a3),-cbTail(a3)    ; Head = Tail? 
+        bsr bufferCheck         ; Won't return unless valid
 \end_layout
 
 \begin_layout Plain Layout
 
-        beq.s ieEmpty                    ; Yes
+        move.w 2(a3),d0         ; Head offset
 \end_layout
 
 \begin_layout Plain Layout
 
-        moveq #1,d0                      ; Not empty
+        cmp.w 4(a3),d0          ; Head = Tail?
+\end_layout
+
+\begin_layout Plain Layout
+
+        beq.s ieEmpty           ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #1,d0             ; Not empty
 \end_layout
 
 \begin_layout Plain Layout
@@ -2608,7 +3153,7 @@ ieEmpty
 
 \begin_layout Plain Layout
 
-        moveq #0,d0                      ; No
+        moveq #0,d0             ; No
 \end_layout
 
 \begin_layout Plain Layout
@@ -2650,12 +3195,22 @@ How Much Space is Used?
 \end_layout
 
 \begin_layout Standard
-This is calculated as 
-\begin_inset Formula $(buffer\_size+head-tail)\ MOD\ buffer\_size$
+The used space in a buffer is calculated as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size
+\]
+
 \end_inset
 
-.
- If we assume a status as shown in Figure 
+
+\end_layout
+
+\begin_layout Standard
+If we assume a buffer state as shown in Figure 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Circular-Buffer-space-used-simple-example"
@@ -3017,8 +3572,8 @@ And
 \end_layout
 
 \begin_layout Standard
-How about when the buffer has been used for a while and the situation resembles
- Figure 
+How about when the buffer has been used for a while and the buffer state
+ resembles Figure 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Circular-Buffer-space-used-comples-example"
@@ -3410,7 +3965,7 @@ status open
 
 \begin_layout Plain Layout
 
-; A3.L = Buffer to get from.
+; A3.L = Buffer address.
  (A3 = cbSize in the buffer.)
 \end_layout
 
@@ -3442,6 +3997,11 @@ status open
 
 \begin_layout Plain Layout
 
+;      = 2 if the buffer address was invalid.
+\end_layout
+
+\begin_layout Plain Layout
+
 ;      <> 0 = used space.
  Z clear.
 \end_layout
@@ -3464,6 +4024,11 @@ status open
 \begin_layout Plain Layout
 
 getUsed
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr bufferCheck         ; Won't return unless valid
 \end_layout
 
 \begin_layout Plain Layout
@@ -3592,7 +4157,11 @@ D5.W
 D5.W
 \family default
  is then decremented ready for the MOD operation later.
- The current head offset is added to D0.W and the tail offset is subtracted.
+ The current head offset is added to 
+\family typewriter
+D0.W
+\family default
+ and the tail offset is subtracted.
  
 \family typewriter
 D0.W
@@ -3622,24 +4191,46 @@ How Much Space is Free?
 \end_layout
 
 \begin_layout Standard
-The space available in a buffer is 
-\begin_inset Formula $buffer\_size-1-space\_used$
+The space currently available in a buffer is calculated as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+buffer\_size-1-space\_used
+\]
+
 \end_inset
 
-.
- The code below in Listing
+
+\end_layout
+
+\begin_layout Standard
+Alternatively, substituting the formula for space used:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+buffer\_size-1-\left(\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code below in Listing
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "lis:Buffer-free-space"
 
 \end_inset
 
- does exactly this.
- It could also use the full formula of 
-\begin_inset Formula $buffer\_size-1-\left(\left(buffer\_size+head-tail\right)\ MOD\ buffer\_size\right)$
-\end_inset
-
- but when half the work has been done already, it's a shame to repeat it!
+ does exactly this using the former formula but it could be rewritten to
+ use the full formula of course, but when half the work has been done already,
+ it's a shame to repeat it!
 \end_layout
 
 \begin_layout Standard
@@ -3686,7 +4277,7 @@ status open
 
 \begin_layout Plain Layout
 
-; A3.L = Buffer to get from.
+; A3.L = Buffer address.
  (A3 = cbSize in the buffer.)
 \end_layout
 
@@ -3713,7 +4304,13 @@ status open
 
 \begin_layout Plain Layout
 
-;      Z set if buffer is full.
+;      = 0 if the buffer is full.
+ Z set also.
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 if the buffer address was invalid.
 \end_layout
 
 \begin_layout Plain Layout
@@ -3734,6 +4331,11 @@ status open
 \begin_layout Plain Layout
 
 getFree
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr bufferCheck         ; Won't return unless valid
 \end_layout
 
 \begin_layout Plain Layout
@@ -3791,6 +4393,10 @@ gfExit
 
 \begin_layout Plain Layout
 
+\end_layout
+
+\begin_layout Plain Layout
+
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
@@ -3827,6 +4433,176 @@ D0.W
 \end_layout
 
 \begin_layout Subsection
+Flushing Buffers
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Flushing-buffers"
+
+\end_inset
+
+ shows the code to flush, or empty, a buffer if this is required for any
+ reason.
+ The code is very simple, it sets the head and tail offsets to zero in the
+ buffer header thus quickly emptying the buffer.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Flush Buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Flushes all data from the buffer.
+ Doesn't overwrite it, only 
+\end_layout
+
+\begin_layout Plain Layout
+
+; set the Head = Tail = 0.
+ The size remains the same.
+\end_layout
+
+\begin_layout Plain Layout
+
+; 
+\end_layout
+
+\begin_layout Plain Layout
+
+; ENTRY:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; A3.L = Buffer to flush.
+ (A3 = cbSize in the buffer.)
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; EXIT:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; D0.L = Error Code
+\end_layout
+
+\begin_layout Plain Layout
+
+;      = 2 if the buffer address was invalid.
+\end_layout
+
+\begin_layout Plain Layout
+
+; None.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; All registers are preserved.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+flushBuffer
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr bufferCheck         ; Won't return unless valid
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w #0,-cbHead(a3)   ; -cbHead is actually cbTail!        
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w #0,-cbTail(a3)   ; -cbTail is actually cbHead!
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Flushing buffers
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Flushing-buffers"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
 Incrementing Head and Tail Offsets
 \end_layout
 
@@ -3838,16 +4614,23 @@ The various procedures explained above all increment their offsets for head
 \end_layout
 
 \begin_layout Standard
-Incrementing an offset is a simple case of 
-\begin_inset Formula $\left(offset+1\right)\ MOD\ buffer\_size$
+Incrementing an offset is a simple case of:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(offset+1\right)\ MOD\ buffer\_size
+\]
+
 \end_inset
 
-.
- We need the MOD function as the offset has to wrap from 
-\begin_inset Formula $buffersize-1$
-\end_inset
 
- to zero when we reach the end of the buffer.
+\end_layout
+
+\begin_layout Standard
+We need the MOD function as the offset has to wrap back to zero when we
+ attempt to increment past the end of the buffer.
  
 \end_layout
 
@@ -3860,7 +4643,7 @@ This is another reason why the buffer size is required to be a power of
 \end_layout
 
 \begin_layout Standard
-For example, if our buffer size is 8 bytes, the ANDing with 7 is effectively
+For example, if our buffer size is 8 bytes, then ANDing with 7 is effectively
  the MOD 8 operation that we need.
  The offset into the buffer, head or tail, will always be from 0 to 7 inclusive.
  When we increment from 7 to 8, we go outside the bounds of the buffer's
@@ -3979,9 +4762,17 @@ reference "lis:Incrementing-an-offset-using-DIVU"
 DIVU
 \family default
  instruction.
- This requires that a long value in the destination register be divided
- by a word value in the source.
- 
+ This requires that a 
+\emph on
+long
+\emph default
+ value in the destination register be divided by a 
+\emph on
+word
+\emph default
+ value in the source register.
+ The high word of the destination register will contain the remainder, which
+ is what we are after.
 \end_layout
 
 \begin_layout Standard
@@ -4071,8 +4862,8 @@ after
 \emph default
  it has been sign extended to a long – if the value happened to be 32767,
  $7FFF, and it was incremented to $8000, it would be sign extended to $FFFF
- 8000 and after the division, the new head pointer would be wrong! Listing
- 
+ 8000 and after the division, the new head pointer would be wrong.
+ Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "lis:Correct-offset-incrementing-with-DIVU"
@@ -4259,16 +5050,18 @@ name "lis:Incorrect-offset-incrementing-with-DIVU"
 \end_layout
 
 \begin_layout Standard
-We expected the remainder to be zero, and yet it's actually 65535.
+We expected the remainder to be zero, and yet it actually appears to be
+ 65535.
  This is, as noted, 
 \emph on
 slightly
 \emph default
  incorrect.
+ Read on.
 \end_layout
 
 \begin_layout Subsection
-QPC2 Bug? Or My Mistake?
+QPC2 Bug? My Mistake?
 \end_layout
 
 \begin_layout Standard
@@ -4293,7 +5086,7 @@ D5 = $0001 FFFF
 status open
 
 \begin_layout Plain Layout
-it happens
+It happens
 \end_layout
 
 \end_inset
@@ -4338,7 +5131,11 @@ The URL is https://qlforum.co.uk/viewtopic.php?f=19&t=3966&p=44307#p44295 if
 
 \end_inset
 
- as I thought I might have found a corner case bug in QPC2.
+ as I thought I 
+\emph on
+might
+\emph default
+ have found a corner case bug in QPC2.
  I hadn't of course.
 \end_layout
 
@@ -4471,19 +5268,342 @@ Test Harness
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
+So, that's the circular buffer code written.
+ Does it work
+\begin_inset Foot
 status open
 
 \begin_layout Plain Layout
-Write some code to test the buffer code.
- Is it at all possible to have a job running which simply polls the buffer
- for data, and an interrupt job that constantly fills it? Too complex? What
- about race conditions? Think about it.
+Given who wrote it, probably not!
+\end_layout
+
+\end_inset
+
+? Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Test-harness-for-cbuffer-code"
+
+\end_inset
+
+ is a small test harness to exercise the buffer handling code.
+\end_layout
+
+\begin_layout Standard
+The code begins by asking for a 5 byte buffer.
+ This is not a power of two, so it will be rounded up to 8 bytes, 7 of which
+ can be used.
+ The buffer will then be filled up with data, the characters 
+\begin_inset Quotes els
+\end_inset
+
+A
+\begin_inset Quotes ers
+\end_inset
+
+ through 
+\begin_inset Quotes els
+\end_inset
+
+G
+\begin_inset Quotes ers
+\end_inset
+
+ and tested to ensure it is indeed full.
+\end_layout
+
+\begin_layout Standard
+After this, the data will be read back, one byte at a time until there is
+ no more data whereupon it will be checked for emptiness and then deleted.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "numbers=left,showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Test Harness
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; A quick and dirty test of the cBuffers_asm code.
+ It will:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; 1.
+ Request a buffer of 5 bytes, but will get one of 8.
+\end_layout
+
+\begin_layout Plain Layout
+
+; 2.
+ Write ABCDEFG to it, filling it up.
+\end_layout
+
+\begin_layout Plain Layout
+
+; 3.
+ Test if it is full, D0 = 0 means it is.
+\end_layout
+
+\begin_layout Plain Layout
+
+; 4.
+ Read back all the data, ABCDEFG, emptying the buffer.
+\end_layout
+
+\begin_layout Plain Layout
+
+; 5.
+ Test if it is empty, D0 = 0 if so.
+\end_layout
+
+\begin_layout Plain Layout
+
+; 6.
+ Free the buffer.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; The code here was simply traced through QMON2 to be sure that
+\end_layout
+
+\begin_layout Plain Layout
+
+; everything was working.
+ It was.
+ Error checking is few and far
+\end_layout
+
+\begin_layout Plain Layout
+
+; between due to the use of QMON2.
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Feel free to use this as a starter if you ever need to use
+\end_layout
+
+\begin_layout Plain Layout
+
+; circular buffers (FIFO) in your code.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #5,d0             ; Will round up to 8
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr allocateBuffer      ; Create buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #'A',d1           ; First byte
+\end_layout
+
+\begin_layout Plain Layout
+
+addLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr addByte             ; Add 1 byte
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne.s addEnd            ; Buffer full?
+\end_layout
+
+\begin_layout Plain Layout
+
+        addq #1,d1              ; No, next byte
+\end_layout
+
+\begin_layout Plain Layout
+
+        bra.s addLoop           ; And again
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+addEnd
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr isFull              ; D0 = 0 then full
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+getLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr getByte             ; Get 1 byte
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne.s getEnd            ; Buffer empty?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bra.s getLoop           ; No, next byte
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+getEnd
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr isEmpty             ; D0 = 0 then empty
+\end_layout
+
+\begin_layout Plain Layout
+
+        bsr freeBuffer          ; Delete buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        clr.l d0                ; For SuperBASIC
+\end_layout
+
+\begin_layout Plain Layout
+
+        rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        ; Pull in the cBuffer_asm code.
+\end_layout
+
+\begin_layout Plain Layout
+
+        in 
+\begin_inset Quotes eld
+\end_inset
+
+ram1_cBuffers_asm"
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Test harness for cBuffer code
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Test-harness-for-cbuffer-code"
+
+\end_inset
+
+
 \end_layout
 
 \end_inset
 
 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Obviously, error checking is not a major priority here as the code was only
+ ever intended to be used within QMON2 so that return values and such like
+ could be checked and the buffer displayed on screen as required.
+ Hopefully, it gives you an idea in how to use the buffer handling code.
+ I look forward to hearing all about the programs you have written that
+ use it.
+ 
 \end_layout
 
 \end_body
