@@ -1,0 +1,494 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+News
+\end_layout
+
+\begin_layout Section
+New Cover
+\end_layout
+
+\begin_layout Standard
+I had a note on the QL Forum that some people
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Ok, one person!
+\end_layout
+
+\end_inset
+
+ get a bit weird in the head when they look at the cover image for this
+ eMagazine.
+ It's got something to do with all the holes, or the appearance of same,
+ so rather than losing any of my valued readers, I've decided to get a new
+ cover image with far fewer holes! 
+\end_layout
+
+\begin_layout Standard
+It may sound amusing, but 
+\begin_inset CommandInset href
+LatexCommand href
+name "Trypophobia"
+target "https://en.wikipedia.org/wiki/Trypophobia"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://en.wikipedia.org/wiki/Trypophobia
+\end_layout
+
+\end_inset
+
+ is a known phobia, so holes are best avoided if you are a sufferer.
+ Hopefully the new cover will prevent any induced weirdness in my reader(s).
+ There's enough weirdness in the author!
+\end_layout
+
+\begin_layout Section
+My Assembly Book
+\end_layout
+
+\begin_layout Standard
+In the last issue, I mentioned that 
+\emph on
+Tinyfpga
+\emph default
+ had created a printed version of my Assembly Language articles from the
+ late, and much missed, 
+\emph on
+QL Today
+\emph default
+ magazine.
+ Since then, Tiny (if I can call him that!) has posted a couple of updates
+ on the book to the QL Forum at 
+\begin_inset CommandInset href
+LatexCommand href
+name "this post"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3976&start=10#p44445"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=3976&start=10#p44445
+\end_layout
+
+\end_inset
+
+ and 
+\begin_inset CommandInset href
+LatexCommand href
+name "this post too"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3976&start=10#p44446"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=3976&start=10#p44446
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+It appears that everyone who purchases a copy gets to see the personal details
+ of the previous customer, which means potentially falling foul of EU GDPR
+ rules and regulations for personal data.
+ There is a fix to the problem, but if anyone has a better idea, please
+ do post the details on the forum in response to the two posts linked above.
+ Thanks.
+\end_layout
+
+\begin_layout Section
+Beginner's Corner
+\end_layout
+
+\begin_layout Standard
+This issue sees the start of a new feature, which will take a look at Assembly
+ Language programming from a beginner's point of view.
+ I don't mean getting right back to basics and learning the instructions
+ etc – that's nicely covered in the book mentioned above, or the PDF version
+ which you can download from 
+\begin_inset CommandInset href
+LatexCommand href
+name "my GitHub repository"
+target "https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+What I do mean is a beginner's guide to Assembly Language Tools – which
+ assembler to use, what about debuggers etc, plus, it occurs to me that
+ I never delved into QDOS and the various utilities and traps in my articles
+ for 
+\emph on
+QL Today
+\emph default
+! So that's where we will be going in the future.
+\end_layout
+
+\begin_layout Section
+SMSQ/E
+\end_layout
+
+\begin_layout Standard
+And speaking of delving into QDOS, this issue marks the end of an era.
+ QDOS is no more, long live SMSQ/E! From now on, I will be converting myself
+ over to using the SMSQ/E versions of trap calls and vectors etc.
+ I feel, after some discussion on the forum, that anyone learning this stuff
+ nowadays – and there are still some – should be using the up to date details.
+ So, no more using 
+\family typewriter
+UT_CON
+\family default
+ as I'll be using 
+\family typewriter
+OPW_CON
+\family default
+ instead!
+\end_layout
+
+\begin_layout Standard
+For those who need a new manual to cover this new regime, the 
+\emph on
+QDOS/SMS Reference Manual
+\emph default
+ is available in PDF format on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "Sinclair QL Home Page"
+target "http://www.dilwyn.me.uk/docs/manuals/index.html"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/index.html
+\end_layout
+
+\end_inset
+
+ where you can grab a 
+\begin_inset CommandInset href
+LatexCommand href
+name "PDF version"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf
+\end_layout
+
+\end_inset
+
+ or a 
+\begin_inset CommandInset href
+LatexCommand href
+name "Libre Office version"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt
+\end_layout
+
+\end_inset
+
+ (ODT) as desired.
+\end_layout
+
+\begin_layout Subsection
+SMSQ/E 3.38
+\end_layout
+
+\begin_layout Standard
+A new version of SMSQ/E is now available.
+ Version 3.38 was announced on 1st November on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "QL Forums"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3957&p=44189#p44189"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=3957&p=44189#p44189
+\end_layout
+
+\end_inset
+
+ and on the QL emailing list.
+ To quote Wolfgang Lenerz:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+SMSQE 3.38 is out now.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+As usual, you can get it at 
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.wlenerz.com/smsqe/"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+The main news here is that, thanks to Alain Haoui's work, WMAN can now draw
+ real subwindow indices.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+The ways this is done is explained in the QPTR manual, the new version of
+ which can be found at my QL stuff site 
+\begin_inset CommandInset href
+LatexCommand href
+target "http://www.wlenerz.com/qlstuff"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+There you can find the QPTR manual (in the documentation section), and also
+ the new QPTR bin file itself, which also implements index drawing (in the
+ programming section) as well as two demo/test programs (one for Basic,
+ made by Alain.
+ Haoui, and one for assembler).
+\end_layout
+
+\begin_layout Section
+QPC2 Version 5.01
+\end_layout
+
+\begin_layout Standard
+Coincidentally with the new release of SMSQ/E, Marcel Kilgus announced the
+ release of QPC2 v5.01 on 1st November 2021.
+ 
+\begin_inset CommandInset href
+LatexCommand href
+name "In his own words"
+target "https://qlforum.co.uk/viewtopic.php?f=19&t=3958#p44190"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=19&t=3958#p44190
+\end_layout
+
+\end_inset
+
+:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Rejoice, QPC2 got a new release today.
+ As always free as in "free beer".
+ Details are here: 
+\begin_inset CommandInset href
+LatexCommand href
+target "https://www.kilgus.net/2021/11/01/qpc2-v5-01-and-smsq-e-v3-38-released/"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And, yes, I know.
+ The chances of a newer release of QPC and/or SMSQ/E appearing 
+\emph on
+before
+\emph default
+ this issue of the eMagazine are pretty high!
+\end_layout
+
+\begin_layout Section
+And Finally...
+\end_layout
+
+\begin_layout Standard
+Apologies for the seemingly never ending list of URLs in the footnotes to
+ the pages in this section.
+ This is mainly done for the reason that some people actually prefer a printed
+ version of my eMagazine and it appears that there's a bug in the handling
+ of clickable links on the paper versions – they simply don't work.
+\end_layout
+
+\end_body
+\end_document

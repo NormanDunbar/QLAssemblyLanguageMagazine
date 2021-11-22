@@ -1,0 +1,41 @@
+Changes for this issue and onwards:
+
+1. Use SMSQ/E trap names etc. Do we need a header file or
+   just use the ones we need? Note that the SMSQ names use
+   a dot, not an underscore. Do we need both?
+
+2. Beginner's Guide to SMSQ/E traps/vectors etc.
+
+3. QMAC/QLINK/QMAKE tutorial.
+
+4. Assembler Workbench ditto?
+
+5. GWASL/GWASS ditto?
+
+6. Parser/Compiler? (See number 7!)
+
+7. Utility to convert equates and such like from QDOS to SMSQ 
+   which should replace explicit equates, insert missing ones,
+   where the QDOS ones are automatic (GWASL/GWASS). Look for:
+
+    QDOS_NAME equ $00
+    ...
+    moveq[.L] #QDOS_NAME,D0
+    move[.Size] #QDOS_NAME,D0
+    ...
+    move.w QDOS_NAME,An
+
+    Lookup table? Maybe, maybe not.
+
+    dc.w Length of each entry
+    dc.b 'ENTRY_0','ENTRY_1',...
+
+    Have separate tables for different lengths.
+
+    extract label, get length, use that table, find entry,
+    then what? How to replace it?
+
+    If SMSQ name is smaller than QDOS name, add spaces,
+    If larger, remove spaces? [OPTIONAL]
+
+
