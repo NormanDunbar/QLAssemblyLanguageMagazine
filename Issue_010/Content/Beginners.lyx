@@ -1,0 +1,2805 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Beginners' Corner
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+This is a new feature starting in this issue.
+ It stems from a post on the QL Forum from 
+\emph on
+TMD2003
+\emph default
+ who was wondering about how to get started learning Assembly Language as
+ a 
+\begin_inset Quotes eld
+\end_inset
+
+noob
+\begin_inset Quotes erd
+\end_inset
+
+.
+ The topic is 
+\begin_inset CommandInset href
+LatexCommand href
+name "this one"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3976"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=3976
+\end_layout
+
+\end_inset
+
+ on the forum.
+ A number of useful answers were given, some pointing at my book and these
+ eMagazines.
+ 
+\end_layout
+
+\begin_layout Section
+Do Basic Things
+\end_layout
+
+\begin_layout Standard
+On the second page of the thread, 
+\emph on
+Tinyfpga
+\emph default
+ issued this 
+\begin_inset Quotes eld
+\end_inset
+
+sort of
+\begin_inset Quotes erd
+\end_inset
+
+ challenge:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+In Basic all I have to do start my journey into the programming world is
+ to:- Type into QD
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+OPEN #1,con_ 
+\end_layout
+
+\begin_layout Plain Layout
+
+OUTLN #1,310,60,50,300 
+\end_layout
+
+\begin_layout Plain Layout
+
+CLS #1 : BORDER #1,1,7 
+\end_layout
+
+\begin_layout Plain Layout
+
+INPUT #1,a$
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+I then save the text in a ram disk, press the execute button and ,"hey presto",
+ I see an app on my screen.
+ What could be an easier introduction to programming?
+\end_layout
+
+\begin_layout Standard
+Well, I like a challenge, even when it's not really intended as one, so
+ I decided I would create the code to do the necessary.
+\end_layout
+
+\begin_layout Standard
+The first thing to note is how simple it looks from SuperBASIC to do what
+ appears to be a simple thing.
+ It's 4 lines of code, how hard can that be?
+\end_layout
+
+\begin_layout Standard
+Well, SuperBASIC takes the typed in commands, parses them and if all is
+ well, execution takes the tokenised code and converts it to various calls
+ to the ROM, Toolkits and such like, and the result is a seemingly simply
+ result.
+ Under the covers there's a whole lot of work taking place.
+\end_layout
+
+\begin_layout Subsection
+Program Constants
+\end_layout
+
+\begin_layout Standard
+I created the code in the various listings in this chapter to do the conversion
+ from SuperBASIC to Assembly.
+ I chose to create a job, that multitasks alongside SuperBASIC but I could
+ have made it a 
+\family typewriter
+CALL
+\family default
+able routine instead.
+ Let's dive in! Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Constant-Definitions"
+
+\end_inset
+
+ shows the constants I used.
+\end_layout
+
+\begin_layout Standard
+In the original, I had QDOS versions for the vectors and traps, for this
+ eMagazine, I've converted things to use SMSQ/E versions.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+; A simple multi-tasking job for TinyFPGA/TMD2003 to:
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; Open #n,con_
+\end_layout
+
+\begin_layout Plain Layout
+
+; OUTLN #n,310,60,50,300
+\end_layout
+
+\begin_layout Plain Layout
+
+; CLS #n
+\end_layout
+
+\begin_layout Plain Layout
+
+; BORDER #n,1,7
+\end_layout
+
+\begin_layout Plain Layout
+
+; INPUT #n, some_text_from_user
+\end_layout
+
+\begin_layout Plain Layout
+
+; Die!
+\end_layout
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+; Norman Dunbar
+\end_layout
+
+\begin_layout Plain Layout
+
+; 20 November 2021.
+\end_layout
+
+\begin_layout Plain Layout
+
+;==============================================================
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Some definitions to make life simple(r)!
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+WHITE       equ 7               ; White colour
+\end_layout
+
+\begin_layout Plain Layout
+
+BLACK       equ 0               ; Black colour
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+BORDCOLOUR  equ WHITE           ; Border colour
+\end_layout
+
+\begin_layout Plain Layout
+
+BORDWIDTH   equ 1               ; Border width
+\end_layout
+
+\begin_layout Plain Layout
+
+PAPER       equ BLACK           ; Paper colour
+\end_layout
+
+\begin_layout Plain Layout
+
+INK         equ WHITE           ; Text colour
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+CON_W       equ 310             ; Console width
+\end_layout
+
+\begin_layout Plain Layout
+
+CON_H       equ 60              ;    "    height
+\end_layout
+
+\begin_layout Plain Layout
+
+CON_X       equ 50              ;    "    X position
+\end_layout
+
+\begin_layout Plain Layout
+
+CON_Y       equ 300             ;    "    Y position
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+BUFFERSIZE  equ 256             ; User input buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; I use GWASS as my assembler, it has the QDOS traps etc built
+\end_layout
+
+\begin_layout Plain Layout
+
+; in.
+ It doesn't however, have the PE stuff, so these two are
+\end_layout
+
+\begin_layout Plain Layout
+
+; required.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+IOP_PINF    equ $70             ; Get PE information
+\end_layout
+
+\begin_layout Plain Layout
+
+IOP_OUTL    equ $7a             ; OUTLN
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; GWASS also doesn't know about SMSQ/E names, so these are now
+\end_layout
+
+\begin_layout Plain Layout
+
+; required.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+OPW.CON     equ $c6             ; Open a console, border, etc
+\end_layout
+
+\begin_layout Plain Layout
+
+IOW.CLRA    equ $20             ; CLS whole window
+\end_layout
+
+\begin_layout Plain Layout
+
+IOB.SBYT    equ $05             ; Print one byte to channel
+\end_layout
+
+\begin_layout Plain Layout
+
+IOW.ECUR    equ $0E             ; Enable cursor
+\end_layout
+
+\begin_layout Plain Layout
+
+IOB.FLIN    equ $02             ; Fetch a line of text plus LF
+\end_layout
+
+\begin_layout Plain Layout
+
+UT.WTEXT    equ $d0             ; Print some text
+\end_layout
+
+\begin_layout Plain Layout
+
+SMS.SSJB    equ $08             ; Suspend a job
+\end_layout
+
+\begin_layout Plain Layout
+
+SMS.FRJB    equ $05             ; Force remove a job
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Constant Definitions
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Constant-Definitions"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There's nothing much here apart from the new style, SMSQ/E names.
+ Most of these are trap codes but a couple are vectored routines which can
+ be used to call the trap routines but in a simpler manner.
+ For certain values of simpler, sometimes.
+\end_layout
+
+\begin_layout Subsection
+Job Header
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Job-Header"
+
+\end_inset
+
+ shows the 
+\begin_inset Quotes eld
+\end_inset
+
+pretty much boilerplate
+\begin_inset Quotes erd
+\end_inset
+
+ code that all jobs need to have at the start.
+ Seasoned readers can skip this next explanation!
+\end_layout
+
+\begin_layout Standard
+A job in SMSQ/E requires a standard job header.
+ This is the same as it was back in the old QDOS days, and consists of 10
+ bytes of boiler plate code, followed by the job's name in the standard
+ format of a word defining the length of the name, followed by the bytes
+ of the name.
+\end_layout
+
+\begin_layout Standard
+There are numerous ways to set up the first 6 bytes.
+ I prefer a short branch to the job's actual start followed by a long word
+ of zero.
+ Back in the days when I wrote code for a living, this could have been used
+ to set up a serial number for copies of the program(s) - there's enough
+ room in a long word for 
+\begin_inset Formula $2^{32}$
+\end_inset
+
+ different values.
+ Minus 1 if you don't want a serial number of zero!
+\end_layout
+
+\begin_layout Standard
+Regardless of how you set up the first 6 bytes, bytes 6 and 7 (starting
+ from zero) will always be the constant value of $4AFB.
+ This is the marker word used by QDOS and SMSQ/E to indicate a job's code
+ follows.
+\end_layout
+
+\begin_layout Standard
+Immediately after the marker word, we have a word defining the size of this
+ job's name, here we see it is 8 bytes long, followed by the bytes of the
+ job name itself.
+ In this case, I set the job name to 
+\begin_inset Quotes eld
+\end_inset
+
+TinyFPGA
+\begin_inset Quotes erd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Job's require a header.
+ This is basically boilerplate, except
+\end_layout
+
+\begin_layout Plain Layout
+
+; for the job name's length and the name of the job.
+ This will
+\end_layout
+
+\begin_layout Plain Layout
+
+; need to be EXEC/EXEC_W/EX or EW'd to execute it.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+Start
+\end_layout
+
+\begin_layout Plain Layout
+
+        bra.s open_console      ; Skip over job header
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.l 0                  ; 4 bytes, can be any value
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.w $4afb              ; Job flag, must be $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.w 8                  ; Length of job name
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.b "TinyFPGA"         ; Bytes of job name
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Job Header
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Job-Header"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Why does a job need a name? It doesn't! But if it has one, it makes life
+ easier when using the SuperBASIC 
+\family typewriter
+JOBS
+\family default
+ command, or the QPAC2 Jobs Thing to list the various jobs running in the
+ system.
+\end_layout
+
+\begin_layout Subsection
+Opening a Console Channel
+\end_layout
+
+\begin_layout Standard
+The first task in the challenge is to open a console channel.
+ How we do this is shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Open-a-Console"
+
+\end_inset
+
+.
+ Bear in mind that there are other Trap calls available to the programmer
+ to open files, and a console channel is just a file.
+ Here we will use a vectored utility which allows the 
+\begin_inset Quotes eld
+\end_inset
+
+open channel
+\begin_inset Quotes erd
+\end_inset
+
+ to be simplified to one call.
+ Without the vector we would have to open the channel, set the paper, strip
+ and ink colours, and set the border width and colour too.
+ I don;t know about you, but I prefer to do less typing in my programs!
+\end_layout
+
+\begin_layout Standard
+The 4 bytes at label 
+\family typewriter
+con_def
+\family default
+ define the border, paper and ink attributes.
+ Here I'm using some of the constants defined in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Constant-Definitions"
+
+\end_inset
+
+ which makes it easier if I decide I don't like 
+\emph on
+Tinyfpga
+\emph default
+'s choice of colours, and want to change things.
+ 
+\end_layout
+
+\begin_layout Standard
+The 4 words immediately following, at label 
+\family typewriter
+outln_def
+\family default
+, are used for two separate purposes.
+ The first is when we open the console channel – they define the width,
+ height, x position and y position of the opened console channel.
+\end_layout
+
+\begin_layout Standard
+The second use is when we try to OUTLN the channel.
+ That function requires a 4 word block of data in exactly this format, so
+ we can use the same code for two different things.
+\end_layout
+
+\begin_layout Standard
+The fact that label exists between the two lumps
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+This is a technical term!
+\end_layout
+
+\end_inset
+
+ of code makes no difference.
+ A label doesn't generate any code or data in the assembled program.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Needs a channel open first.
+ This can be done in a couple of
+\end_layout
+
+\begin_layout Plain Layout
+
+; ways, but this is probably the easiest.
+ It will open a con_
+\end_layout
+
+\begin_layout Plain Layout
+
+; channel of the required size and border it.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; UT_CON uses all of the following from con_def and outln_def
+\end_layout
+
+\begin_layout Plain Layout
+
+; IOP_OUTLN only uses the latter.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+con_def
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.b BORDCOLOUR         ; Border colour
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.b BORDWIDTH          ; And width
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.b PAPER              ; Paper/strip colour
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.b INK                ; Ink colour
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+outln_def
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.w CON_W              ; Width
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.w CON_H              ; Height
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.w CON_X              ; X pos
+\end_layout
+
+\begin_layout Plain Layout
+
+        dc.w CON_Y              ; Y pos
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+open_console
+\end_layout
+
+\begin_layout Plain Layout
+
+        lea con_def,a1          ; Parameters
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w OPW.CON,a2       ; C6 = CONSOLE required
+\end_layout
+
+\begin_layout Plain Layout
+
+        jsr (a2)                ; Open Console & set params
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne die                 ; If it failed - bale out
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Open a Console
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Open-a-Console"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Having got the console channel definitions out of the way, we can open it
+ and set the attributes with a call to the vectored 
+\family typewriter
+OPW.CON
+\family default
+ utility.
+ This call requires that the 
+\family typewriter
+A1.L
+\family default
+ register points at the byte defining the border colour, thus 
+\family typewriter
+con_def
+\family default
+, and that's all.
+ 
+\end_layout
+
+\begin_layout Standard
+To call a vectored utility we get a word from the ROM (as was in the old
+ days) at a certain address, in SMSQ/E this address is labelled 
+\family typewriter
+OPW.CON
+\family default
+ and this contains the address where the actual code we wish to execute
+ lives.
+ In the ROM, there is a long list of available vectored routines which we
+ can use in our own code.
+ 
+\end_layout
+
+\begin_layout Standard
+After calling the vectored utility, we will have an error code in 
+\family typewriter
+D0.L
+\family default
+ and, if nothing went wrong, 
+\family typewriter
+D0.L
+\family default
+ will be zero, the 
+\family typewriter
+Z
+\family default
+ flag will be set for us, and 
+\family typewriter
+A0.L
+\family default
+ will contain the channel identifier for the newly opened channel.
+ Note that this is not the same as a SuperBASIC channel number.
+ SuperBASIC holds a table of channel identifiers and indexes that table
+ using the channel number, not the actual channel identifier.
+\end_layout
+
+\begin_layout Standard
+If there was an error, the error code is in 
+\family typewriter
+D0.L
+\family default
+ as noted, and the 
+\family typewriter
+Z
+\family default
+ flag will not be set.
+ In this case, we simply jump to the code at label 
+\family typewriter
+die
+\family default
+, where the error code will be returned to SuperBASIC and the job aborted.
+\end_layout
+
+\begin_layout Subsection
+Do We Have the Pointer Environment?
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Tinyfpga's
+\emph default
+ challenge was to 
+\family typewriter
+OUTLN
+\family default
+ the opened channel.
+ To do this we need to ensure that the Pointer Environment is present.
+ The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Check-for-Pointer-Environment"
+
+\end_inset
+
+ does exactly this by calling the 
+\family typewriter
+IOP.PINF
+\family default
+ function.
+ This is not a vectored utility, this is a trap call.
+ These are slightly different as they execute as 
+\emph on
+exceptions
+\emph default
+ and not as normal subroutuines.
+\end_layout
+
+\begin_layout Standard
+To test if the PE is present we need a channel identifier in register 
+\family typewriter
+A0.L
+\family default
+ – we already have that from above; we need a timeout in register 
+\family typewriter
+D3.W
+\family default
+ and we need the value $70 in register 
+\family typewriter
+D0.L
+\family default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+It need not be actually the 
+\emph on
+whole
+\emph default
+ of register 
+\family typewriter
+D0
+\family default
+, however, a 
+\family typewriter
+moveq
+\family default
+ instruction fills the whole of the register.
+\end_layout
+
+\end_inset
+
+.
+ After setting up the registers, a 
+\family typewriter
+trap #3
+\family default
+ call is made and on return, an error code will be found in register 
+\family typewriter
+D0.L
+\family default
+ however, the 
+\family typewriter
+Z
+\family default
+ flag will not be set.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; We only get here if it worked.
+ A0 now holds the channel id.
+\end_layout
+
+\begin_layout Plain Layout
+
+; Most, if not all, QDOSMSQ code preserves the A0 register.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Check if the PE is installed.
+ If not, ignore the error and
+\end_layout
+
+\begin_layout Plain Layout
+
+; skip to handle clearing the screen "manually".
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+check_pe
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #IOP.PINF,d0      ; IOP_PINF
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #-1,d3            ; Timeout (Preserved)
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #3
+\end_layout
+
+\begin_layout Plain Layout
+
+        tst.l d0                ; Errors?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne.w cls_console       ; PE missing
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Check for Pointer Environment
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Check-for-Pointer-Environment"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Why is the 
+\family typewriter
+Z
+\family default
+ flag not set? Because the trap code executes as an exception, part of what
+ it does before executing is to stack the status register.
+ After execution, the exception code returns to user code using the 
+\family typewriter
+RTE
+\family default
+ instruction, not 
+\family typewriter
+RTS
+\family default
+.
+ The 
+\family typewriter
+RTE
+\family default
+ unstacks the old status register value and puts it back into the status
+ register.
+ This obliterates any flags set within the exception (ie, 
+\family typewriter
+trap
+\family default
+) code so none of the flags will represent what happened within the trap
+ code.
+\end_layout
+
+\begin_layout Standard
+This means that every time we return from a trap call, we must test if 
+\family typewriter
+D0.L
+\family default
+ is zero or not.
+ This will set the 
+\family typewriter
+Z
+\family default
+ flag accordingly and we can then tell if the 
+\family typewriter
+trap
+\family default
+ call worked or failed.
+\end_layout
+
+\begin_layout Standard
+In this case, we don't really care if the PE is present or not.
+ Well, I assumed this to be the case based on the challenge.
+ If the PE is found, we can 
+\family typewriter
+OUTLN
+\family default
+ the channel as desired – and this will 
+\family typewriter
+CLS
+\family default
+ the channel too based on one of the parameters.
+ If not found, we can just 
+\family typewriter
+CLS
+\family default
+ the channel anyway.
+\end_layout
+
+\begin_layout Subsection
+Pointer Environment Found
+\end_layout
+
+\begin_layout Standard
+If the PE is present, we can 
+\family typewriter
+OUTLN
+\family default
+ the channel.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Pointer-Environment-Present"
+
+\end_inset
+
+ shows the code to do this.
+ Again, 
+\family typewriter
+IOP.OUTL
+\family default
+ is a trap call, not a vector.
+ We are required to set register 
+\family typewriter
+D0
+\family default
+ to $7A – which is what 
+\family typewriter
+IOP.OUTL
+\family default
+ is defined as; Register 
+\family typewriter
+D1.L
+\family default
+ should hold the X and Y shadow widths for the 
+\family typewriter
+OUTLN
+\family default
+ – we are not using shadows; Register 
+\family typewriter
+D2
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+
+\family typewriter
+The documentation doesn't mention a size!
+\end_layout
+
+\end_inset
+
+
+\family default
+ should hold 1 to preserve the window contents so that a previously 
+\family typewriter
+OUTLN
+\family default
+'d window can be moved and the contents preserved, or zero to not bother.
+ As this is the first 
+\family typewriter
+OUTLN
+\family default
+ call for this window, we have to use zero.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; PE is present.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; OUTLN the window,D3 (timeout) was preserved in IOP_PINF as 
+\end_layout
+
+\begin_layout Plain Layout
+
+; was A0 (channel id for the console).
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+outln_console
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #IOP.OUTL,d0      ; IOP_OUTL
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #0,d1             ; No shadows
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #0,d2             ; Don't preserve contents
+\end_layout
+
+\begin_layout Plain Layout
+
+        lea outln_def,a1        ; Window sizes (W,H,X,Y)
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #3                 ; Do it
+\end_layout
+
+\begin_layout Plain Layout
+
+        tst.l d0                ; Errors?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne die                 ; Yes, bale out
+\end_layout
+
+\begin_layout Plain Layout
+
+        
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Pointer Environment Present
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Pointer-Environment-Present"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After the 
+\family typewriter
+trap
+\family default
+ call, we check for errors as explained above, and if there were any, we
+ exit the job via the code at label 
+\family typewriter
+die
+\family default
+.
+ If there were no errors, we drop in to the following code to clear the
+ screen.
+ 
+\end_layout
+
+\begin_layout Subsection
+Clear Screen
+\end_layout
+
+\begin_layout Standard
+If the PE was found to be missing, we don't really care in this small example
+ as all we need from the PE is the 
+\family typewriter
+OUTLN
+\family default
+ call, and we drop in here to clear the console channel.
+ If the PE was present, the channel has been 
+\family typewriter
+OUTLN
+\family default
+'d, but we are here again to clear it also.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Clear-the-Screen"
+
+\end_inset
+
+ sets 
+\family typewriter
+D0.L
+\family default
+ to $20 also known as 
+\family typewriter
+IOW_CLRA
+\family default
+; 
+\family typewriter
+D3.W
+\family default
+ is still the same timeout as before; 
+\family typewriter
+A0.L
+\family default
+ is still the console channel identifier.
+ Those are all we need, so we then 
+\family typewriter
+trap #3
+\family default
+ to clear the screen.
+ On return, 
+\family typewriter
+D0.L
+\family default
+ is tested in the usual manner and on any errors, we bale out of the job.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; PE is missing.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Clear the screen.
+ The timeout and channel ID have been 
+\end_layout
+
+\begin_layout Plain Layout
+
+; preserved over the last two routines.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+cls_console
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #IOW.CLRA,d0      ; CLS whole window
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #3                 ; Do it
+\end_layout
+
+\begin_layout Plain Layout
+
+        tst.l d0                ; Any errors, probably not
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne die                 ; Yes, bale out
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Clear the Screen
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Clear-the-Screen"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Print a Prompt
+\end_layout
+
+\begin_layout Standard
+This was not part of the original challenge, but I added it when debugging
+ a problem.
+ I decided to leave it in.
+ The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Print-a-Prompt"
+
+\end_inset
+
+ simply prints a prompt of 
+\begin_inset Quotes els
+\end_inset
+
+>
+\begin_inset Quotes ers
+\end_inset
+
+ to the console channel.
+ This is facilitated using 
+\family typewriter
+IOB.SBYT
+\family default
+ which requires that 
+\family typewriter
+D0.L
+\family default
+ is set to $05, aka 
+\family typewriter
+IOB.SBYT
+\family default
+ one of our constants; 
+\family typewriter
+D1.B
+\family default
+ is set to the character to be sent to the channel; 
+\family typewriter
+D3.W
+\family default
+ is the same old timeout value and 
+\family typewriter
+A0.L
+\family default
+ is the channel identifier.
+\end_layout
+
+\begin_layout Standard
+After the trap, 
+\family typewriter
+D0.L
+\family default
+ is tested in the usual manner and we exit the job if any errors occurred.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Print a ">" prompt to the channel.
+ Timeout/channel Id still
+\end_layout
+
+\begin_layout Plain Layout
+
+; preserved.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+con_prompt
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #IOB.SBYT,d0      ; Print one character
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #'>',d1           ; The prompt character
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #3                 ; Do it
+\end_layout
+
+\begin_layout Plain Layout
+
+        tst.l d0                ; Any errors?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne die                 ; Yes, bale out
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Print a Prompt
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Print-a-Prompt"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Enable the Cursor
+\end_layout
+
+\begin_layout Standard
+This is also not part of the original channel, but a cursor must be enabled
+ when we want to get input from a console channel.
+ We have yet another trap call to help with this.
+ The code in 
+\family typewriter
+D0.L
+\family default
+ is 
+\family typewriter
+IOW.ECUR
+\family default
+ the timeout and channel identifier are in the usual registers.
+ Errors are tested in the normal manner as this is a 
+\family typewriter
+trap
+\family default
+ call, not a vectored call.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Enable-a-Cursor"
+
+\end_inset
+
+ shows the code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Enable the channel's cursor.
+ We need one to get input from
+\end_layout
+
+\begin_layout Plain Layout
+
+; a console channel.
+ Timeout & channel id preserved still.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+con_cursor
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #IOW.ECUR,d0      ; Enable cursor
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #3                 ; Do it
+\end_layout
+
+\begin_layout Plain Layout
+
+        tst.l d0                ; Errors?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne die                 ; Yes, bale out
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Enable a Cursor
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Enable-a-Cursor"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Get Some Input
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Request-Input"
+
+\end_inset
+
+ shows the code we need to obtain a line of input from the user.
+ How long is a line? Well, that's all down to the programmer.
+ However, we define an input buffer, at label input_buffer, to be 256 bytes
+ long, plus an extra 2 bytes.
+ 
+\family typewriter
+BUFFERSIZE
+\family default
+ is one of our constants and defaults to 256, but you can change it.
+\end_layout
+
+\begin_layout Standard
+Why 2 extra bytes? We are accepting a string from the user.
+ Strings in SMSQ/E are defined as a word holding the size followed by the
+ bytes of the string – the job name in this code, for example.
+ If we wanted to process the string in some way, we would need to know the
+ length.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+IOB.FLIN
+\family default
+ is the trap call we need to use.
+ This will have 
+\family typewriter
+D0.L
+\family default
+ holding $02; 
+\family typewriter
+D2.W
+\family default
+ holding the maximum buffer size we will allow; 
+\family typewriter
+A1.L
+\family default
+ points at the destination for the input we receive and 
+\family typewriter
+D3.W
+\family default
+ and 
+\family typewriter
+A0.L
+\family default
+ are the usual timeout and channel identifier.
+\end_layout
+
+\begin_layout Standard
+You will note 
+\family typewriter
+A1.L
+\family default
+ is pointing at the third byte in the input buffer, this is where the text
+ will be stored, the first two bytes are used for the size of the text we
+ obtained.
+\end_layout
+
+\begin_layout Standard
+After the trap call, if there are no errors, we reset 
+\family typewriter
+A1.L
+\family default
+ to the start of the buffer this time – it was changed by the trap call
+ – and store the size word there.
+ We now have a proper SMSQ/E string.
+ The size word in this case comes from 
+\family typewriter
+D1.W
+\family default
+ on return from the trap, where it holds the size of the input received,
+ 
+\emph on
+including
+\emph default
+ the terminating linefeed.
+\end_layout
+
+\begin_layout Standard
+What happens if there was more input than the buffer size? Nothing, the
+ buffer will be filled to capacity and the trap call will return.
+ The last character in the buffer will not, therefore, be a linefeed in
+ this case.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Grab some input from the console.
+ The timeout and channel id
+\end_layout
+
+\begin_layout Plain Layout
+
+; are still valid.
+ We point A1 at input_buffer+2 as we need the
+\end_layout
+
+\begin_layout Plain Layout
+
+; start of the buffer to hold the length of the text that
+\end_layout
+
+\begin_layout Plain Layout
+
+; follows.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+get_input
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #IOB.FLIN,d0      ; Fetch input with Linefeed
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w #BUFFERSIZE,d2   ; How big is my buffer?
+\end_layout
+
+\begin_layout Plain Layout
+
+        lea input_buffer+2,a1   ; Input buffer space
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #3                 ; Fetch input D1.W = size
+\end_layout
+
+\begin_layout Plain Layout
+
+        tst.l d0                ; Errors?
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne die                 ; Fraid so
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+        lea input_buffer,a1     ; The buffer start this time
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w d1,(a1)          ; Store the input size (inc LF)
+\end_layout
+
+\begin_layout Plain Layout
+
+        bra print_input         ; Skip over inoput buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+input_buffer
+\end_layout
+
+\begin_layout Plain Layout
+
+        ds.w    BUFFERSIZE+2    ; Buffer for data input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Request Input
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Request-Input"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Setting A1.L to the start of the buffer sets us up nicely for printing out
+ the received text.
+\end_layout
+
+\begin_layout Subsection
+Printing the Text
+\end_layout
+
+\begin_layout Standard
+This wasn't part of the challenge, but I added it to show that the date
+ we typed in to the channel was in fact well received and correctly saved.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Printing-the-Input"
+
+\end_inset
+
+ shows the code we use to print out the received input text.
+ This will include the trailing linefeed is one was present.
+\end_layout
+
+\begin_layout Standard
+This code uses a vectored utility, 
+\family typewriter
+UT.WTEXT
+\family default
+, which internally calls another trap #3 function to print out the text.
+ Why have I used the vector? The vector requires a pointer to an SMSQ/E
+ string in 
+\family typewriter
+A1.L
+\family default
+ – we already have that.
+ It requires a channel identifier and timeout in 
+\family typewriter
+A0.L
+\family default
+ and 
+\family typewriter
+D3.W
+\family default
+ – we already have that.
+\end_layout
+
+\begin_layout Standard
+The corresponding trap call needs the string length in 
+\family typewriter
+D1.W
+\family default
+ and 
+\family typewriter
+A1.L
+\family default
+ pointing to the bytes of the text.
+ I prefer using 
+\family typewriter
+UT.WTEXT
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+After the call, we know that the 
+\family typewriter
+Z
+\family default
+ flag is set if no errors occurred, so there's no need to test 
+\family typewriter
+D0.L
+\family default
+ on return.
+ If errors are detected, we again exit the job.
+\end_layout
+
+\begin_layout Standard
+Note, this vectored code destroys the timeout value in 
+\family typewriter
+D3.W
+\family default
+.
+ However, at this point we are done with the infinite timeout we have been
+ using.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Print the input that the user gave us, including the line
+\end_layout
+
+\begin_layout Plain Layout
+
+; feed at the end.
+ A1 points to the text's word size, D3 will
+\end_layout
+
+\begin_layout Plain Layout
+
+; be corrupted by this vector call (timeout) but the channel
+\end_layout
+
+\begin_layout Plain Layout
+
+; id in A0 will not.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+print_input
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w UT.WTEXT,a2      ; Print a string of bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+        jsr (a2)                ; Print it
+\end_layout
+
+\begin_layout Plain Layout
+
+        bne.s die               ; Ooops, error
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Printing the Input
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Printing-the-Input"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Hang on a Few Seconds!
+\end_layout
+
+\begin_layout Standard
+Ok, we are done.
+ Except to give the user a chance to see the text printed on the channel,
+ I've added yet another extra to the challenge code.
+ The currently running job, named 
+\begin_inset Quotes eld
+\end_inset
+
+Tinyfpga
+\begin_inset Quotes erd
+\end_inset
+
+, will be suspended for a couple of seconds.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Delay-Before-Ending"
+
+\end_inset
+
+ shows how this is done.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+SMS.SSJB
+\family default
+ is a trap call which suspends a job from execution for the number of frames
+ specified in the 
+\family typewriter
+D3.W
+\family default
+ register.
+ 
+\family typewriter
+D1.L
+\family default
+ holds the job identifier, or -1 for the current job, and 
+\family typewriter
+A1.L
+\family default
+ points at a byte which will be cleared when this job resumes.
+ As we have no need to signal our reappearance, we use zero.
+\end_layout
+
+\begin_layout Standard
+Note that the number of frames is 200.
+ This is 
+\begin_inset Formula $4$
+\end_inset
+
+ seconds in the UK and countries with a 50 Hz mains frequency.
+ In the USA it's 60 Hz, so in the USA the delay will be 
+\begin_inset Formula $3\frac{1}{3}$
+\end_inset
+
+ seconds.
+\end_layout
+
+\begin_layout Standard
+After the trap, we do not test for errors, we are about to die anyway.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; Suspend the job for a couple of second to let the user see
+\end_layout
+
+\begin_layout Plain Layout
+
+; the output.
+ Then die.
+ Will corrupt A0 but who cares!
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+suspend_job
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #SMS.SSJB,d0      ; Suspend a job
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #-1,d1            ; This job
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.w #200,d3          ; 4 seconds is 200 frames
+\end_layout
+
+\begin_layout Plain Layout
+
+        movea.l #0,a1           ; No byte to be cleared
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #1                 ; Suspend the job
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Delay Before Ending
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Delay-Before-Ending"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Death of a Job
+\end_layout
+
+\begin_layout Standard
+The job is now complete.
+ We are not required to loop around and keep running, so we cannot allow
+ the job's code to simply stop, we need to remove the job from the system.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Tinyfpga-Death-of-a-job"
+
+\end_inset
+
+ shows how to force remove a job using the 
+\family typewriter
+SMS.FRJB
+\family default
+ trap call.
+\end_layout
+
+\begin_layout Standard
+The error code in D0.L is copied into D3.L for return to SuperBASIC – more
+ on that soon – and the job identifier is loaded into D1.L, we are using
+ -1 again to indicate the current job.
+ After the trap, no code will be executed as the job 
+\emph on
+is no more, it has shuffled off its mortal coil and gone to meet its maker!
+\emph default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+From Monty Python's 
+\emph on
+Dead Parrot
+\emph default
+ sketch.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+; The job is complete, remove it from the system.
+ Any error
+\end_layout
+
+\begin_layout Plain Layout
+
+; codes in D0 are copied to D3 ready for EXEC_W/EW to collect.
+\end_layout
+
+\begin_layout Plain Layout
+
+; EXEC/EX don't bother.
+\end_layout
+
+\begin_layout Plain Layout
+
+;--------------------------------------------------------------
+\end_layout
+
+\begin_layout Plain Layout
+
+die
+\end_layout
+
+\begin_layout Plain Layout
+
+        move.l d0,d3            ; Any errors?
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #SMS.FRJB,d0      ; Force Remove a job
+\end_layout
+
+\begin_layout Plain Layout
+
+        moveq #-1,d1            ; -1 means "this job"
+\end_layout
+
+\begin_layout Plain Layout
+
+        trap #1                 ; Kill this job
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Tinyfpga - Death of a Job
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Tinyfpga-Death-of-a-job"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Error Codes
+\end_layout
+
+\begin_layout Standard
+When the job is started using 
+\family typewriter
+EXEC
+\family default
+, or 
+\family typewriter
+EW
+\family default
+, it will never tell you how it ended.
+ There could have been errors at any stage and you will never know about
+ it.
+ Why not? Because 
+\family typewriter
+EXEC
+\family default
+/
+\family typewriter
+EW
+\family default
+ start up a job and then return.
+ These commands do not wait for the job to complete.
+ How then can they be expected to be able to obtain the job's error code
+ when it finishes – it might run for days after all.
+\end_layout
+
+\begin_layout Standard
+During testing, when the code wasn't crashing, I ran it with 
+\family typewriter
+EXEC_W
+\family default
+ or 
+\family typewriter
+EW
+\family default
+.
+ These commands wait for the job to complete before returning to SuperBASIC.
+ In this case, the job's error codes can be returned to SuperBASIC.
+\end_layout
+
+\begin_layout Section
+Assembling the Code
+\end_layout
+
+\begin_layout Standard
+If I were to assume that you have downloaded 
+\begin_inset CommandInset href
+LatexCommand href
+name "GWASS"
+target "http://www.dilwyn.me.uk/asm/gwassp22.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/asm/gwassp22.zip
+\end_layout
+
+\end_inset
+
+ for QPC2 and other 68020 based emulators, or 
+\begin_inset CommandInset href
+LatexCommand href
+name "GWASL"
+target "http://www.dilwyn.me.uk/asm/gwaslp08.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/asm/gwaslp08.zip
+\end_layout
+
+\end_inset
+
+ for the QL and 68008 based emulators, and have the code saved as 
+\family typewriter
+ram1_Tinyfpga_asm
+\family default
+, then assembling the code is as simple as this:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EXEC
+\family default
+ 
+\family typewriter
+gwass60_bin
+\family default
+ or 
+\family typewriter
+EXEC gwasl_bin
+\family default
+ to start the assembler;
+\end_layout
+
+\begin_layout Itemize
+Select the option to start assembling;
+\end_layout
+
+\begin_layout Itemize
+Type in the filename: 
+\family typewriter
+ram1_Tinyfpga_asm
+\end_layout
+
+\begin_layout Itemize
+Wait.
+\end_layout
+
+\begin_layout Standard
+After a successful assemble, 
+\family typewriter
+ram1_Tinyfpga_bin
+\family default
+ will be the executable job.
+ To run it:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EXEC
+\family default
+ 
+\family typewriter
+ram1_Tinyfpga_bin: REMark Alternatively, EX ram1_Tinyfpga_bin
+\end_layout
+
+\begin_layout Standard
+On a successful execution, a small window will open, with black paper, white
+ ink and a white, one pixel border.
+ A 
+\begin_inset Quotes els
+\end_inset
+
+>
+\begin_inset Quotes ers
+\end_inset
+
+ prompt will be displayed in the top left corner.
+ Type some text and press ENTER.
+ The text you typed will be printed, the job will pause for 4 seconds, and
+ then vanish.
+\end_layout
+
+\begin_layout Section
+Summary
+\end_layout
+
+\begin_layout Standard
+So that's the Assembly Language version of 
+\emph on
+Tinyfpga
+\emph default
+'s challenge.
+ There's a lot going on under the covers of SuperBASIC that programmers
+ almost never see.
+ When you start delving ito Assembly Language, you are responsible for just
+ about everything! Thankfully, SMSQ/E provides numerous utilities and features
+ that you can call upon to make life easier.
+ 
+\end_layout
+
+\begin_layout Standard
+In future issues, I'll be delving into a few more of these with, hopefully,
+ enough explanation for beginners to get started with.
+\end_layout
+
+\begin_layout Standard
+Get hold of the SMSQ/E Reference Manual from:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "Here"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf
+\end_layout
+
+\end_inset
+
+ for the PDF version; or
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "Here"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt
+\end_layout
+
+\end_inset
+
+ for the ODT version.
+\end_layout
+
+\end_body
+\end_document

@@ -1,0 +1,648 @@
+
+\chapter{Beginners' Corner}
+
+\section{Introduction}
+
+This is a new feature starting in this issue. It stems from a post
+on the QL Forum from \emph{TMD2003} who was wondering about how to
+get started learning Assembly Language as a ``noob''. The topic
+is \href{https://qlforum.co.uk/viewtopic.php?f=3&t=3976}{this one}\footnote{https://qlforum.co.uk/viewtopic.php?f=3\&t=3976}
+on the forum. A number of useful answers were given, some pointing
+at my book and these eMagazines. 
+
+\section{Do Basic Things}
+
+On the second page of the thread, \emph{Tinyfpga} issued this ``sort
+of'' challenge:
+
+\emph{In Basic all I have to do start my journey into the programming
+world is to:- Type into QD}
+
+\begin{lstlisting}
+OPEN #1,con_ 
+OUTLN #1,310,60,50,300 
+CLS #1 : BORDER #1,1,7 
+INPUT #1,a$
+\end{lstlisting}
+
+\emph{I then save the text in a ram disk, press the execute button
+and ,\textquotedbl hey presto\textquotedbl , I see an app on my
+screen. What could be an easier introduction to programming?}
+
+Well, I like a challenge, even when it's not really intended as one,
+so I decided I would create the code to do the necessary.
+
+The first thing to note is how simple it looks from SuperBASIC to
+do what appears to be a simple thing. It's 4 lines of code, how hard
+can that be?
+
+Well, SuperBASIC takes the typed in commands, parses them and if all
+is well, execution takes the tokenised code and converts it to various
+calls to the ROM, Toolkits and such like, and the result is a seemingly
+simply result. Under the covers there's a whole lot of work taking
+place.
+
+\subsection{Program Constants}
+
+I created the code in the various listings in this chapter to do the
+conversion from SuperBASIC to Assembly. I chose to create a job, that
+multitasks alongside SuperBASIC but I could have made it a \texttt{CALL}able
+routine instead. Let's dive in! Listing \ref{lis:Tinyfpga-Constant-Definitions}
+shows the constants I used.
+
+In the original, I had QDOS versions for the vectors and traps, for
+this eMagazine, I've converted things to use SMSQ/E versions.
+
+\begin{lstlisting}[caption={Tinyfpga - Constant Definitions},label={lis:Tinyfpga-Constant-Definitions}]
+;==============================================================
+; A simple multi-tasking job for TinyFPGA/TMD2003 to:
+;
+; Open #n,con_
+; OUTLN #n,310,60,50,300
+; CLS #n
+; BORDER #n,1,7
+; INPUT #n, some_text_from_user
+; Die!
+;==============================================================
+; Norman Dunbar
+; 20 November 2021.
+;==============================================================
+
+;--------------------------------------------------------------
+; Some definitions to make life simple(r)!
+;--------------------------------------------------------------
+WHITE       equ 7               ; White colour
+BLACK       equ 0               ; Black colour
+
+BORDCOLOUR  equ WHITE           ; Border colour
+BORDWIDTH   equ 1               ; Border width
+PAPER       equ BLACK           ; Paper colour
+INK         equ WHITE           ; Text colour
+
+CON_W       equ 310             ; Console width
+CON_H       equ 60              ;    "    height
+CON_X       equ 50              ;    "    X position
+CON_Y       equ 300             ;    "    Y position
+
+BUFFERSIZE  equ 256             ; User input buffer size
+
+;--------------------------------------------------------------
+; I use GWASS as my assembler, it has the QDOS traps etc built
+; in. It doesn't however, have the PE stuff, so these two are
+; required.
+;--------------------------------------------------------------
+IOP_PINF    equ $70             ; Get PE information
+IOP_OUTL    equ $7a             ; OUTLN
+
+;--------------------------------------------------------------
+; GWASS also doesn't know about SMSQ/E names, so these are now
+; required.
+;--------------------------------------------------------------
+OPW.CON     equ $c6             ; Open a console, border, etc
+IOW.CLRA    equ $20             ; CLS whole window
+IOB.SBYT    equ $05             ; Print one byte to channel
+IOW.ECUR    equ $0E             ; Enable cursor
+IOB.FLIN    equ $02             ; Fetch a line of text plus LF
+UT.WTEXT    equ $d0             ; Print some text
+SMS.SSJB    equ $08             ; Suspend a job
+SMS.FRJB    equ $05             ; Force remove a job
+
+\end{lstlisting}
+
+There's nothing much here apart from the new style, SMSQ/E names.
+Most of these are trap codes but a couple are vectored routines which
+can be used to call the trap routines but in a simpler manner. For
+certain values of simpler, sometimes.
+
+\subsection{Job Header}
+
+Listing \ref{lis:Tinyfpga-Job-Header} shows the ``pretty much boilerplate''
+code that all jobs need to have at the start. Seasoned readers can
+skip this next explanation!
+
+A job in SMSQ/E requires a standard job header. This is the same as
+it was back in the old QDOS days, and consists of 10 bytes of boiler
+plate code, followed by the job's name in the standard format of a
+word defining the length of the name, followed by the bytes of the
+name.
+
+There are numerous ways to set up the first 6 bytes. I prefer a short
+branch to the job's actual start followed by a long word of zero.
+Back in the days when I wrote code for a living, this could have been
+used to set up a serial number for copies of the program(s) - there's
+enough room in a long word for $2^{32}$ different values. Minus 1
+if you don't want a serial number of zero!
+
+Regardless of how you set up the first 6 bytes, bytes 6 and 7 (starting
+from zero) will always be the constant value of \$4AFB. This is the
+marker word used by QDOS and SMSQ/E to indicate a job's code follows.
+
+Immediately after the marker word, we have a word defining the size
+of this job's name, here we see it is 8 bytes long, followed by the
+bytes of the job name itself. In this case, I set the job name to
+``TinyFPGA''.
+
+\begin{lstlisting}[caption={Tinyfpga - Job Header},label={lis:Tinyfpga-Job-Header}]
+;--------------------------------------------------------------
+; Job's require a header. This is basically boilerplate, except
+; for the job name's length and the name of the job. This will
+; need to be EXEC/EXEC_W/EX or EW'd to execute it.
+;--------------------------------------------------------------
+Start
+        bra.s open_console      ; Skip over job header
+        dc.l 0                  ; 4 bytes, can be any value
+        dc.w $4afb              ; Job flag, must be $4afb
+        dc.w 8                  ; Length of job name
+        dc.b "TinyFPGA"         ; Bytes of job name
+
+\end{lstlisting}
+
+Why does a job need a name? It doesn't! But if it has one, it makes
+life easier when using the SuperBASIC \texttt{JOBS} command, or the
+QPAC2 Jobs Thing to list the various jobs running in the system.
+
+\subsection{Opening a Console Channel}
+
+The first task in the challenge is to open a console channel. How
+we do this is shown in Listing \ref{lis:Tinyfpga-Open-a-Console}.
+Bear in mind that there are other Trap calls available to the programmer
+to open files, and a console channel is just a file. Here we will
+use a vectored utility which allows the ``open channel'' to be simplified
+to one call. Without the vector we would have to open the channel,
+set the paper, strip and ink colours, and set the border width and
+colour too. I don;t know about you, but I prefer to do less typing
+in my programs!
+
+The 4 bytes at label \texttt{con\_def} define the border, paper and
+ink attributes. Here I'm using some of the constants defined in Listing
+\ref{lis:Tinyfpga-Constant-Definitions} which makes it easier if
+I decide I don't like \emph{Tinyfpga}'s choice of colours, and want
+to change things. 
+
+The 4 words immediately following, at label \texttt{outln\_def}, are
+used for two separate purposes. The first is when we open the console
+channel -- they define the width, height, x position and y position
+of the opened console channel.
+
+The second use is when we try to OUTLN the channel. That function
+requires a 4 word block of data in exactly this format, so we can
+use the same code for two different things.
+
+The fact that label exists between the two lumps\footnote{This is a technical term!}
+of code makes no difference. A label doesn't generate any code or
+data in the assembled program.
+
+\begin{lstlisting}[caption={Tinyfpga - Open a Console},label={lis:Tinyfpga-Open-a-Console}]
+;--------------------------------------------------------------
+; Needs a channel open first. This can be done in a couple of
+; ways, but this is probably the easiest. It will open a con_
+; channel of the required size and border it.
+;
+; UT_CON uses all of the following from con_def and outln_def
+; IOP_OUTLN only uses the latter.
+;--------------------------------------------------------------
+con_def
+        dc.b BORDCOLOUR         ; Border colour
+        dc.b BORDWIDTH          ; And width
+        dc.b PAPER              ; Paper/strip colour
+        dc.b INK                ; Ink colour
+
+outln_def
+        dc.w CON_W              ; Width
+        dc.w CON_H              ; Height
+        dc.w CON_X              ; X pos
+        dc.w CON_Y              ; Y pos
+
+open_console
+        lea con_def,a1          ; Parameters
+        move.w OPW.CON,a2       ; C6 = CONSOLE required
+        jsr (a2)                ; Open Console & set params
+        bne die                 ; If it failed - bale out
+
+\end{lstlisting}
+
+Having got the console channel definitions out of the way, we can
+open it and set the attributes with a call to the vectored \texttt{OPW.CON}
+utility. This call requires that the \texttt{A1.L} register points
+at the byte defining the border colour, thus \texttt{con\_def}, and
+that's all. 
+
+To call a vectored utility we get a word from the ROM (as was in the
+old days) at a certain address, in SMSQ/E this address is labelled
+\texttt{OPW.CON} and this contains the address where the actual code
+we wish to execute lives. In the ROM, there is a long list of available
+vectored routines which we can use in our own code. 
+
+After calling the vectored utility, we will have an error code in
+\texttt{D0.L} and, if nothing went wrong, \texttt{D0.L} will be zero,
+the \texttt{Z} flag will be set for us, and \texttt{A0.L} will contain
+the channel identifier for the newly opened channel. Note that this
+is not the same as a SuperBASIC channel number. SuperBASIC holds a
+table of channel identifiers and indexes that table using the channel
+number, not the actual channel identifier.
+
+If there was an error, the error code is in \texttt{D0.L} as noted,
+and the \texttt{Z} flag will not be set. In this case, we simply jump
+to the code at label \texttt{die}, where the error code will be returned
+to SuperBASIC and the job aborted.
+
+\subsection{Do We Have the Pointer Environment?}
+
+\emph{Tinyfpga's} challenge was to \texttt{OUTLN} the opened channel.
+To do this we need to ensure that the Pointer Environment is present.
+The code in Listing \ref{lis:Tinyfpga-Check-for-Pointer-Environment}
+does exactly this by calling the \texttt{IOP.PINF} function. This
+is not a vectored utility, this is a trap call. These are slightly
+different as they execute as \emph{exceptions} and not as normal subroutuines.
+
+To test if the PE is present we need a channel identifier in register
+\texttt{A0.L} -- we already have that from above; we need a timeout
+in register \texttt{D3.W} and we need the value \$70 in register \texttt{D0.L}\footnote{It need not be actually the \emph{whole} of register \texttt{D0},
+however, a \texttt{moveq} instruction fills the whole of the register.}. After setting up the registers, a \texttt{trap \#3} call is made
+and on return, an error code will be found in register \texttt{D0.L}
+however, the \texttt{Z} flag will not be set.
+
+\begin{lstlisting}[caption={Tinyfpga - Check for Pointer Environment},label={lis:Tinyfpga-Check-for-Pointer-Environment}]
+;--------------------------------------------------------------
+; We only get here if it worked. A0 now holds the channel id.
+; Most, if not all, QDOSMSQ code preserves the A0 register.
+;--------------------------------------------------------------
+; Check if the PE is installed. If not, ignore the error and
+; skip to handle clearing the screen "manually".
+;--------------------------------------------------------------
+check_pe
+        moveq #IOP.PINF,d0      ; IOP_PINF
+        moveq #-1,d3            ; Timeout (Preserved)
+        trap #3
+        tst.l d0                ; Errors?
+        bne.w cls_console       ; PE missing
+
+\end{lstlisting}
+
+Why is the \texttt{Z} flag not set? Because the trap code executes
+as an exception, part of what it does before executing is to stack
+the status register. After execution, the exception code returns to
+user code using the \texttt{RTE} instruction, not \texttt{RTS}. The
+\texttt{RTE} unstacks the old status register value and puts it back
+into the status register. This obliterates any flags set within the
+exception (ie, \texttt{trap}) code so none of the flags will represent
+what happened within the trap code.
+
+This means that every time we return from a trap call, we must test
+if \texttt{D0.L} is zero or not. This will set the \texttt{Z} flag
+accordingly and we can then tell if the \texttt{trap} call worked
+or failed.
+
+In this case, we don't really care if the PE is present or not. Well,
+I assumed this to be the case based on the challenge. If the PE is
+found, we can \texttt{OUTLN} the channel as desired -- and this will
+\texttt{CLS} the channel too based on one of the parameters. If not
+found, we can just \texttt{CLS} the channel anyway.
+
+\subsection{Pointer Environment Found}
+
+If the PE is present, we can \texttt{OUTLN} the channel. Listing \ref{lis:Tinyfpga-Pointer-Environment-Present}
+shows the code to do this. Again, \texttt{IOP.OUTL} is a trap call,
+not a vector. We are required to set register \texttt{D0} to \$7A
+-- which is what \texttt{IOP.OUTL} is defined as; Register \texttt{D1.L}
+should hold the X and Y shadow widths for the \texttt{OUTLN} -- we
+are not using shadows; Register \texttt{D2}\footnote{\texttt{The documentation doesn't mention a size!}}
+should hold 1 to preserve the window contents so that a previously
+\texttt{OUTLN}'d window can be moved and the contents preserved, or
+zero to not bother. As this is the first \texttt{OUTLN} call for this
+window, we have to use zero.
+
+\begin{lstlisting}[caption={Tinyfpga - Pointer Environment Present},label={lis:Tinyfpga-Pointer-Environment-Present}]
+;--------------------------------------------------------------
+; PE is present.
+;--------------------------------------------------------------
+; OUTLN the window,D3 (timeout) was preserved in IOP_PINF as 
+; was A0 (channel id for the console).
+;--------------------------------------------------------------
+outln_console
+        moveq #IOP.OUTL,d0      ; IOP_OUTL
+        moveq #0,d1             ; No shadows
+        moveq #0,d2             ; Don't preserve contents
+        lea outln_def,a1        ; Window sizes (W,H,X,Y)
+        trap #3                 ; Do it
+        tst.l d0                ; Errors?
+        bne die                 ; Yes, bale out
+        
+\end{lstlisting}
+
+After the \texttt{trap} call, we check for errors as explained above,
+and if there were any, we exit the job via the code at label \texttt{die}.
+If there were no errors, we drop in to the following code to clear
+the screen. 
+
+\subsection{Clear Screen}
+
+If the PE was found to be missing, we don't really care in this small
+example as all we need from the PE is the \texttt{OUTLN} call, and
+we drop in here to clear the console channel. If the PE was present,
+the channel has been \texttt{OUTLN}'d, but we are here again to clear
+it also. Listing \ref{lis:Tinyfpga-Clear-the-Screen} sets \texttt{D0.L}
+to \$20 also known as \texttt{IOW\_CLRA}; \texttt{D3.W} is still the
+same timeout as before; \texttt{A0.L} is still the console channel
+identifier. Those are all we need, so we then \texttt{trap \#3} to
+clear the screen. On return, \texttt{D0.L} is tested in the usual
+manner and on any errors, we bale out of the job.
+
+\begin{lstlisting}[caption={Tinyfpga - Clear the Screen},label={lis:Tinyfpga-Clear-the-Screen}]
+;--------------------------------------------------------------
+; PE is missing.
+;--------------------------------------------------------------
+; Clear the screen. The timeout and channel ID have been 
+; preserved over the last two routines.
+;--------------------------------------------------------------
+cls_console
+        moveq #IOW.CLRA,d0      ; CLS whole window
+        trap #3                 ; Do it
+        tst.l d0                ; Any errors, probably not
+        bne die                 ; Yes, bale out
+
+\end{lstlisting}
+
+
+\subsection{Print a Prompt}
+
+This was not part of the original challenge, but I added it when debugging
+a problem. I decided to leave it in. The code in Listing \ref{lis:Tinyfpga-Print-a-Prompt}
+simply prints a prompt of `>' to the console channel. This is facilitated
+using \texttt{IOB.SBYT} which requires that \texttt{D0.L} is set to
+\$05, aka \texttt{IOB.SBYT} one of our constants; \texttt{D1.B} is
+set to the character to be sent to the channel; \texttt{D3.W} is the
+same old timeout value and \texttt{A0.L} is the channel identifier.
+
+After the trap, \texttt{D0.L} is tested in the usual manner and we
+exit the job if any errors occurred.
+
+\begin{lstlisting}[caption={Tinyfpga - Print a Prompt},label={lis:Tinyfpga-Print-a-Prompt}]
+;--------------------------------------------------------------
+; Print a ">" prompt to the channel. Timeout/channel Id still
+; preserved.
+;--------------------------------------------------------------
+con_prompt
+        moveq #IOB.SBYT,d0      ; Print one character
+        moveq #'>',d1           ; The prompt character
+        trap #3                 ; Do it
+        tst.l d0                ; Any errors?
+        bne die                 ; Yes, bale out
+
+\end{lstlisting}
+
+
+\subsection{Enable the Cursor}
+
+This is also not part of the original channel, but a cursor must be
+enabled when we want to get input from a console channel. We have
+yet another trap call to help with this. The code in \texttt{D0.L}
+is \texttt{IOW.ECUR} the timeout and channel identifier are in the
+usual registers. Errors are tested in the normal manner as this is
+a \texttt{trap} call, not a vectored call.
+
+Listing \ref{lis:Tinyfpga-Enable-a-Cursor} shows the code.
+
+\begin{lstlisting}[caption={Tinyfpga - Enable a Cursor},label={lis:Tinyfpga-Enable-a-Cursor}]
+;--------------------------------------------------------------
+; Enable the channel's cursor. We need one to get input from
+; a console channel. Timeout & channel id preserved still.
+;--------------------------------------------------------------
+con_cursor
+        moveq #IOW.ECUR,d0      ; Enable cursor
+        trap #3                 ; Do it
+        tst.l d0                ; Errors?
+        bne die                 ; Yes, bale out
+
+\end{lstlisting}
+
+
+\subsection{Get Some Input}
+
+Listing \ref{lis:Tinyfpga-Request-Input} shows the code we need to
+obtain a line of input from the user. How long is a line? Well, that's
+all down to the programmer. However, we define an input buffer, at
+label input\_buffer, to be 256 bytes long, plus an extra 2 bytes.
+\texttt{BUFFERSIZE} is one of our constants and defaults to 256, but
+you can change it.
+
+Why 2 extra bytes? We are accepting a string from the user. Strings
+in SMSQ/E are defined as a word holding the size followed by the bytes
+of the string -- the job name in this code, for example. If we wanted
+to process the string in some way, we would need to know the length.
+
+\texttt{IOB.FLIN} is the trap call we need to use. This will have
+\texttt{D0.L} holding \$02; \texttt{D2.W} holding the maximum buffer
+size we will allow; \texttt{A1.L} points at the destination for the
+input we receive and \texttt{D3.W} and \texttt{A0.L} are the usual
+timeout and channel identifier.
+
+You will note \texttt{A1.L} is pointing at the third byte in the input
+buffer, this is where the text will be stored, the first two bytes
+are used for the size of the text we obtained.
+
+After the trap call, if there are no errors, we reset \texttt{A1.L}
+to the start of the buffer this time -- it was changed by the trap
+call -- and store the size word there. We now have a proper SMSQ/E
+string. The size word in this case comes from \texttt{D1.W} on return
+from the trap, where it holds the size of the input received, \emph{including}
+the terminating linefeed.
+
+What happens if there was more input than the buffer size? Nothing,
+the buffer will be filled to capacity and the trap call will return.
+The last character in the buffer will not, therefore, be a linefeed
+in this case.
+
+\begin{lstlisting}[caption={Tinyfpga - Request Input},label={lis:Tinyfpga-Request-Input}]
+;--------------------------------------------------------------
+; Grab some input from the console. The timeout and channel id
+; are still valid. We point A1 at input_buffer+2 as we need the
+; start of the buffer to hold the length of the text that
+; follows.
+;--------------------------------------------------------------
+get_input
+        moveq #IOB.FLIN,d0      ; Fetch input with Linefeed
+        move.w #BUFFERSIZE,d2   ; How big is my buffer?
+        lea input_buffer+2,a1   ; Input buffer space
+        trap #3                 ; Fetch input D1.W = size
+        tst.l d0                ; Errors?
+        bne die                 ; Fraid so
+
+        lea input_buffer,a1     ; The buffer start this time
+        move.w d1,(a1)          ; Store the input size (inc LF)
+        bra print_input         ; Skip over inoput buffer
+
+input_buffer
+        ds.w    BUFFERSIZE+2    ; Buffer for data input
+
+\end{lstlisting}
+
+Setting A1.L to the start of the buffer sets us up nicely for printing
+out the received text.
+
+\subsection{Printing the Text}
+
+This wasn't part of the challenge, but I added it to show that the
+date we typed in to the channel was in fact well received and correctly
+saved. Listing \ref{lis:Tinyfpga-Printing-the-Input} shows the code
+we use to print out the received input text. This will include the
+trailing linefeed is one was present.
+
+This code uses a vectored utility, \texttt{UT.WTEXT}, which internally
+calls another trap \#3 function to print out the text. Why have I
+used the vector? The vector requires a pointer to an SMSQ/E string
+in \texttt{A1.L} -- we already have that. It requires a channel identifier
+and timeout in \texttt{A0.L} and \texttt{D3.W} -- we already have
+that.
+
+The corresponding trap call needs the string length in \texttt{D1.W}
+and \texttt{A1.L} pointing to the bytes of the text. I prefer using
+\texttt{UT.WTEXT}.
+
+After the call, we know that the \texttt{Z} flag is set if no errors
+occurred, so there's no need to test \texttt{D0.L} on return. If errors
+are detected, we again exit the job.
+
+Note, this vectored code destroys the timeout value in \texttt{D3.W}.
+However, at this point we are done with the infinite timeout we have
+been using.
+
+\begin{lstlisting}[caption={Tinyfpga - Printing the Input},label={lis:Tinyfpga-Printing-the-Input}]
+;--------------------------------------------------------------
+; Print the input that the user gave us, including the line
+; feed at the end. A1 points to the text's word size, D3 will
+; be corrupted by this vector call (timeout) but the channel
+; id in A0 will not.
+;--------------------------------------------------------------
+print_input
+        move.w UT.WTEXT,a2      ; Print a string of bytes
+        jsr (a2)                ; Print it
+        bne.s die               ; Ooops, error
+
+\end{lstlisting}
+
+
+\subsection{Hang on a Few Seconds!}
+
+Ok, we are done. Except to give the user a chance to see the text
+printed on the channel, I've added yet another extra to the challenge
+code. The currently running job, named ``Tinyfpga'', will be suspended
+for a couple of seconds. Listing \ref{lis:Tinyfpga-Delay-Before-Ending}
+shows how this is done.
+
+\texttt{SMS.SSJB} is a trap call which suspends a job from execution
+for the number of frames specified in the \texttt{D3.W} register.
+\texttt{D1.L} holds the job identifier, or -1 for the current job,
+and \texttt{A1.L} points at a byte which will be cleared when this
+job resumes. As we have no need to signal our reappearance, we use
+zero.
+
+Note that the number of frames is 200. This is $4$ seconds in the
+UK and countries with a 50 Hz mains frequency. In the USA it's 60
+Hz, so in the USA the delay will be $3\frac{1}{3}$ seconds.
+
+After the trap, we do not test for errors, we are about to die anyway.
+
+\begin{lstlisting}[caption={Tinyfpga - Delay Before Ending},label={lis:Tinyfpga-Delay-Before-Ending}]
+;--------------------------------------------------------------
+; Suspend the job for a couple of second to let the user see
+; the output. Then die. Will corrupt A0 but who cares!
+;--------------------------------------------------------------
+suspend_job
+        moveq #SMS.SSJB,d0      ; Suspend a job
+        moveq #-1,d1            ; This job
+        move.w #200,d3          ; 4 seconds is 200 frames
+        movea.l #0,a1           ; No byte to be cleared
+        trap #1                 ; Suspend the job
+
+\end{lstlisting}
+
+
+\subsection{Death of a Job}
+
+The job is now complete. We are not required to loop around and keep
+running, so we cannot allow the job's code to simply stop, we need
+to remove the job from the system. Listing \ref{lis:Tinyfpga-Death-of-a-job}
+shows how to force remove a job using the \texttt{SMS.FRJB} trap call.
+
+The error code in D0.L is copied into D3.L for return to SuperBASIC
+-- more on that soon -- and the job identifier is loaded into D1.L,
+we are using -1 again to indicate the current job. After the trap,
+no code will be executed as the job \emph{is no more, it has shuffled
+off its mortal coil and gone to meet its maker!}\footnote{From Monty Python's \emph{Dead Parrot} sketch.}
+
+\begin{lstlisting}[caption={Tinyfpga - Death of a Job},label={lis:Tinyfpga-Death-of-a-job}]
+;--------------------------------------------------------------
+; The job is complete, remove it from the system. Any error
+; codes in D0 are copied to D3 ready for EXEC_W/EW to collect.
+; EXEC/EX don't bother.
+;--------------------------------------------------------------
+die
+        move.l d0,d3            ; Any errors?
+        moveq #SMS.FRJB,d0      ; Force Remove a job
+        moveq #-1,d1            ; -1 means "this job"
+        trap #1                 ; Kill this job
+
+\end{lstlisting}
+
+
+\subsection{Error Codes}
+
+When the job is started using \texttt{EXEC}, or \texttt{EW}, it will
+never tell you how it ended. There could have been errors at any stage
+and you will never know about it. Why not? Because \texttt{EXEC}/\texttt{EW}
+start up a job and then return. These commands do not wait for the
+job to complete. How then can they be expected to be able to obtain
+the job's error code when it finishes -- it might run for days after
+all.
+
+During testing, when the code wasn't crashing, I ran it with \texttt{EXEC\_W}
+or \texttt{EW}. These commands wait for the job to complete before
+returning to SuperBASIC. In this case, the job's error codes can be
+returned to SuperBASIC.
+
+\section{Assembling the Code}
+
+If I were to assume that you have downloaded \href{http://www.dilwyn.me.uk/asm/gwassp22.zip}{GWASS}\footnote{http://www.dilwyn.me.uk/asm/gwassp22.zip}
+for QPC2 and other 68020 based emulators, or \href{http://www.dilwyn.me.uk/asm/gwaslp08.zip}{GWASL}\footnote{http://www.dilwyn.me.uk/asm/gwaslp08.zip}
+for the QL and 68008 based emulators, and have the code saved as \texttt{ram1\_Tinyfpga\_asm},
+then assembling the code is as simple as this:
+\begin{itemize}
+\item \texttt{EXEC} \texttt{gwass60\_bin} or \texttt{EXEC gwasl\_bin} to
+start the assembler;
+\item Select the option to start assembling;
+\item Type in the filename: \texttt{ram1\_Tinyfpga\_asm}
+\item Wait.
+\end{itemize}
+After a successful assemble, \texttt{ram1\_Tinyfpga\_bin} will be
+the executable job. To run it:
+\begin{itemize}
+\item \texttt{EXEC} \texttt{ram1\_Tinyfpga\_bin: REMark Alternatively, EX
+ram1\_Tinyfpga\_bin}
+\end{itemize}
+On a successful execution, a small window will open, with black paper,
+white ink and a white, one pixel border. A `>' prompt will be displayed
+in the top left corner. Type some text and press ENTER. The text you
+typed will be printed, the job will pause for 4 seconds, and then
+vanish.
+
+\section{Summary}
+
+So that's the Assembly Language version of \emph{Tinyfpga}'s challenge.
+There's a lot going on under the covers of SuperBASIC that programmers
+almost never see. When you start delving ito Assembly Language, you
+are responsible for just about everything! Thankfully, SMSQ/E provides
+numerous utilities and features that you can call upon to make life
+easier. 
+
+In future issues, I'll be delving into a few more of these with, hopefully,
+enough explanation for beginners to get started with.
+
+Get hold of the SMSQ/E Reference Manual from:
+\begin{itemize}
+\item \href{http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS\%20Reference\%20Guide\%20v4.5.pdf}{Here}\footnote{http://www.dilwyn.me.uk/docs/manuals/QDOS\_SMS\%20Reference\%20Guide\%20v4.5.pdf}
+for the PDF version; or
+\item \href{http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS\%20Reference\%20Guide\%20v4.5.odt}{Here}\footnote{http://www.dilwyn.me.uk/docs/manuals/QDOS\_SMS\%20Reference\%20Guide\%20v4.5.odt}
+for the ODT version.
+\end{itemize}
+
