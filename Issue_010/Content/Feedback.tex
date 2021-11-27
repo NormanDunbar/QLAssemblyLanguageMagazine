@@ -1,0 +1,46 @@
+
+\chapter{Feedback}
+
+\section{Circular Buffers}
+
+When I announce Issue 9 on the QL Forum, Marcel queried the Circular
+Buffer article in the issue. He was wondering if I had simply recreated
+the Queue handling features of QDOSMSQ, those being \texttt{IOQ.SETQ},
+\texttt{IOQ.TEST}, \texttt{IOQ.PBYT}, and \texttt{IOQ.GBYT}. 
+
+Putting it simply, \emph{probably}! However, as I pointed out, it
+was a fun exercise in creating the code from a C++ version, and debugging
+a particularly insidious bug where allocating common heap space gets
+rounded up!
+
+Thanks Marcel, at least I know one person read it!
+
+\section{Learning Assembly Language}
+
+\emph{TMD2003} wondered about learning Assembly Language and started
+\href{https://qlforum.co.uk/viewtopic.php?f=3&t=3976}{a thread}\footnote{https://qlforum.co.uk/viewtopic.php?f=3\&t=3976}
+on the QL Forum\footnote{Yes, I know, it's not really feedback on the previous issue of the
+eMagazine, but I though it was relevant.}. On the second page of the thread, \emph{Tinyfpga} issued this statement:
+
+\emph{In Basic all I have to do start my journey into the programming
+world is to:- Type into QD}
+
+\begin{lstlisting}
+OPEN #1,con_ 
+OUTLN #1,310,60,50,300 
+CLS #1 : BORDER #1,1,7 
+INPUT #1,a$
+\end{lstlisting}
+
+\emph{I then save the text in a ram disk, press the execute button
+and ,\textquotedbl hey presto\textquotedbl , I see an app on my
+screen. What could be an easier introduction to programming?}
+
+Well, I decided that that would be a good start to the new Beginner's
+feature, so I've taken up \emph{Tinyfpga}'s ``challenge'' in this
+issue and converted his \emph{easy introduction to programming} into
+Assembly Language.
+
+\section{Wolfgang's Feedback on Label Alignment}
+
+TODO!

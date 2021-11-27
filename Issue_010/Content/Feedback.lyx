@@ -1,5 +1,5 @@
-#LyX 2.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 508
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
 \begin_document
 \begin_header
 \save_transient_properties true
@@ -12,9 +12,6 @@
 \definecolor{wwwDarkGreen}{HTML}{006400}
 \definecolor{wwwDarkOrchid}{HTML}{9932CC}
 \definecolor{wwwDarkOrange}{HTML}{FF8C00}
-% Added by lyx2lyx
-\renewcommand{\textendash}{--}
-\renewcommand{\textemdash}{---}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -32,6 +29,8 @@
 \font_osf false
 \font_sf_scale 100 100
 \font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -72,8 +71,9 @@
 \use_indices false
 \paperorientation portrait
 \suppress_date false
-\justification true
+\justification false
 \use_refstyle 1
+\use_minted 0
 \boxbgcolor #ff557f
 \index Index
 \shortcut idx
@@ -83,7 +83,10 @@
 \tocdepth 3
 \paragraph_separation skip
 \defskip medskip
-\quotes_language english
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
 \papercolumns 1
 \papersides 2
 \paperpagestyle default
@@ -98,109 +101,128 @@
 \begin_body
 
 \begin_layout Chapter
-Feedback on Issue 8
+Feedback
+\end_layout
+
+\begin_layout Section
+Circular Buffers
 \end_layout
 
 \begin_layout Standard
-No long after release, I spotted a bug in the randomisation chapter in Issue
- 8.
- On page 49, in 
-\emph on
-Listing 7.3: Rnd 1 to 6 function - Part 1
-\emph default
-, I had a comment on line 67 which mentioned 
-\begin_inset Quotes eld
-\end_inset
-
-divide by 65536
-\begin_inset Quotes erd
-\end_inset
-
+When I announce Issue 9 on the QL Forum, Marcel queried the Circular Buffer
+ article in the issue.
+ He was wondering if I had simply recreated the Queue handling features
+ of QDOSMSQ, those being 
+\family typewriter
+IOQ.SETQ
+\family default
+, 
+\family typewriter
+IOQ.TEST
+\family default
+, 
+\family typewriter
+IOQ.PBYT
+\family default
+, and 
+\family typewriter
+IOQ.GBYT
+\family default
 .
- That was complete nonsense, as that would have cleared the high word and
- not the low word.
  
 \end_layout
 
 \begin_layout Standard
-Marcel spotted the error and advised me that the code was clearing overflow,
- not dividing.
- My mistake.
+Putting it simply, 
+\emph on
+probably
+\emph default
+! However, as I pointed out, it was a fun exercise in creating the code
+ from a C++ version, and debugging a particularly insidious bug where allocating
+ common heap space gets rounded up!
 \end_layout
 
 \begin_layout Standard
-Marcel also spotted something else in the code I had blatantly stolen from
- the SMSQ sources.
+Thanks Marcel, at least I know one person read it!
+\end_layout
+
+\begin_layout Section
+Learning Assembly Language
 \end_layout
 
 \begin_layout Standard
-It appears that the code in the 
-\begin_inset listings
-inline true
-status open
+
+\emph on
+TMD2003
+\emph default
+ wondered about learning Assembly Language and started 
+\begin_inset CommandInset href
+LatexCommand href
+name "a thread"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3976"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
 
 \begin_layout Plain Layout
-
-rnd
+https://qlforum.co.uk/viewtopic.php?f=3&t=3976
 \end_layout
 
 \end_inset
 
- routine where we have this extract:
+ on the QL Forum
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Yes, I know, it's not really feedback on the previous issue of the eMagazine,
+ but I thought it was relevant.
+\end_layout
+
+\end_inset
+
+.
+ On the second page of the thread, 
+\emph on
+Tinyfpga
+\emph default
+ issued this statement:
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+In Basic all I have to do start my journey into the programming world is
+ to:- Type into QD
 \end_layout
 
 \begin_layout Standard
 \begin_inset listings
-lstparams "numbers=none"
 inline false
 status open
 
 \begin_layout Plain Layout
 
-rnd
+OPEN #1,con_ 
 \end_layout
 
 \begin_layout Plain Layout
 
-    ...
+OUTLN #1,310,60,50,300 
 \end_layout
 
 \begin_layout Plain Layout
 
-    mulu    #$c12d,d0           ; HHHH * 49453
+CLS #1 : BORDER #1,1,7 
 \end_layout
 
 \begin_layout Plain Layout
 
-    mulu    #$712d,d4           ; LLLL * 28973
-\end_layout
-
-\begin_layout Plain Layout
-
-	...
-\end_layout
-
-\begin_layout Plain Layout
-
-    clr.w   d0                  ; HHHH 0000 (Divide by 65536)
-\end_layout
-
-\begin_layout Plain Layout
-
-	...
-\end_layout
-
-\begin_layout Plain Layout
-
-\begin_inset Caption Standard
-
-\begin_layout Plain Layout
-Rnd 1 to 6 function
-\end_layout
-
-\end_inset
-
-
+INPUT #1,a$
 \end_layout
 
 \end_inset
@@ -209,45 +231,40 @@ Rnd 1 to 6 function
 \end_layout
 
 \begin_layout Standard
-could possibly be a typo! He believes that the code should be calculating
- a 32 bit by 16 bit multiplication – the expression:
+
+\emph on
+I then save the text in a ram disk, press the execute button and ,"hey presto",
+ I see an app on my screen.
+ What could be an easier introduction to programming?
 \end_layout
 
 \begin_layout Standard
-\begin_inset Formula 
-\[
-myRandSeed=myRandSeed*\$712D+1
-\]
-
+Well, I decided that that would be a good start to the new Beginner's feature,
+ so I've taken up 
+\emph on
+Tinyfpga
+\emph default
+'s 
+\begin_inset Quotes eld
 \end_inset
 
-
-\end_layout
-
-\begin_layout Standard
-However, it seems to be this instead:
-\end_layout
-
-\begin_layout Standard
-\begin_inset Formula 
-\[
-myRandSeed=myRandSeed*\$712D+\left(\left(myRandSeed\&\$F0000\right)*\$5000\right)+1
-\]
-
+challenge
+\begin_inset Quotes erd
 \end_inset
 
+ in this issue and converted his 
+\emph on
+easy introduction to programming
+\emph default
+ into Assembly Language.
+\end_layout
 
+\begin_layout Section
+Wolfgang's Feedback on Label Alignment
 \end_layout
 
 \begin_layout Standard
-Why both halves of the 32 bit random seed are not being multiplied by $712d
- is unknown, perhaps the used of $c12d is a typo, perhaps it's deliberate
- to make it more random.
- Nobody knows!
-\end_layout
-
-\begin_layout Standard
-Thanks Marcel.
+TODO!
 \end_layout
 
 \end_body
