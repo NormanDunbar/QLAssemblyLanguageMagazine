@@ -1,0 +1,936 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Free Pascal Compiler
+\end_layout
+
+\begin_layout Standard
+Back in November 2020, there was a 
+\begin_inset Quotes eld
+\end_inset
+
+thing
+\begin_inset Quotes erd
+\end_inset
+
+ called 
+\emph on
+QLvember
+\emph default
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+I really hate it when they do stuff like that, taking a month and a concept,
+ and putting them together.
+ Things like Dryanuary, Veganuary, QLvemver – it makes my teeth crawl! Anyway,
+ enough from the old git!
+\end_layout
+
+\end_inset
+
+ and someone – K
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+'a
+\end_layout
+
+\end_inset
+
+roly Balogh 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Need to get UTF8 working, pdflatex rejects the accented character
+\end_layout
+
+\end_inset
+
+is his name, he's from Hungary, and 
+\emph on
+Chainq
+\emph default
+ is his nickname on the QL Forum – decided to try and make the Free Pascal
+ Compiler (FPC) work on the QL.
+ After an exchange of information on QL Forum, 
+\begin_inset CommandInset href
+LatexCommand href
+name "this thread"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3057&p=37465#p37465"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=3057&p=37465#p37465
+\end_layout
+
+\end_inset
+
+, he went off and created a cross compiler for the QL.
+\end_layout
+
+\begin_layout Standard
+Eventually, myself and Marcel got slightly involved and helped create a
+ starting set of Pascal 
+\begin_inset Quotes eld
+\end_inset
+
+units
+\begin_inset Quotes erd
+\end_inset
+
+ (aka libraries if you wish) to make writing Pascal easy for QL users.
+ 
+\end_layout
+
+\begin_layout Standard
+Then I got distracted, my wife and I, after 25 years of marriage (almost),
+ heard the pitter patter of tiny feet! We bought a puppy! Looking after
+ one of those is hard work – I'd forgotten how hard it can be – but he's
+ settled down a bit better now, so I'm getting back into development again.
+ Just as well I wrote a document detailing how to get hold of the development
+ tools and source code required to build the compiler and the QL Units.
+ You can find it on my 
+\begin_inset CommandInset href
+LatexCommand href
+name "GitHub page, here"
+target "https://github.com/NormanDunbar/FPC-CrossCompiler-QL/releases/latest/."
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://github.com/NormanDunbar/FPC-CrossCompiler-QL/releases/latest/.
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+This article is an attempt to get more people interested enough to help
+ out writing code for the QL's run time library and other units.
+ If we can do this, we will have a proper modern, frequently updated cross
+ compiler for the QL.
+ I'm running FPC on Linux, but it's also available for Windows too.
+ Either way, we can now cross compile Pascal code for the QL – there are
+ restrictions obviously, because the RTL and Units are incomplete, but if
+ more of us join in, we might get something done.
+\end_layout
+
+\begin_layout Standard
+Dare I mention, the FPC compiler is able to compile Object Oriented code,
+ which runs on the QL.
+ I have a post on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "forum here"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=3725"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=3725
+\end_layout
+
+\end_inset
+
+ about this.
+ Tony Tebby will not be amused!
+\end_layout
+
+\begin_layout Section
+Writing Code
+\end_layout
+
+\begin_layout Standard
+Basically, I'm writing QDOS and/or SMSQ routines to match those documented
+ in the Technical Guides.
+ For example, Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:FPC-FileOpen-function"
+
+\end_inset
+
+ is the Pascal 
+\family typewriter
+FileOpen
+\family default
+ function, which opens a file, this is found in the 
+\family typewriter
+sysutils
+\family default
+ unit for the QL.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+function FileOpen(const FileName: rawbytestring; Mode: Integer): THandle;
+\end_layout
+
+\begin_layout Plain Layout
+
+var
+\end_layout
+
+\begin_layout Plain Layout
+
+  QLMode: Integer;
+\end_layout
+
+\begin_layout Plain Layout
+
+begin
+\end_layout
+
+\begin_layout Plain Layout
+
+  FileOpen:=-1;
+\end_layout
+
+\begin_layout Plain Layout
+
+  case Mode of
+\end_layout
+
+\begin_layout Plain Layout
+
+    fmOpenRead: QLMode := Q_OPEN_IN;
+\end_layout
+
+\begin_layout Plain Layout
+
+    fmOpenWrite: QLMode :=  Q_OPEN_OVER;
+\end_layout
+
+\begin_layout Plain Layout
+
+    fmOpenReadWrite: QLMode := Q_OPEN;
+\end_layout
+
+\begin_layout Plain Layout
+
+  end;
+\end_layout
+
+\begin_layout Plain Layout
+
+  FileOpen := io_open(pchar(Filename), QLMode);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if FileOpen < 0 then
+\end_layout
+
+\begin_layout Plain Layout
+
+    FileOpen:=-1;
+\end_layout
+
+\begin_layout Plain Layout
+
+end;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+function FileGetDate(Handle: THandle) : Int64;
+\end_layout
+
+\begin_layout Plain Layout
+
+begin
+\end_layout
+
+\begin_layout Plain Layout
+
+  result:=-1;
+\end_layout
+
+\begin_layout Plain Layout
+
+end;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+FPC FileOpen function
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:FPC-FileOpen-function"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+You can see, about half way down, there's a call to 
+\family typewriter
+io_open
+\family default
+, passing the filename and the mode the file is to be opened.
+ The code for 
+\family typewriter
+io_open
+\family default
+ is shown in Listing ?, and is found in the 
+\family typewriter
+qdos.inc
+\family default
+ file.
+ You will hopefully notice from the code that there are two io_open functions:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+io_open_qlstr
+\family default
+: which opens a file using a QL style string for the file name - a word
+ count followed by the bytes of the string.
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+io_open
+\family default
+: Which is called from Pascal, and converts the Pascal parameters passed,
+ to suitable ones to call 
+\family typewriter
+io_open_qlstr
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+You might also notice a function called 
+\family typewriter
+FileGetDate
+\family default
+? That one simply returns -1 because it has yet to be written for the QL.
+ And this is a gentle reminder that we need more people to get involved.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+const
+\end_layout
+
+\begin_layout Plain Layout
+
+  _IO_OPEN = $01;
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+function io_open_qlstr(name_qlstr: pointer; mode: longint): Tchanid; assembler;
+ nostackframe; public name '_io_open_qlstr';
+\end_layout
+
+\begin_layout Plain Layout
+
+asm
+\end_layout
+
+\begin_layout Plain Layout
+
+  movem.l d2-d3,-(sp)
+\end_layout
+
+\begin_layout Plain Layout
+
+  move.l name_qlstr,a0
+\end_layout
+
+\begin_layout Plain Layout
+
+  moveq.l #-1,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+  move.l mode,d3
+\end_layout
+
+\begin_layout Plain Layout
+
+  moveq.l #_IO_OPEN,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+  trap #2
+\end_layout
+
+\begin_layout Plain Layout
+
+  tst.l d0
+\end_layout
+
+\begin_layout Plain Layout
+
+  bne.s @quit
+\end_layout
+
+\begin_layout Plain Layout
+
+  move.l a0,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+@quit:
+\end_layout
+
+\begin_layout Plain Layout
+
+  movem.l (sp)+,d2-d3
+\end_layout
+
+\begin_layout Plain Layout
+
+end;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+function io_open(name: pchar; mode: longint): Tchanid; public name '_io_open';
+\end_layout
+
+\begin_layout Plain Layout
+
+var
+\end_layout
+
+\begin_layout Plain Layout
+
+  len: longint;
+\end_layout
+
+\begin_layout Plain Layout
+
+  name_qlstr: array[0..63] of char;
+\end_layout
+
+\begin_layout Plain Layout
+
+begin
+\end_layout
+
+\begin_layout Plain Layout
+
+  len:=length(name);
+\end_layout
+
+\begin_layout Plain Layout
+
+  if len > length(name_qlstr)-2 then
+\end_layout
+
+\begin_layout Plain Layout
+
+    len:=length(name_qlstr)-2;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+  PWord(@name_qlstr)[0]:=len;
+\end_layout
+
+\begin_layout Plain Layout
+
+  Move(name^,name_qlstr[2],len);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+  result:=io_open_qlstr(@name_qlstr,mode);
+\end_layout
+
+\begin_layout Plain Layout
+
+end;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+FPC Io_open function
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:FPC-Io_open-function"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Parameter Passing
+\end_layout
+
+\begin_layout Standard
+The default method of passing parameters around in Free Pascal is named
+ 
+\emph on
+register
+\emph default
+.
+ This method passes parameters using registers where it can, as follows:
+ 
+\end_layout
+
+\begin_layout Itemize
+The first ordinal number (ie, a numeric value) is passed in register 
+\family typewriter
+D0
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+The second ordinal number (ie, a numeric value) is passed in register 
+\family typewriter
+D1
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+The first pointer or reference is passed in register 
+\family typewriter
+A0
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+The second pointer or reference is passed in register 
+\family typewriter
+A1
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+Any remaining parameters are passed on the stack from left to right.
+\end_layout
+
+\begin_layout Standard
+If you look closely at 
+\family typewriter
+io_open
+\family default
+ you will see that it takes the address of the QL String for the filename
+ as a 
+\family typewriter
+pointer
+\family default
+ data type.
+ This will be passed in register 
+\family typewriter
+A0
+\family default
+ as per the convention, however, the eagle-eyed among you will have spotted
+ that there is an instruction 
+\begin_inset listings
+lstparams "showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+move.l name_qlstr,a0
+\end_layout
+
+\end_inset
+
+ which, if the above information is correct, simply copies 
+\family typewriter
+A0
+\family default
+ to 
+\family typewriter
+A0
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+This is indeed correct, however, it should not be deleted as a spurious
+ line of code.
+ There are other parameter passing modes, documented on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "Free Pascal Wiki here"
+target "https://wiki.freepascal.org/m68k#Registers"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://wiki.freepascal.org/m68k#Registers
+\end_layout
+
+\end_inset
+
+, which use a different manner of passing parameters.
+ If you delete that 
+\emph on
+spurious
+\emph default
+ line, and the mode changes in future, code will stop working.
+\end_layout
+
+\begin_layout Standard
+Another problem that might bite you, is when you are usually a bit anally
+ retentive about setting up the registers in order, you might, as I did,
+ find yourself overwriting registers 
+\family typewriter
+D0
+\family default
+ and 
+\family typewriter
+D1
+\family default
+ with QDOSSMSQ trap settings, for example, before you've grabbed the parameters
+ passed from Pascal.
+ How do I know this? Don't ask – but it took a lot of 
+\family typewriter
+QMON
+\family default
+ing to find out what was going wrong!
+\end_layout
+
+\begin_layout Subsubsection
+Returning Results
+\end_layout
+
+\begin_layout Itemize
+Return values which are 32 bits in size, or smaller numeric values are returned
+ in register 
+\family typewriter
+D0
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+Pointers are returned in register 
+\family typewriter
+A0
+\family default
+ or 
+\family typewriter
+D0
+\family default
+ (platform and calling convention specific).
+\end_layout
+
+\begin_layout Itemize
+64 bit ordinal values are returned in register pair 
+\family typewriter
+D0
+\family default
+/
+\family typewriter
+D1
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+You can see the channel ID being returned from 
+\family typewriter
+io_open_qlstr
+\family default
+ in 
+\family typewriter
+D0
+\family default
+ instead of the usual QDOSMSQ manner of returning it in 
+\family typewriter
+A0
+\family default
+.
+\end_layout
+
+\begin_layout Section
+Join In If You Can
+\end_layout
+
+\begin_layout Standard
+If you can write assembly code, then why not join in? Grab my document and
+ have a go at making one or more of the missing functions for the QL, work.
+ It's fun and a good way to be useful – although my wife, hello dear, begs
+ to differ on my definition of 
+\emph on
+useful
+\emph default
+!
+\end_layout
+
+\begin_layout Standard
+The main forum thread starts from 
+\emph on
+chainq
+\emph default
+'s post, linked above.
+ That's where I have been putting my patch files and they've been accepted
+ into the FPC project, some slightly amended by 
+\emph on
+chainq
+\emph default
+, which is fine, he knows this stuff, I'm just a code monkey! There's also
+ a good deal of information on that thread about the way that FPC works
+ for the QL.
+\end_layout
+
+\begin_layout Standard
+If you have questions, ask away, someone will chime in and hopefully, help
+ you out.
+\end_layout
+
+\begin_layout Standard
+One more thing, the FPC project recently
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Depending on when you read this, maybe not quite so recently!
+\end_layout
+
+\end_inset
+
+ (8th August 2020) migrated everything from Subversion as a version control
+ system, to git.
+ The project is now hosted on GitLab and mirrored to gitHub, for safety,
+ but GitLab is the main repository.
+ You can 
+\begin_inset CommandInset href
+LatexCommand href
+name "find it here"
+target "https://gitlab.com/freepascal.org/fpc/source.git"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://gitlab.com/freepascal.org/fpc/source.git
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\end_body
+\end_document
