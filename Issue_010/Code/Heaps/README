@@ -1,0 +1,14 @@
+The examples in this directory are fragments only, they are not
+a fully working example I'm afraid. They were written to be run
+under QMON2 so that I could test the Technical Manual's advice 
+about what was returned and where.
+
+As it turned out the docs didn't mention that the size of the 
+allocated space returns by the Commmon Heap code includes the 
+header block in the size.
+
+I was also unaware that the User Heap stuff takes it's header 
+block out of your requested allocation!
+
+Cheers,
+Norm.

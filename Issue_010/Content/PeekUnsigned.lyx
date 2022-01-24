@@ -1,0 +1,1606 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_author "Norman Dunbar"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style british
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=none,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Unsigned Peeks
+\end_layout
+
+\begin_layout Standard
+There's a thread on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "QL Forum"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=4027&sid=7a218630d06b1d78c6bb436e1fbf32f9"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=4027&sid=7a218630d06b1d78c6bb436e1fbf32f9
+\end_layout
+
+\end_inset
+
+ about how difficult it might be to write programs in S*BASIC on SMSQ/E.
+ There is a pile of useful information there.
+ One of the more interesting comments was about a hardware timer to get
+ proper delays in code, but this required the use of 
+\family typewriter
+PEEK_L
+\family default
+.
+ And, as we all know, 
+\family typewriter
+PEEK_L
+\family default
+ returns a float, and is signed.
+ 
+\end_layout
+
+\begin_layout Standard
+I responded on 
+\begin_inset CommandInset href
+LatexCommand href
+name "this post"
+target "https://qlforum.co.uk/viewtopic.php?f=3&t=4027&p=45290#p45290"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=3&t=4027&p=45290#p45290
+\end_layout
+
+\end_inset
+
+ with an example of some code to get around that problem by adding 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+ if the result was negative.
+ Sadly, in my posting, I actually typed 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+32
+\end_layout
+
+\end_inset
+
+– Duh! 
+\end_layout
+
+\begin_layout Standard
+Marcel responded that 
+\emph on
+someone could do a 
+\family typewriter
+PEEK_UL
+\family default
+ function
+\emph default
+ to get an unsigned result.
+ This caused confusion for a bit as nobody knew that 
+\family typewriter
+PEEK_UL
+\family default
+ existed and when they tried, it was, of course, not found.
+ Marcel 
+\emph on
+may
+\emph default
+ have been hinting that 
+\emph on
+someone could easily write an unsigned version of the 
+\family typewriter
+PEEK_L
+\family default
+ (and 
+\family typewriter
+PEEK_W
+\family default
+) functions
+\emph default
+.
+ So I did! And here they is.
+\end_layout
+
+\begin_layout Standard
+You'd 
+\emph on
+think
+\emph default
+ there was nothing to it really, and there isn't, but along the way to producing
+ this code, I had to delve into some old code of mine
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Well, it's either mine or I stole it from somewhere, I can't remember that
+ far back!
+\end_layout
+
+\end_inset
+
+ to convert a long value to a floating point value on the maths stack.
+ For the life of me, I couldn't remember how I did it, so I fell down that
+ rabbit hole until I had a vague understanding of QL Floating Point and
+ the conversion code.
+\end_layout
+
+\begin_layout Standard
+SMSQ/E has a maths package operation to convert a long value on the maths
+ stack into a float, however, QDOS doesn't have this option – it's interestingly
+ missing from the maths package op code – so there are two versions of the
+ source code and binary files on the accompanying code download for this
+ issue.
+\end_layout
+
+\begin_layout Standard
+The SMSQ/E version is 230 bytes while the QDOS version is longer, at 258.
+ The QDOS version is, however, safe to run on SMSQ/E as well.
+ Just don't try running the SMSQ/E version on QDOS – I have no idea what
+ will happen.
+\end_layout
+
+\begin_layout Section
+PEEK_UW and PEEK_UL
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+PEEK_W
+\family default
+ and 
+\family typewriter
+PEEK_L
+\family default
+ on the QL are signed.
+ They return positive and negative values.
+ This is sometimes a bit of a pain because, taking 
+\family typewriter
+PEEK_L
+\family default
+ as an example, fetching any value over $7FFFFFFF or 2,147,483,647, will
+ result in the value going negative.
+ This may not be what you desire.
+ The solution is easy, add 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+
+ or 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+, depending on whether you are peeking for words or longs, to the result
+ on return to S*BASIC.
+ Sometimes you forget, well, I do, and so, these two new functions will
+ do the testing and adding for us, leaving S*BASIC to get on with interpreting
+ the rest of the code.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Equates"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the start of the source code, and shows the various equates I've used
+ in the code.
+ These are, as mentioned in the News Section, now using the SMSQ/E mnemonics,
+ don't worry if you are using QDOS as it's the values that count – I could
+ have called them Fred, Barney Wilma, Betty etc, but that's not a meaningful
+ set of names
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Unless we are writing a Flintstones application I suppose.
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={10-26},caption={Unsigned Peeks - Equates},label={lis:Unsigned-Peeks-Equates}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The only thing I'd draw your attention to is the two flags I've set up to
+ determine if we are peeking words or longs, those being 
+\family typewriter
+peek_w
+\family default
+ and 
+\family typewriter
+peek_l
+\family default
+.
+ I've given those a value which just happens to correspond to the exponent
+ for a floating point value of either 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+
+ or 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+ – this is a cunning plan to save me some work later on!
+\end_layout
+
+\begin_layout Standard
+The code proper begins at the label start, which you can see in Listing
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Extend-SBASIC"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ where we have the standard code to link in new procedures and/or functions,
+ and the requisite definition block in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Procedure-function-definition-block"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ where we are defining no new procedures, only two new functions, 
+\family typewriter
+PEEK_UL
+\family default
+ and 
+\family typewriter
+PEEK_UW
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={31-35},caption={Unsigned Peeks - Linking into S*BASIC},label={lis:Unsigned-Peeks-Extend-SBASIC}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={40-50},caption={Unsigned Peeks - Procedure/Function definition block},label={lis:Unsigned-Peeks-Procedure-function-definition-block}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Both new functions share a lot of common code.
+ To this end, I set a flag to determine which is being called so that the
+ places where things differ, can easily tell the functions apart.
+ 
+\family typewriter
+PEEK_W
+\family default
+ begins, as Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Peek-uw"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows, by setting the correct flag in 
+\family typewriter
+D4.W
+\family default
+, before jumping off to join the first section of common code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={59-61},caption={Unsigned Peeks - Peek\\_uw},label={lis:Unsigned-Peeks-Peek-uw}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Peek_ul"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the beginning of the 
+\family typewriter
+PEEK_UL
+\family default
+ function.
+ It also sets a flag before dropping into the common code for both functions.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={69-80},caption={Unsigned Peeks - Peek\\_ul},label={lis:Unsigned-Peeks-Peek_ul}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Both functions require a single parameter, so we subtract 
+\family typewriter
+A3.L
+\family default
+ from 
+\family typewriter
+A5.L
+\family default
+ and if the result is not 8 bytes, then we exit back to S*BASIC with a bad
+ parameter error.
+ 
+\family typewriter
+A3.L
+\family default
+ points to the last function parameter on the name table, and 
+\family typewriter
+A5.L
+\family default
+ to the first.
+ Each name table entry takes 8 bytes.
+\end_layout
+
+\begin_layout Standard
+If we do have 8 bytes of a difference, then we know that there's exactly
+ one parameter waiting, so we can go fetch it.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Fetching-one-parameter"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code to fetch the address parameter as a long value.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={86-90},caption={Unsigned Peeks - Fetching one parameter},label={lis:Unsigned-Peeks-Fetching-one-parameter}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When fetching parameters for a procedure or function, 
+\family typewriter
+D3.W
+\family default
+ holds the count of parameters actually fetched.
+ Just as an extra check, we test this, in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Testing-parameters-fetched"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, to make sure that we did indeed only fetch a single parameter.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={96-98},showlines=true,caption={Unsigned Peeks - Testing parameters fetched},label={lis:Unsigned-Peeks-Testing-parameters-fetched}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If we somehow managed to fetch more, or less, than one parameter, we bale
+ out to S*BASIC with a bad parameter error.
+ If not, then we continue to pull the passed address off of the maths stack
+ into 
+\family typewriter
+A2.L
+\family default
+ and then we 
+\begin_inset Quotes bld
+\end_inset
+
+peek
+\begin_inset Quotes brd
+\end_inset
+
+ the long value at the requested address into 
+\family typewriter
+D7.L
+\family default
+ as per Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Getting-the-address-and-peeking"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={104-106},caption={Unsigned Peeks - Getting the address, and peeking it},label={lis:Unsigned-Peeks-Getting-the-address-and-peeking}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At t his point, we have pretty much executed a 
+\family typewriter
+PEEK_L
+\family default
+ function call, but we might want only the first word if we are executing
+ 
+\family typewriter
+PEEK_UW
+\family default
+.
+ If so, we need to return only the current high word of 
+\family typewriter
+D7.L
+\family default
+, so Listing ? is the code that does the check.
+ If we are indeed running 
+\family typewriter
+PEEK_UW
+\family default
+, then the low word is cleared and then the upper word is swapped into the
+ lower word, giving the correct value in 
+\family typewriter
+D7.L
+\family default
+ for 
+\family typewriter
+PEEK_UW
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={112-116, 121-121},caption={Unsigned Peeks - Fixup for PEEK\\_UW},label={lis:Unsigned-Peeks-Fixup-for-peek-uw}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Both functions come together again at label 
+\family typewriter
+pulGotPeek
+\family default
+, where 
+\family typewriter
+D7.L
+\family default
+ holds the possibly negative value we need to return to S*BASIC.
+ Unfortunately, this is also exactly where they diverge again, however,
+ I'm only discussing the SMSQ/E version here.
+ I've explained converting a long word into floating point the end of this
+ chapter, if you are interested?
+\end_layout
+
+\begin_layout Standard
+The differences are these:
+\end_layout
+
+\begin_layout Itemize
+SMSQ/E has a maths package operation, 
+\family typewriter
+OP.FLONG
+\family default
+, to take the long word on the top of the maths stack, and convert it to
+ a floating point value at TOS, adjusting 
+\family typewriter
+A1.L
+\family default
+ as necessary (subtracting 2 from it – the difference between a 6 byte float
+ and a 4 byte long)
+\end_layout
+
+\begin_layout Itemize
+QDOS requires the developer, me, to allocate an additional 2 bytes on the
+ maths stack.
+ There is already 4 bytes available as we pulled the address parameter as
+ a long word, which takes 4 bytes.
+\end_layout
+
+\begin_layout Itemize
+It the space allocation succeeds then we can convert, manually, and normalise
+ the long word in 
+\family typewriter
+D7.L
+\family default
+ into a float and stack it.
+\end_layout
+
+\begin_layout Itemize
+In the QDOS variant, the developer, me again, has to be very careful to
+ keep the TOS pointer in A1 correct at all times.
+ 
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Floating-a-long-smsq-style"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the simple way that SMSQ/E converts a long word to a floating point
+ value.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={185-190},caption={Unsigned Peeks - Floating a Long SMSQ/E style},label={lis:Unsigned-Peeks-Floating-a-long-smsq-style}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We need to stack the value in 
+\family typewriter
+D7.L
+\family default
+ so we can do that easily as we know that there are 4 bytes available on
+ the maths stack, and that 
+\family typewriter
+A1.L
+\family default
+ is still correctly pointing at the TOS where we need our long word to be.
+ As with almost everything S*BASIC, addresses are relative to 
+\family typewriter
+A6
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+After stacking 
+\family typewriter
+D7.L
+\family default
+, we simply call a subroutine, 
+\family typewriter
+pulDoMathsOp
+\family default
+, which can be seen later in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Execute-maths-package-operation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, to do the hard work of converting the value.
+ If that worked, then we skip off to 
+\family typewriter
+pulTestNegative
+\family default
+, where we join up with the code for QDOS again.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={201-203},caption={Unsigned Peeks - Testing for negativity},label={lis:Unsigned-Peeks-Testing-for-negativity}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Testing-for-negativity"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ checks the byte at the high end of the mantissa for the floating point
+ value on the maths stack.
+ Bit 31 of the mantissa is the sign bit and that corresponds to bit 7 in
+ this particular byte.
+ If the bit is clear, then we have a positive number as there's no need
+ to do the addition to make it positive.
+\end_layout
+
+\begin_layout Standard
+If the bit is set, then the value is negative, and we need to add 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+
+ or 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+ depending on the function currently executing.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Adjusting-for-negativity"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows how I decided to do it.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={215-223},caption={Unsigned Peeks - Adjusting for negativity},label={lis:Unsigned-Peeks-Adjusting-for-negativity}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first thing we have to do is request 6 bytes, enough room for a new
+ floating point value, on the maths stack.
+ This is done by a subroutine, 
+\family typewriter
+pulGetSpace
+\family default
+ in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Allocating-maths-stack-space"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ which will make sure that the space is allocated and adjusts 
+\family typewriter
+A1.L
+\family default
+ as necessary.
+\end_layout
+
+\begin_layout Standard
+We can now stack the floating point representation of 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+
+ or 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+ appropriately.
+ Remember that flag I used to determine whether we were in 
+\family typewriter
+PEEK_UW
+\family default
+ or 
+\family typewriter
+PEEK_UL
+\family default
+? Well, that value just happens to be the exponent for 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+
+ or 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+and so we can stack the exponent directly from the flag register, 
+\family typewriter
+D4.W
+\family default
+.
+ The mantissa for both values is the same, so that gets stacked next.
+ We now have 
+\family typewriter
+(A6,A1.L)
+\family default
+ pointing at 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+15
+\end_layout
+
+\end_inset
+
+ or 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+31
+\end_layout
+
+\end_inset
+
+ on TOS, and the peek value at Next On Stack, NOS.
+ We need to add them together.
+\end_layout
+
+\begin_layout Standard
+SMSQ/E and QDOS both have the same maths package operation to add two floats,
+ 
+\family typewriter
+QA.ADD
+\family default
+.
+ This has the side effect of replacing NOS with the result of the addition
+ and removes TOS making the existing NOS the new TOS.
+ 
+\family typewriter
+A1.L
+\family default
+ is now 6 larger than previously, and we need this to be saved away.
+ The subroutine 
+\family typewriter
+pulDoMathsOp
+\family default
+, in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Execute-maths-package-operation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ does this for us.
+\end_layout
+
+\begin_layout Standard
+The value at TOS is now guaranteed to be positive, so we can carry on and
+ return the result to S*BASIC.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Return-to-s-basic"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is how we do that.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={230-233},caption={Unsigned Peeks - Return to S*BASIC},label={lis:Unsigned-Peeks-Return-to-s-basic}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D4.W
+\family default
+ is set to 2 to indicate a float result is on the maths stack at TOS and
+ we return with no errors.
+\end_layout
+
+\begin_layout Standard
+That's basically all there is to it! Except for a couple of small subroutines.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Allocating-maths-stack-space"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the subroutine 
+\family typewriter
+pulGetSpace
+\family default
+ which requests space for the maths stack and keeps the various pointers
+ correctly aligned.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={247-256},caption={Unsigned Peeks - Allocating maths stack space},label={lis:Unsigned-Peeks-Allocating-maths-stack-space}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code expects 
+\family typewriter
+D1.L
+\family default
+ to contain the number of bytes needed and 
+\family typewriter
+A1.L
+\family default
+ to point at the maths stack TOS, relative to 
+\family typewriter
+A6.L
+\family default
+.
+ The 
+\family typewriter
+QA.RESRI
+\family default
+ vector code trashes registers 
+\family typewriter
+D2
+\family default
+, 
+\family typewriter
+D3
+\family default
+, 
+\family typewriter
+A1
+\family default
+ and 
+\family typewriter
+A2
+\family default
+, but we have to reload 
+\family typewriter
+A1.L
+\family default
+ from 
+\family typewriter
+SB_ARTHP
+\family default
+ anyway, so that's no matter.
+ 
+\end_layout
+
+\begin_layout Standard
+The subroutine requests 
+\family typewriter
+D1.L
+\family default
+ bytes of space, then retrieves the potentially new value for 
+\family typewriter
+A1.L
+\family default
+ from 
+\family typewriter
+SB_ARTHP
+\family default
+ before subtracting 
+\family typewriter
+D1.L
+\family default
+ to get the new TOS.
+ This value is saved back in 
+\family typewriter
+SB_ARTHP
+\family default
+ as it must be.
+\end_layout
+
+\begin_layout Standard
+On exit, 
+\family typewriter
+A1.L
+\family default
+ is the new TOS pointer, ready for use by our code.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-Execute-maths-package-operation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the final subroutine.
+ This one, 
+\family typewriter
+pulDoMathsOp
+\family default
+, executes a single maths package operation according to the code in 
+\family typewriter
+D0.W
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm"
+lstparams "linerange={272-281},caption={Unsigned Peeks - Execute maths package operation},label={lis:Unsigned-Peeks-Execute-maths-package-operation}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The subroutine expects an operation code, as a word, in 
+\family typewriter
+D0.W
+\family default
+ and executes it.
+ If all went well, then the TOS might have changed, so to keep things right,
+ the potential new TOS is pulled from 
+\family typewriter
+SB_ARTHP
+\family default
+ back into 
+\family typewriter
+A1.L
+\family default
+ before setting no errors in D0, and returning to the caller.
+\end_layout
+
+\begin_layout Standard
+If errors were detected, the code makes an early exit back to the caller
+ with 
+\family typewriter
+D0
+\family default
+ set to the error code, and the 
+\family typewriter
+Z
+\family default
+ flag unset.
+\end_layout
+
+\begin_layout Subsection
+QDOS Conversion of Long to Float
+\end_layout
+
+\begin_layout Standard
+AS mentioned above, QDOS requires manual intervention to convert a long
+ word into a floating point value.
+ We already have room for a long word, but we need an additional two bytes
+ for a float, so first of all, we have to request two extra bytes.
+ Listing ? shows how we do this by setting 
+\family typewriter
+D1.L
+\family default
+ to 2, and calling the 
+\family typewriter
+pulGetSpace
+\family default
+ subroutine, in Listing ?, to do the hard work of getting the space and
+ keeping the pointers aligned.
+ On return, 
+\family typewriter
+A1.L
+\family default
+ is set ready for us to use to stack a 6 byte float value.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_QDOS.asm"
+lstparams "linerange={134-136},caption={Unsigned Peeks - QDOS Making stack space},label={lis:Unsigned-Peeks-QDOS-making-stack-space}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Unfortunately, QDOS is bereft in the maths package operations to convert
+ a long word to a float, so we have to do it manually.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Unsigned-Peeks-QDOS-Convering-long-to-float"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ does the hard work for us.
+ At the end, we should have the exponent value in register 
+\family typewriter
+D5.W
+\family default
+ and the mantissa in register 
+\family typewriter
+D6.L
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_QDOS.asm"
+lstparams "linerange={144-168},caption={Unsigned Peeks - QDOS Converting Long to Float},label={lis:Unsigned-Peeks-QDOS-Convering-long-to-float}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+How does it work? I was hoping you wouldn't ask!
+\end_layout
+
+\begin_layout Subsection
+QL Floating Point Values
+\end_layout
+
+\begin_layout Standard
+The QL's internal floating point format is a 2 byte exponent and a 4 byte
+ mantissa.
+ What are they? Well, if you have a number such as 
+\begin_inset Formula $1.23\times10^{3}$
+\end_inset
+
+then the mantissa is the 
+\begin_inset Formula $1.23$
+\end_inset
+
+ and the exponent is 
+\begin_inset Formula $3$
+\end_inset
+
+ and the number is 
+\begin_inset Quotes qld
+\end_inset
+
+normalised
+\begin_inset Quotes qrd
+\end_inset
+
+ when the mantissa is 
+\begin_inset Quotes qld
+\end_inset
+
+n.something
+\begin_inset Quotes qrd
+\end_inset
+
+.
+ Zero is a special case.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula $1.23\times10^{3}$
+\end_inset
+
+ could easily be written as 
+\begin_inset Formula $12.3\times10^{2}$
+\end_inset
+
+ or 
+\begin_inset Formula $123\times10^{1}$
+\end_inset
+
+ they all result in 1,230.
+ A properly normalised number, in this notation, is a single digit prior
+ to the decimal point, so 
+\begin_inset Formula $1.23\times10^{3}$
+\end_inset
+
+ is the correct value.
+\end_layout
+
+\begin_layout Standard
+The exponent is the power of 10 that the mantissa is to be multiplied by,
+ to get the actual
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Watch out for errors though, floating point is notorious for errors.
+ Many floating point values cannot be represented exactly.
+ One third for example.
+ 
+\end_layout
+
+\end_inset
+
+ value, in other words, the value is:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+mantissa*10^{exponent}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The same is true in base 2, or binary.
+ The value is 
+\begin_inset Formula $mantissa*2^{exponent}$
+\end_inset
+
+ as we are working in base 2, not base 10.
+ 
+\end_layout
+
+\begin_layout Standard
+In SMSQ/E, the mantissa is normalised when bit 31 or bit 30 of the mantissa
+ is set.
+ Bit 31 will be set if the number is negative, and bit 30 if positive.
+ The exponent only has the bottom 12 bits available as the top nibble is
+ used to determine if this is a decimal float value, a binary float value
+ or a hexadecimal float value.
+\end_layout
+
+\begin_layout Standard
+12 bits is 2,048 so the exponent has 12 bits of precision.
+ However, it is signed so the range is from 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+-2048
+\end_layout
+
+\end_inset
+
+ to 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+2047
+\end_layout
+
+\end_inset
+
+ which is from 3.094
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+-617
+\end_layout
+
+\end_inset
+
+ to 1.616
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+616
+\end_layout
+
+\end_inset
+
+ which is a decent enough range.
+\end_layout
+
+\begin_layout Standard
+The exponent is also offset by $800, which makes the actual value equal
+ to:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+mantissa*2^{exponent-\$800}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Zero is a special case where the exponent and mantissa are both zero.
+\end_layout
+
+\begin_layout Standard
+A couple of examples:
+\end_layout
+
+\begin_layout Itemize
+10.0 is represented as $0804 50000000
+\end_layout
+
+\begin_layout Itemize
+-10.0 is represented by $07FC D0000000
+\end_layout
+
+\begin_layout Standard
+Taking 10 first.
+\end_layout
+
+\begin_layout Standard
+The mantissa is %0101 0000 0000 0000 0000 0000 0000 0000 so we are only
+ interested in the %0101 bits, the trailing zeros can be ignored.
+\end_layout
+
+\begin_layout Standard
+The sign bit is zero, so the number is positive.
+ So far so good.
+ Bit 30, which represents 0.5 is set, as is bit 28 which represents 0.125,
+ the mantissa is therefore the addition of these fractions.
+ The result is 0.625.
+\end_layout
+
+\begin_layout Standard
+The exponent is $0804, subtracting $0800 we get $04, so 10 is 0.625 multiplied
+ by 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+
+or 16.
+ !0 is indeed equal to 0.625 times 16.
+\end_layout
+
+\begin_layout Standard
+Negative 10 next.
+\end_layout
+
+\begin_layout Standard
+The mantissa is %1101 0000 0000 0000 0000 0000 0000 0000 and again, we can
+ ignore all the trailing zero, keeping only %1101.
+\end_layout
+
+\begin_layout Standard
+Bit 31 is 1 so we are dealing with a negative number.
+\end_layout
+
+\begin_layout Standard
+Bits 30, 0.5, and 28, 0.125, are both set, so we have a value again, of 0.625.
+ Subtracting $800 from $7FC results in $FFFC or -4, and 0.625 times 2
+\begin_inset script superscript
+
+\begin_layout Plain Layout
+-4
+\end_layout
+
+\end_inset
+
+ is -10.
+ 
+\end_layout
+
+\begin_layout Standard
+The bits in the mantissa represent 
+\begin_inset Formula $\frac{1}{2^{31-bit}}$
+\end_inset
+
+starting at bit 30 which is the most significant bit, representing 
+\begin_inset Formula $\frac{1}{2^{1}}$
+\end_inset
+
+ or 0.5, down to bit 0, representing 
+\begin_inset Formula $\frac{1}{2^{31}}$
+\end_inset
+
+or 
+\begin_inset Quotes qld
+\end_inset
+
+not very much at all!
+\begin_inset Quotes qrd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So, back to the code.
+ If we assume 
+\family typewriter
+D7.L
+\family default
+ is zero, then we have the easy case where we move it into 
+\family typewriter
+D5.W
+\family default
+ and 
+\family typewriter
+D6.L
+\family default
+, it will set the 
+\family typewriter
+Z
+\family default
+ flag and we are ready to stack the value.
+\end_layout
+
+\begin_layout Standard
+If 
+\family typewriter
+D7.L
+\family default
+ is holding 10, then setting set 
+\family typewriter
+D5.W
+\family default
+ to $081f as a first attempt at an exponent.
+ Where did this value come from? I have no idea! I suspect it might be the
+ highest possible exponent value for a long word.
+ Adding 
+\family typewriter
+D7.L
+\family default
+ to itself will overflow if Bit 31 is set.
+ If so, then we have got a normalised number and we can stack it.
+\end_layout
+
+\begin_layout Standard
+We then enter a loop where we try halving the exponent and
+\end_layout
+
+\begin_layout Section
+UNFINISHED !!!!
+\end_layout
+
+\end_body
+\end_document

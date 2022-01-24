@@ -753,7 +753,7 @@ open channel
  to be simplified to one call.
  Without the vector we would have to open the channel, set the paper, strip
  and ink colours, and set the border width and colour too.
- I don;t know about you, but I prefer to do less typing in my programs!
+ I don't know about you, but I prefer to do less typing in my programs!
 \end_layout
 
 \begin_layout Standard
@@ -1280,16 +1280,11 @@ In this case, we don't really care if the PE is present or not.
 \family typewriter
 OUTLN
 \family default
- the channel as desired – and this will 
+ the channel as desired, but if it wasn't found, we can just 
 \family typewriter
 CLS
 \family default
- the channel too based on one of the parameters.
- If not found, we can just 
-\family typewriter
-CLS
-\family default
- the channel anyway.
+ the channel anyway and carry one – in this example.
 \end_layout
 
 \begin_layout Subsection
@@ -1335,11 +1330,9 @@ OUTLN
 \family typewriter
 D2
 \begin_inset Foot
-status collapsed
+status open
 
 \begin_layout Plain Layout
-
-\family typewriter
 The documentation doesn't mention a size!
 \end_layout
 
@@ -1896,8 +1889,11 @@ reference "lis:Tinyfpga-Request-Input"
 
  shows the code we need to obtain a line of input from the user.
  How long is a line? Well, that's all down to the programmer.
- However, we define an input buffer, at label input_buffer, to be 256 bytes
- long, plus an extra 2 bytes.
+ However, we define an input buffer, at label 
+\family typewriter
+input_buffer
+\family default
+, to be 256 bytes long, plus an extra 2 bytes.
  
 \family typewriter
 BUFFERSIZE
@@ -2123,7 +2119,7 @@ Printing the Text
 \end_layout
 
 \begin_layout Standard
-This wasn't part of the challenge, but I added it to show that the date
+This wasn't part of the challenge, but I added it to show that the data
  we typed in to the channel was in fact well received and correctly saved.
  Listing 
 \begin_inset CommandInset ref
@@ -2326,7 +2322,7 @@ D3.W
 \family typewriter
 D1.L
 \family default
- holds the job identifier, or -1 for the current job, and 
+ holds the job identifier, or -1 for the current job; and 
 \family typewriter
 A1.L
 \family default

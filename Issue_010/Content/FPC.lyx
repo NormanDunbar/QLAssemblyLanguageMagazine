@@ -398,7 +398,6 @@ end;
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 FPC FileOpen function
 \begin_inset CommandInset label
 LatexCommand label
@@ -420,7 +419,7 @@ name "lis:FPC-FileOpen-function"
 \end_layout
 
 \begin_layout Standard
-You can see, about half way down, there's a call to 
+You can see, on line 11, about half way down, there's a call to 
 \family typewriter
 io_open
 \family default
@@ -429,7 +428,17 @@ io_open
 \family typewriter
 io_open
 \family default
- is shown in Listing ?, and is found in the 
+ is shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:FPC-Io_open-function"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, and is found in the 
 \family typewriter
 qdos.inc
 \family default
@@ -464,6 +473,13 @@ You might also notice a function called
 \family typewriter
 FileGetDate
 \family default
+ in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:FPC-FileOpen-function"
+
+\end_inset
+
 ? That one simply returns -1 because it has yet to be written for the QL.
  And this is a gentle reminder that we need more people to get involved.
 \end_layout
@@ -644,7 +660,6 @@ end;
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 FPC Io_open function
 \begin_inset CommandInset label
 LatexCommand label
@@ -757,12 +772,15 @@ A0
 \end_layout
 
 \begin_layout Standard
-This is indeed correct, however, it should not be deleted as a spurious
- line of code.
+This is indeed correct, however, it 
+\emph on
+should not
+\emph default
+ be deleted as a spurious line of code.
  There are other parameter passing modes, documented on the 
 \begin_inset CommandInset href
 LatexCommand href
-name "Free Pascal Wiki here"
+name "Free Pascal Wiki"
 target "https://wiki.freepascal.org/m68k#Registers"
 literal "false"
 
@@ -788,8 +806,18 @@ spurious
 
 \begin_layout Standard
 Another problem that might bite you, is when you are usually a bit anally
- retentive about setting up the registers in order, you might, as I did,
- find yourself overwriting registers 
+ retentive
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Another technical term!
+\end_layout
+
+\end_inset
+
+ about setting up the registers in order, you might, as I did, find yourself
+ overwriting registers 
 \family typewriter
 D0
 \family default
@@ -797,8 +825,11 @@ D0
 \family typewriter
 D1
 \family default
- with QDOSSMSQ trap settings, for example, before you've grabbed the parameters
- passed from Pascal.
+ with QDOSSMSQ trap settings, for example, 
+\emph on
+before
+\emph default
+ you've grabbed the parameters passed from Pascal.
  How do I know this? Don't ask – but it took a lot of 
 \family typewriter
 QMON
@@ -844,7 +875,14 @@ D1
 \end_layout
 
 \begin_layout Standard
-You can see the channel ID being returned from 
+You can see, in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:FPC-Io_open-function"
+
+\end_inset
+
+, the channel ID being returned from 
 \family typewriter
 io_open_qlstr
 \family default

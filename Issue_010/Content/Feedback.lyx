@@ -12,6 +12,10 @@
 \definecolor{wwwDarkGreen}{HTML}{006400}
 \definecolor{wwwDarkOrchid}{HTML}{9932CC}
 \definecolor{wwwDarkOrange}{HTML}{FF8C00}
+
+% To allow tabl;es to be coloured in the background, 
+% not just the text.
+\usepackage{colortbl}
 \end_preamble
 \use_default_options true
 \maintain_unincluded_children false
@@ -264,7 +268,1735 @@ Wolfgang's Feedback on Label Alignment
 \end_layout
 
 \begin_layout Standard
-TODO!
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+TODO: Correct ql2win/win2ql to correctly trap the buffer overflow errors
+ -5 and -18 as below, and ignore them.
+ Also fix code so that if the last line has no linefeed, the buffer gets
+ written out at EOF, if it has contents.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+ALSO TODO: BUG FIX THIS:
+\end_layout
+
+\begin_layout Plain Layout
+I noted a more serious problem in your code for the filter programs :
+\end_layout
+
+\begin_layout Plain Layout
+At some stage you use the following line
+\end_layout
+
+\begin_layout Plain Layout
+moveq #buffSize,d4
+\end_layout
+
+\begin_layout Plain Layout
+where buffSize is 2*64, i.e.
+ 128.
+\end_layout
+
+\begin_layout Plain Layout
+But moveq handles 0-127 as positive, above that as negative, so that the
+\end_layout
+
+\begin_layout Plain Layout
+value in D4 becomes $ffffff80.
+ This means that when you make the IO
+\end_layout
+
+\begin_layout Plain Layout
+calls (move.w d4,d2), the OS thinks its buffer is $ff80 bytes long.
+ That
+\end_layout
+
+\begin_layout Plain Layout
+could be a serious problem (suppose a line is longer than 128 bytes,
+\end_layout
+
+\begin_layout Plain Layout
+you get a nice buffer overflow)...
+ Note that the documentation states
+\end_layout
+
+\begin_layout Plain Layout
+than the buffer length in D2 should be a positive word.
+\end_layout
+
+\begin_layout Plain Layout
+CHECKED: Correct.
+ Need to change to move.w #128,d4 instead of moveq.
+ Moveq.w rejects 128 as a value (GWASS).
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+I received an email from Wolfgang Lenerz about a foible he has discovered
+ in the way I format my source code for Assembly Language programs and utilities.
+ This is quite weird, in my opinion, but never the less, it needs looking
+ into.
+ Here are Wolfgang's comments:
+\end_layout
+
+\begin_layout Itemize
+I downloaded the QL Assembly Language issue 9.
+ As usual, it's fun to read! I have a small comment regarding your label
+ emplacements - I hope you don't mind.
+ Looking at the ql2win filter programs, it starts like this:
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l $00
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+name
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w name_end-name-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'QL2WIN'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Let's suppose I wanted to print out the version, I might start that by using
+ the lines:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+    lea version,a1
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w (a1)+,d1
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+somewhere in the code.
+ That would work fine.
+\end_layout
+
+\begin_layout Standard
+Now make the program name any number of odd characters, like 'QL2WINa' and
+ leave the rest as is.
+ One would think that this shouldn't make any difference.
+\end_layout
+
+\begin_layout Standard
+Strangely enough though, when you run this, the line 
+\begin_inset listings
+lstparams "showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+lea version,a1
+\end_layout
+
+\end_inset
+
+ will give you an address error
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Admittedly, you won't have a problem on 
+\emph on
+QPC
+\emph default
+ - but that is because 
+\emph on
+QPC
+\emph default
+ emulates an 68020, which can handle word and longword reads/writes at odd
+ addresses.
+ You won't have a problem with 
+\emph on
+SMSQmulator
+\emph default
+ either i.e.
+ no address error exception, but you will get "unexpected results"...
+\end_layout
+
+\end_inset
+
+ as A1 will point to an odd address!
+\end_layout
+
+\begin_layout Standard
+If you now move the 
+\family typewriter
+version
+\family default
+ label to the line 
+\family typewriter
+dc.w vers_end-version-2
+\family default
+, everything will be fine again, whether the name length is odd or even.
+\end_layout
+
+\begin_layout Standard
+So what happens? The assembler (at least the macro assembler, I don't know
+ about George's) will go through the file and note the address of the version
+ label.
+ This comes right after the bytes of the name, and if the name length is
+ uneven, that address is also odd.
+ Then the assembler continues and notes the 
+\family typewriter
+DC.W
+\family default
+ directive.
+ As this would lie at an odd address, it inserts a filler byte - which comes
+ 
+\emph on
+after
+\emph default
+ the 
+\family typewriter
+version
+\family default
+ label.
+\end_layout
+
+\begin_layout Standard
+If you now put the label on the same line as the 
+\family typewriter
+DC.W
+\family default
+ directive, the assembler puts in the filler byte before noting the address
+ of 
+\family typewriter
+version
+\family default
+ label.
+\end_layout
+
+\begin_layout Standard
+This is why there is no problem with leaving labels inside of actual code
+ even above the line the label refers to - code is always word aligned.
+ But if you start handling bytes, then you might get an odd address at a
+ label.
+\end_layout
+
+\begin_layout Standard
+This is why most people leave more space between the beginning of the line
+ and the start of the opcode - it leaves more space for putting the labels
+ in front of them.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Interesting! I'll answer the last point first, I put labels on a separate
+ line because I prefer it that way.
+ I was brought up on COBOL where that was required.
+ It has sort of stuck.
+ I never realised it would cause so much trouble though.
+\end_layout
+
+\begin_layout Standard
+I decided to run a few tests, using 
+\emph on
+GWASL
+\emph default
+, 
+\emph on
+GWASS
+\emph default
+ and 
+\emph on
+QMAC
+\emph default
+ which are the assemblers I own.
+ The source code was as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+;    section code
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l $00
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+name
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w name_end-name-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'QL2WIN'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start2
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l $00
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+name2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w name_end2-name2-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'QL2WIN'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end2 equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w vers_end2-version2-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end2 equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #0,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+;    end
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+I uncommented the 
+\family typewriter
+section code
+\family default
+ and 
+\family typewriter
+end
+\family default
+ lines to compile with 
+\emph on
+QMAC
+\emph default
+.
+ The results of my experimenting are shown in table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Weird-Label-Addresses"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="11" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+GWASL
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+GWASS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+QMAC
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+start
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0000
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0008
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0008
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0008
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+name_end
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$000D
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$000D
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$000D
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+version
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cellcolor{red}
+\end_layout
+
+\end_inset
+
+$000D
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cellcolor{red}
+\end_layout
+
+\end_inset
+
+$000D
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+cellcolor{red}
+\end_layout
+
+\end_inset
+
+$000D
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+vers_end
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$001C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$001C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$001C
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+start2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$001C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$001C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$001C
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+name2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0024
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0024
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0024
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+name_end2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0029
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0029
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0029
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+version2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$002A
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$002A
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$002A
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+vers_end2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0038
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0038
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0038
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Weird Label Addresses
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Weird-Label-Addresses"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The odd addresses, that we care about, are highlighted.
+ Just taking a slightly edited extract from the 
+\emph on
+GWASL
+\emph default
+/
+\emph on
+GWASS
+\emph default
+ listing files, we can see the problem:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+000D 00                        version
+\end_layout
+
+\begin_layout Plain Layout
+
+000E 000C                          dc.w vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+0010 5665 7273 696F 6E20 312E      dc.b 'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+001C                           vers_end-version-2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The label 
+\family typewriter
+version
+\family default
+, is at address $000D, or 13 in decimal, which is definitely odd.
+ A similar output can be seen in the listing file from 
+\emph on
+QMAC
+\emph default
+.
+\end_layout
+
+\begin_layout Standard
+Well, that's a bummer indeed! How to resolve the issue? Simples!
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l $00
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w $4afb
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+name
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w name_end-name-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'QL2WIN'
+\end_layout
+
+\begin_layout Plain Layout
+
+name_end equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+	ds.w 0		; Force word alignment
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+version
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.w vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.b 'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+vers_end equ *
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #0,d0
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+By adding the line 
+\begin_inset listings
+lstparams "showstringspaces=false"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+ds.w 0
+\end_layout
+
+\end_inset
+
+ to force word alignment, the problem goes away.
+ This is because the alignment byte is inserted 
+\emph on
+before
+\emph default
+ the label and not 
+\emph on
+at
+\emph default
+ the label as before.
+ This extract from the 
+\emph on
+GWASL
+\emph default
+/
+\emph on
+GWASS
+\emph default
+ listing files shows the fix in place:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+000E                           version
+\end_layout
+
+\begin_layout Plain Layout
+
+000E 000C                          dc.w vers_end-version-2
+\end_layout
+
+\begin_layout Plain Layout
+
+0010 5665 7273 696F 6E20 312E      dc.b 'Version 1.00'
+\end_layout
+
+\begin_layout Plain Layout
+
+001C                           vers_end-version-2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The version label is now correctly word aligned and has an even address.
+\end_layout
+
+\begin_layout Section
+Wolfgang's Comments on 
+\family typewriter
+Ql2Win_asm
+\end_layout
+
+\begin_layout Standard
+Wolfgang also sent me a second email, after asking if he could comment on
+ my code, with the following comments and observations.
+ 
+\end_layout
+
+\begin_layout Standard
+I'm happy for any comments to be sent to me regarding anything I write,
+ I'm not an expert and sometimes there are other/better ways to do what
+ I do, feel free to point them out!
+\end_layout
+
+\begin_layout Itemize
+I don't understand the reason for the code at label 
+\family typewriter
+gotLine
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+This may be down to my use of 
+\family typewriter
+IO_FSTRG
+\family default
+ which I was using originally, instead of 
+\family typewriter
+IO_FLINE
+\family default
+ which I changed it to use instead.
+ I think, if I remember, I had a bug or two, or something wasn't quite right
+ with 
+\family typewriter
+IO_FSTRG
+\family default
+ hence the change.
+ I might have forgotten to clean up afterwards!
+\end_layout
+
+\begin_layout Itemize
+You test for the presence of LF at the end of the string.
+ But, in your scheme, it will always be there!Well, only if the line was
+ shorter than the buffer length.
+ 
+\end_layout
+
+\begin_layout Standard
+Looking at the code (
+\family typewriter
+ql2win_asm
+\family default
+) I see that 
+\family typewriter
+gotLine
+\family default
+ looks for the linefeed, and if not there, skips to 
+\family typewriter
+putLine
+\family default
+ to write out the buffer, before reading the next chunk again by branching
+ back to 
+\family typewriter
+readLoop
+\family default
+.
+\end_layout
+
+\begin_layout Itemize
+Indeed, if you get a line that is too long for the buffer, the trap comes
+ back with a buffer full error (-5) (or, sometimes, mistakenly, with an
+ overflow error, -18) - and in that case you abandon the treatment as you
+ leave with the error.
+ So the only time you get to the label is when the line does have the correct
+ LF at the end - no need to check for it.
+\end_layout
+
+\begin_layout Standard
+This is 
+\emph on
+obviously
+\emph default
+ (now you mention it) a bug.
+ You are correct, if the buffer is too small I will get an error, so I'll
+ never be able to read the next chunk of the partial line.
+ Thanks for pointing this out.
+ 
+\end_layout
+
+\begin_layout Itemize
+You should really also treat the 
+\family typewriter
+bffl
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+
+\family typewriter
+Buffer Overflow
+\end_layout
+
+\end_inset
+
+
+\family default
+ error, by just writing the line so far, and then getting the rest of it.
+\end_layout
+
+\begin_layout Standard
+See above! I thought I was doing this, but the trap handling code breaks
+ it.
+ Duh!
+\end_layout
+
+\begin_layout Itemize
+When there is an EOF at the read trap, you leave w/o error.
+ What if the last file in the file didn't end with LF or CR/LF? You'll also
+ get an EOF, but there will be a remainder still in the buffer.
+ Shouldn't the remainder still be written out?
+\end_layout
+
+\begin_layout Standard
+Yes, another bug that needs fixing.
+ Thanks.
+\end_layout
+
+\begin_layout Itemize
+Consider this code:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+(jump here from start)
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+     cmpi.w  #numchans,(a7)    ; Two channels is a must
+\end_layout
+
+\begin_layout Plain Layout
+
+     beq.s   ql2win            ; Ok, skip error bit
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+bad_parameter
+\end_layout
+
+\begin_layout Plain Layout
+
+     moveq   #err_bp,d0        ; Guess!
+\end_layout
+
+\begin_layout Plain Layout
+
+     bra     errorExit         ; Die horribly
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ql2win
+\end_layout
+
+\begin_layout Plain Layout
+
+     moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+After checking for the correct number of channels, you branch to 
+\family typewriter
+ql2win
+\family default
+ if that is ok, else you continue and treat the error.
+ May I suggest you do the contrary? Check for correct number of channels
+ and branch to the error code if there is a problem, else continue normally.
+ Something like this:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+bad_parameter
+\end_layout
+
+\begin_layout Plain Layout
+
+     moveq   #err_bp,d0        ; Guess!
+\end_layout
+
+\begin_layout Plain Layout
+
+     bra     errorExit         ; Die horribly
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+(jump here from start)
+\end_layout
+
+\begin_layout Plain Layout
+
+checkStack
+\end_layout
+
+\begin_layout Plain Layout
+
+     cmpi.w  #numchans,(a7)    ; Two channels is a must
+\end_layout
+
+\begin_layout Plain Layout
+
+     bne.s   bad_parameter     ;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+ql2win
+\end_layout
+
+\begin_layout Plain Layout
+
+     moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The reason is two-fold.
+\end_layout
+
+\begin_layout Standard
+First of all, a branch not taken is faster than a branch taken.
+ So here, you only take the branch if there is a problem with the parameters,
+ and in that case you don't really care if that takes a microsecond more.
+\end_layout
+
+\begin_layout Standard
+Second, you don't interrupt the program flow for whoever is reading your
+ program.
+ Instead of also having to (mentally) jump to the 
+\family typewriter
+ql2win
+\family default
+ label, you just continue reading.
+ (Admittedly, this last point is more of a personal preference).
+\end_layout
+
+\begin_layout Standard
+The same reasoning could also be applied in the 
+\family typewriter
+readloop
+\family default
+, after the trap where you test 
+\family typewriter
+D0
+\family default
+ for errors - only branch if there is an error, not if there isn't.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+All of which makes perfect sense, thanks.
+ I usually try to consider the most often occurring case first, but occasionally
+, I do things in a different order.
+ I must try harder.
+\end_layout
+
+\begin_layout Itemize
+Maybe you should tell your readers that you don't explicitly close the channels
+ that were opened, since the OS automatically closes all channels opened
+ (or rather owned) by a job when that job is removed.
+\end_layout
+
+\begin_layout Standard
+A good suggestion, thanks.
+ I will.
+ In fact, I'll do it now!
+\end_layout
+
+\begin_layout Standard
+I have omitted to make clear that any open channels, chunks of heap space
+ allocated to a specific job, will be reclaimed by the operating system
+ when the job is removed from the system, either by itself or forcibly by
+ another job.
+ This keeps things nice and tidy and is rather helpful, 
+\emph on
+however
+\emph default
+, there's no harm whatsoever in closing files yourself and returning allocated
+ heap space back to the Common Heap.
+\end_layout
+
+\begin_layout Itemize
+Finally, I presume that you didn't use the SMSQE queue handling (at smsq_ioq_)
+ for didactic reasons for your circular buffer (which is what an SMSQE queue
+ is).
+\end_layout
+
+\begin_layout Standard
+Ah yes, the QDOS/SMSQ/E Queue Handling functions! Marcel mentioned those
+ (on the QL Forum) as well.
+ I was aware of those, but this is some code I've written in C++ for a project,
+ and I will soon (for certain values of soon) be converting it to Atmel
+ AVR Assembly Language for a similar project.
+ I thought I would try it out on a language I'm more familiar with first.
+ It was also a fun project to work with, having been away from the keyboard
+ for a while.
+\end_layout
+
+\begin_layout Itemize
+I know these were a great number of comments, but they wouldn't exist if
+ you hadn't taken it upon yourself to write your greatly enjoyable series!
+\end_layout
+
+\begin_layout Standard
+Comments are 
+\emph on
+always
+\emph default
+ welcome, thanks.
+ It's good to hear that I have at least two readers! (Not counting myself,
+ and also, why do I always find bugs/typos after sending out the eMagazine!)
+\end_layout
+
+\begin_layout Standard
+Thanks Wolfgang.
 \end_layout
 
 \end_body

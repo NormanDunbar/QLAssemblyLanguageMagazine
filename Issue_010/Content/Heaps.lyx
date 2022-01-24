@@ -1,0 +1,4442 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_author "Norman Dunbar"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style british
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Heaps
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Note
+\series default
+: Unless otherwise noted in the text, code listings in this chapter are
+ fragments only, they do not make up a full, working application.
+\end_layout
+
+\begin_layout Standard
+There are two kinds of heap in the QL:
+\end_layout
+
+\begin_layout Itemize
+The 
+\emph on
+Common Heap.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+User Heap(s).
+\end_layout
+
+\begin_layout Standard
+What's the difference? Well, details are below but in summary:
+\end_layout
+
+\begin_layout Itemize
+Allocation requests in the common heap will have a 16 byte overhead added
+ to the space requested, and the amount requested will be rounded up to
+ a multiple of 16.
+ However, if this leaves a 16 byte gap, then the value will be rounded up
+ to a multiple of 32 instead.
+ 
+\series bold
+Warning
+\series default
+: This is an implementation detail and you should not rely on the rounding
+ being 16 or 32.
+ Check 
+\family typewriter
+D1
+\family default
+ on return and make sure you got what you requested
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Thanks Marcel.
+\end_layout
+
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+The value returned in 
+\family typewriter
+D1
+\family default
+, the amount of space allocated, 
+\emph on
+includes
+\emph default
+ the 16 byte overhead plus the rounding;
+\end_layout
+
+\begin_layout Itemize
+The 16 byte overhead is prior to the address returned in 
+\family typewriter
+A0
+\family default
+ for the base of the space allocated;
+\end_layout
+
+\begin_layout Itemize
+When deallocating common heap, you don't need to remember the size that
+ was allocated;
+\end_layout
+
+\begin_layout Itemize
+Common heap addresses are absolute;
+\end_layout
+
+\begin_layout Itemize
+User heap space requests are rounded to multiples of 8 bytes;
+\end_layout
+
+\begin_layout Itemize
+There is an 8 byte overhead, but this is 
+\emph on
+not added
+\emph default
+ to the size requested;
+\end_layout
+
+\begin_layout Itemize
+The overhead is at the two long words pointed to by the address returned
+ in 
+\family typewriter
+A0
+\family default
+ for the base of the area allocated;
+\end_layout
+
+\begin_layout Itemize
+When deallocating user heap space, you need to remember the size of the
+ space allocated.
+\end_layout
+
+\begin_layout Itemize
+User heap addresses are relative to 
+\family typewriter
+A6
+\family default
+.
+\end_layout
+
+\begin_layout Section
+Common Heap
+\end_layout
+
+\begin_layout Standard
+The common heap is an area of RAM, allocated from the free space area in
+ the memory map, between the addresses pointed to by 
+\family typewriter
+SYS_CHPB
+\family default
+ – the base of the common heap area – and 
+\family typewriter
+SYS_FSBB
+\family default
+ – the base of the free memory area – both relative to 
+\family typewriter
+A6
+\family default
+ of course! The common heap is mainly used by QDOS/SMSQ to hold such things
+ as channel definition blocks and other bits of working storage required
+ by various drivers.
+ Individual jobs can also request areas of space in the common heap for
+ their own use.
+\end_layout
+
+\begin_layout Itemize
+When a channel is closed the space allocated in the common heap will be
+ reclaimed automatically; 
+\end_layout
+
+\begin_layout Itemize
+Likewise, if a driver is (able to be) removed from the system, it's working
+ storage space will be reclaimed;
+\end_layout
+
+\begin_layout Itemize
+When a job is removed from the system, perhaps forcibly, then any areas
+ of common heap owned by the job are also reclaimed by the system.
+\end_layout
+
+\begin_layout Standard
+All of the above can also 
+\begin_inset Quotes eld
+\end_inset
+
+voluntarily
+\begin_inset Quotes erd
+\end_inset
+
+ free up any space obtained in the common heap, when it is done with.
+\end_layout
+
+\begin_layout Standard
+To try to avoid fragmenting the common heap, if is advisable to free up
+ space in the opposite order from that in which is was allocated.
+ For example, if a job requests 10 Kb, 5 Kb then 30 Kb from the common heap,
+ it should, but it's not mandatory, to free the 30 Kb allocation, then the
+ 5 Kb allocation and finally, the 10 Kb allocation.
+ This doesn't work all the time – some other jobs may have allocated space
+ between those mentioned and freeing will still leave the common heap a
+ little more fragmented than is desirable.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Note
+\series default
+: There are similar problems with heap allocation on other operating systems,
+ not just the QL.
+ The advice on those systems is also, deallocate in the opposite order that
+ you allocated.
+\end_layout
+
+\begin_layout Standard
+A job should, really, request a single chunk of common heap and use that
+ as a user heap, allocating space from the user heap rather than the common
+ heap, especially if the allocations are small in size
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Based on which definition of 
+\begin_inset Quotes eld
+\end_inset
+
+small
+\begin_inset Quotes erd
+\end_inset
+
+ I wonder?
+\end_layout
+
+\end_inset
+
+ as this will help to reduce common heap fragmentation.
+ User heaps are discussed in the next section.
+\end_layout
+
+\begin_layout Standard
+Fragmentation of the common heap can lead to situations such like a channel
+ which cannot be opened as there isn't enough 
+\emph on
+contiguous
+\emph default
+ free space to create a channel definition block.
+ 
+\end_layout
+
+\begin_layout Standard
+Note that when allocating common heap space, the amount of RAM allocated
+ will be rounded up to a multiple of 16 (or, potentially, 32) bytes.
+ Each chunk of common heap allocated will have a 16 byte overhead on top
+ of the space requested.
+ For example:
+\end_layout
+
+\begin_layout Itemize
+The code requests 10 bytes of common heap;
+\end_layout
+
+\begin_layout Itemize
+The allocation will be 16 bytes after rounding up;
+\end_layout
+
+\begin_layout Itemize
+The total space allocated from the common heap's free space will be 32 to
+ include the 16 byte overhead;
+\end_layout
+
+\begin_layout Itemize
+The value returned in 
+\family typewriter
+D1
+\family default
+, the amount of space allocated, will include the overhead and rounding
+ – it will be 32.
+\end_layout
+
+\begin_layout Standard
+The 16 byte overhead holds the data detailed in Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Common-Heap-Header"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="5" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="60text%">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Offset(A0)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Size
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Description
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-$010
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Long
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Length of this block.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-$0C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Long
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Either a pointer to the address of the I/O driver code which will free this
+ block; or a pointer to the next free area in the common heap; or zero.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-$08
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Long
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ID of the job which owns this area of common heap.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-$04
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Long
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Address of a byte to be set when this area of heap is freed.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Common Heap Header
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Common-Heap-Header"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The long word at offset -$0C will normally be zero for space allocated by
+ jobs – not drivers – as the free space list in the common heap is maintained
+ by a separate linked list of pointers, based on the system variable 
+\family typewriter
+SYS_FSBB
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Most jobs I've looked at, including many
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Ahem, all!
+\end_layout
+
+\end_inset
+
+ of my own, don't bother with 
+\emph on
+user
+\emph default
+ heaps – see next section – and simply allocate space in the 
+\emph on
+common
+\emph default
+ heap as and when required.
+ Perhaps the authors, myself included, need to think about which heap is
+ best for the application?
+\end_layout
+
+\begin_layout Subsection
+Traps
+\end_layout
+
+\begin_layout Standard
+Note that when allocating common heap space, the amount of RAM allocated
+ will be rounded up to a multiple of 16 (or 32) bytes.
+ 
+\end_layout
+
+\begin_layout Standard
+There are two traps to manage allocations in the common heap.
+\end_layout
+
+\begin_layout Subsubsection
+Sms.achp
+\end_layout
+
+\begin_layout Standard
+This trap call used to be known as 
+\family typewriter
+MT_ALLOC
+\family default
+ in QDOS, but is now called 
+\family typewriter
+SMS.ACHP
+\family default
+ in SMSQ/E.
+ The obligatory table of parameters can be seen in Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:SMS.ACHP-Parameters"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D3
+\family default
+ is interesting, Pennel doesn't mention it, but the SMSQ/E Manual (version
+ 4.5) says that memory will be allocated in Fast RAM if 
+\family typewriter
+D3
+\family default
+ is zero, and in ST compatible RAM if 
+\begin_inset Quotes eld
+\end_inset
+
+acsi
+\begin_inset Quotes erd
+\end_inset
+
+, on those machines with ST and Fast RAM.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="19" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="50text%">
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Calling Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SMS.ACHP = $18
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Number of bytes required.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D2.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ID of owning job.
+ -1 indicates the current job.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D3.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Zero, or 
+\begin_inset Quotes eld
+\end_inset
+
+acsi
+\begin_inset Quotes erd
+\end_inset
+
+ for Atari TT and machines with ST and Fast RAM.
+ 
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Return Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Error code, or zero for no errors.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Actual number of bytes allocated, including the 16 byte overhead.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Base address of the allocated space.
+ This is the first byte after the header for the block.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Errors in D0
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ERR.IJOB
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Invalid job ID
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ERR.IMEM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Out of memory
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SMS.ACHP Parameters
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:SMS.ACHP-Parameters"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Example of Use
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Common-Heap-Allocation-Example"
+
+\end_inset
+
+ shows a small example of requesting 1 byte of space from the common heap,
+ then returning it to the heap.
+ I tested the code by running it through QMON2 to check on the numbers returned
+ in the appropriate registers and confirm the rounding and so on.
+ I also checked the 16 bytes prior to the base address in 
+\family typewriter
+A0
+\family default
+ and the overhead data can be seen there.
+\end_layout
+
+\begin_layout Standard
+The figures listed are examples from my execution, your figures, should
+ you attempt this code, will most likely differ,
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+sms.achp  equ $18               ; Allocate common heap
+\end_layout
+
+\begin_layout Plain Layout
+
+sms.rchp  equ $19               ; Free common heap 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.achp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #1,d1                 ; A single byte
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #-1,d2                ; For this job 
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #0,d3                 ; For SMSQ/E on ST machines
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; allocate
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Ok?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s allocated             ; Yes, free the heap space
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; No, return error of S*BASIC
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+allocated
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.rchp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; Free heap space
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; There are no errors, ever!
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Common Heap Allocation Example
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Common-Heap-Allocation-Example"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When I executed the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Common-Heap-Allocation-Example"
+
+\end_inset
+
+ and traced it with QMON2, I extracted the following detail:
+\end_layout
+
+\begin_layout Itemize
+The base of the allocated block of RAM was at address $1014A0, this was
+ the address passed back in 
+\family typewriter
+A0.L
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+D1.L
+\family default
+ returned the value $20 – for 32 bytes allocated in total;
+\end_layout
+
+\begin_layout Itemize
+The 16 bytes prior to the base address were:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+
+\family typewriter
+-16(A0)
+\family default
+ = $00000020 = the size of the block allocated;
+\end_layout
+
+\begin_layout Itemize
+-
+\family typewriter
+12(A0)
+\family default
+ = $00000000 = Pointer to next free section of common heap, or driver deallocati
+on code;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+-8(A0)
+\family default
+ = $00000000 = Owning job Id;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+-4(A0)
+\family default
+ = $00000000 = Address of byte to be set when this block is freed.
+\end_layout
+
+\end_deeper
+\begin_layout Standard
+Interesting would you say? I requested a single byte yet I see that 32 bytes
+ were allocated.
+ This confirms that the 16 byte overhead is 
+\emph on
+included
+\emph default
+ in the allocated space value returned in 
+\family typewriter
+D1
+\family default
+, which none of the docs
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Pennel, Dickens and QDOS/SMSQ Reference Manual, 4.5.
+\end_layout
+
+\end_inset
+
+ mention.
+ 
+\end_layout
+
+\begin_layout Standard
+I did some other tests with different request sizes and in all cases, it
+ appears that the rounding is to 16 bytes and not to 8
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+I wonder if Pennel says 8 because that's what QDOS did, but SMSQ/E uses
+ a 16 byte rounding instead?
+\end_layout
+
+\end_inset
+
+ as indicated in the documentation.
+\end_layout
+
+\begin_layout Subsubsection
+Sms.rchp
+\end_layout
+
+\begin_layout Standard
+This trap call used to be known as 
+\family typewriter
+MT_RECHP
+\family default
+ in QDOS, but is now called 
+\family typewriter
+SMS.RCHP
+\family default
+ in SMSQ/E.
+ The obligatory table of parameters can be seen in Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:SMS.RCHP-Parameters"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="16" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="50text%">
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Calling Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SMS.RCHP = $19
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Base address of the allocated space.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Return Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ignore, no errors are returned.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Errors in D0
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+None – the trap call never fails.
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SMS.RCHP Parameters
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:SMS.RCHP-Parameters"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Common-Heap-Allocation-Example"
+
+\end_inset
+
+ shows an example of the use of this trap.
+\end_layout
+
+\begin_layout Subsection
+Vectors
+\end_layout
+
+\begin_layout Standard
+There are a pair of vectored routines, 
+\family typewriter
+MEM.ACHP
+\family default
+ and 
+\family typewriter
+MEM.RCHP
+\family default
+, which enable code to manipulate space in the common heap.
+ These vectors are atomic and must be called with the processor running
+ in Supervisor Mode.
+ They are normally used by device drivers to allocate space in the common
+ heap for channel definition blocks for the Open function of the driver.
+ The entire area allocated is zero filled if enough RAM existed in one contiguou
+s block.
+\end_layout
+
+\begin_layout Standard
+The 16 byte header for the area allocated is not filled in by the vectored
+ code, it is the responsibility of the device driver code to do this.
+ 
+\end_layout
+
+\begin_layout Standard
+Other than to mention that they exist, their use from within a device driver
+ is beyond the scope of this eMagazine, and so they will not be discussed
+ further.
+\end_layout
+
+\begin_layout Section
+User Heaps
+\end_layout
+
+\begin_layout Standard
+If your job requires allocating small chunks of RAM, perhaps for a linked
+ list, or a tree of structures, then rather than slicing and dicing the
+ common heap into tiny bits, it is advisable to allocate a large, single,
+ chunk of common heap and use that as a user heap to allocate the small
+ chunks.
+ The advantage of this process is that when done, you simple deallocate
+ the common heap space and free up a large chunk on one go, rather than
+ having to free up lots of small chunks.
+ This helps to prevent fragmentation of the common heap.
+\end_layout
+
+\begin_layout Standard
+The steps involved in this process are:
+\end_layout
+
+\begin_layout Itemize
+Allocate a suitable sized area of common heap to be used for your user heap;
+\end_layout
+
+\begin_layout Itemize
+Link the allocated area into your job's user heap space;
+\end_layout
+
+\begin_layout Itemize
+Allocate space in the user heap, as and when required;
+\end_layout
+
+\begin_layout Itemize
+Use and abuse the user heap space allocated;
+\end_layout
+
+\begin_layout Itemize
+Optionally, but good practice, deallocate used space when finished with;
+\end_layout
+
+\begin_layout Itemize
+Release the common heap at job end – this may be manually done, or left
+ to QDOS/SMSQ to do it automatically.
+\end_layout
+
+\begin_layout Standard
+Note that when allocating user heap space, the amount of RAM allocated will
+ be rounded up to a multiple of 8 bytes.
+ Each chunk of user heap allocated will have an 8 byte overhead on top of
+ the space requested, and possibly rounded up.
+ For example:
+\end_layout
+
+\begin_layout Itemize
+Request 10 bytes of user heap;
+\end_layout
+
+\begin_layout Itemize
+The allocation will be 16 bytes after rounding up;
+\end_layout
+
+\begin_layout Itemize
+The total space allocated from the user heap's free space will be 16 as
+ the 8 byte overhead is 
+\emph on
+not added
+\emph default
+ to the requested size!
+\end_layout
+
+\begin_layout Standard
+The 8 byte overhead holds the data detailed in Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:User-Heap-Header"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="3" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="60text%">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Offset
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Size
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Description
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$00
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Long
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Length of this block.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$04
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Long
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A 
+\emph on
+relative
+\emph default
+ pointer to the next free space in the user heap space.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+User Heap Header
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:User-Heap-Header"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The overhead will be written 
+\emph on
+to the start of the allocated heap space
+\emph default
+, at the address returned in 
+\family typewriter
+A0
+\family default
+, and is considered part of the user heap allocation.
+ This is different to the overhead in common heap space.
+\end_layout
+
+\begin_layout Standard
+You will need to save the size of each and every user heap allocation so
+ that it can be returned to the heap's free space when done with.
+ You can do this manually – possibly dangerous if you get the sizes wrong
+ – if you only have a couple of allocations, or request 8 bytes more for
+ each allocation and use the space allocated from address 
+\family typewriter
+8(A0,A6)
+\family default
+ on return, rather than that from 
+\family typewriter
+0(A0,A6)
+\family default
+.
+ You can also, if applicable, simple rerun the code to create the user heap
+ space which will free up all allocated chunks in the user heap in one fell
+ swoop.
+\end_layout
+
+\begin_layout Subsection
+Traps
+\end_layout
+
+\begin_layout Standard
+Note that when allocating user heap space, the amount of RAM allocated will
+ be rounded up to a multiple of 8 bytes.
+ Each allocation will itself have an 8 byte overhead as discussed in Table
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:User-Heap-Header"
+
+\end_inset
+
+, the 8 bytes is taken out of the space requested and is the first two long
+ words in the allocated section of the heap.
+ 
+\end_layout
+
+\begin_layout Standard
+In other words, if you need 10 bytes, ask for 18 because the first 8 bytes,
+ at the address returned in 
+\family typewriter
+A0
+\family default
+, will contain the 8 byte overhead.
+ This is useful to keep a hold of as the length of the block is needed when
+ returning the allocated RAM back to the user heap free space with 
+\family typewriter
+SMS.REHP
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+All addresses are relative to 
+\family typewriter
+A6
+\family default
+ when allocating or deallocating user heap space.
+\end_layout
+
+\begin_layout Subsubsection
+Sms.alhp
+\end_layout
+
+\begin_layout Standard
+Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:SMS.ALHP-Parameters"
+
+\end_inset
+
+ shows the registers that need setting up to call the 
+\family typewriter
+SMS.ALHP
+\family default
+ trap to allocate memory in a user heap.
+ The return parameters are interesting too.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="19" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="50text%">
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Calling Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SMS.ALHP = $0C
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Number of bytes required.
+ Does not include the 8 byte overhead.
+ Perhaps ask for 8 extra bytes?
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Pointer to a pointer to the free space list.
+ Relative to A6.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A6.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Base address of job.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Return Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Error code, or zero for no errors.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Actual number of bytes allocated – should be the number requested and includes
+ the 8 byte overhead.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Base address of the allocated space.
+ This points to the first byte of the header for the block.
+ Relative to A6.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A6
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Preserved.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Errors in D0
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+ERR.IMEM
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No area of free space was large enough to allocate.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SMS.ALHP Parameters
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:SMS.ALHP-Parameters"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+Sms.rehp
+\end_layout
+
+\begin_layout Standard
+This trap call is used when initially adding an area of RAM to be used as
+ a user heap, or when freeing an allocation within the user heap.
+ In the former case, the long word at 
+\family typewriter
+(A6,A1.L)
+\family default
+ should be zero, in the latter, it will be some other, non-zero value.
+ Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:User-Heap-Creation-Example"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:User-Heap-Deallocation"
+
+\end_inset
+
+ show examples of both.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="19" columns="2">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="left" valignment="top" width="50text%">
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Calling Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+SMS.REHP = $0D
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Length of space to link (back) into a heap
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Base address of the space to be linked in/back.
+ Relative to A6.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A1.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Pointer to a pointer to the free space list.
+ Relative to A6.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A6.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Base address of job.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Return Parameters
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Register
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Usage
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D0.L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ignore, no errors are returned.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D1L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+D3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A0L
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+A3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="left" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Corrupted.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Errors in D0
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell multicolumn="1" alignment="left" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+None – the trap call never fails.
+\end_layout
+
+\end_inset
+</cell>
+<cell multicolumn="2" alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+SMS.RCHP Parameters
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:SMS.RCHP-Parameters-1"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsubsection
+User Heap Example
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:User-Heap-Creation-Example"
+
+\end_inset
+
+ shows a small example where a chunk of 64 Kb of common heap is requested
+ from the system, and, if successfully allocated, is converted to a user
+ heap.
+ the code checks return values from traps – it's assembled to be 
+\family typewriter
+CALL
+\family default
+ed from SuperBASIC/SBASIC – and if any errors occur, the code exits back
+ to SuperBASIC/SBASIC with the error code.
+\end_layout
+
+\begin_layout Standard
+The allocated area of common heap is then converted to a user heap by simply
+ making sure that the free space address, pointed to by the long word at
+ 
+\family typewriter
+myHeap
+\family default
+, is zero, then calling the 
+\family typewriter
+SMS.REHP
+\family default
+ trap.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+sms.achp  equ $18
+\end_layout
+
+\begin_layout Plain Layout
+
+sms.rehp  equ $0d
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; First, allocate a 64Kb common heap area:
+\end_layout
+
+\begin_layout Plain Layout
+
+start   
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.achp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #65536,d1            ; 64Kb required
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #-1,d2                ; This job will be the owner
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; Allocate the space
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Did it work?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s heapOk                ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Handle out of memory errors here.
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; Back to SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+        
+\end_layout
+
+\begin_layout Plain Layout
+
+; We have a common heap, convert it to a user heap :
+\end_layout
+
+\begin_layout Plain Layout
+
+heapOk  
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.rehp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    suba.l a6,a0                ; We need A0 to be A6 relative
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a1               ; Pointer to heap header
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l 0,(a1)               ; Indicate this is a new heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    suba.l a6,a1                ; This needs to be relative A6
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; That should do it (No errors)
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s useHeap               ; Go and use the heap space
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+myHeap
+\end_layout
+
+\begin_layout Plain Layout
+
+    ds.l 1                      ; Pointer to free space
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+User Heap Creation Example
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:User-Heap-Creation-Example"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Once we have an area of RAM set aside as a user heap, we can begin to use
+ it.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:User-Heap-Allocation"
+
+\end_inset
+
+ is an example of allocating 200 bytes from the newly created user heap.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+sms.alhp  equ $0c
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Allocate space in the user heap.
+\end_layout
+
+\begin_layout Plain Layout
+
+useHeap
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.alhp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #200,d1              ; I need 200 bytes of user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a0               ; MyHeap = Free space pointer
+\end_layout
+
+\begin_layout Plain Layout
+
+    suba.l a6,a0                ; Relative to A6        
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; Allocate 200 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Did it work?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s doStuff               ; Go and use the allocation
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Handle out of user heap memory errors here
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; Back to SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+        
+\end_layout
+
+\begin_layout Plain Layout
+
+; Now we have allocated some user heap, use it somehow
+\end_layout
+
+\begin_layout Plain Layout
+
+doStuff 
+\end_layout
+
+\begin_layout Plain Layout
+
+    adda.l a6,a0                ; Absolute the address
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+User Heap Allocation
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:User-Heap-Allocation"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At this point, running via QMON2, I checked the allocated user heap space
+ to see if the 8 byte overhead was prior to the address returned in 
+\family typewriter
+A0
+\family default
+, as per the common heap; or at the returned address.
+ The overhead is indeed at the address pointed to by 
+\family typewriter
+(A6,A0.L)
+\family default
+ on return and after 
+\begin_inset Quotes eld
+\end_inset
+
+unrelativing
+\begin_inset Quotes erd
+\end_inset
+
+ the address, 
+\family typewriter
+0(A0)
+\family default
+ holds the long word $000000C8 which is the length of the block, the long
+ word at 
+\family typewriter
+4(A0)
+\family default
+ is zero.
+\end_layout
+
+\begin_layout Standard
+When we have finished using the 200 bytes, we can return it to the user
+ heap, in case we need more space at some other point in the code.
+ This uses the same trap call which created the user heap in the first place,
+ but this time, the pointer to the free space, 
+\family typewriter
+myHeap
+\family default
+, will not be zero as it points to the first free chunk of user heap.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+freeUser  
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.rehp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #200,d1              ; Size is 200 bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+    suba.l a6,a0                ; A0 has to be relative a6
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a1               ; Pointer to top of heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    suba.l a6,a1                ; Which has also to be relative A6
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; Deallocate the 200 byte area
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; Back to SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+User Heap Deallocation
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:User-Heap-Deallocation"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+You will note that I have hard coded the block size in register 
+\family typewriter
+D1
+\family default
+ for this trap call.
+ This is one way to do it especially if you only required a couple of chunks
+ of user heap, keeping a note of the sizes isn't difficult in that case.
+ However, if you are allocating lots of user heap space, or chunks of many
+ different sizes, what to do?
+\end_layout
+
+\begin_layout Standard
+My advice would be, allocate space for 8 bytes plus what your code needs,
+ and use the data from 
+\family typewriter
+8(A6,A0.L)
+\family default
+ onwards, and do not touch anything below that address.
+ When you are done with the space and about to free it, simply load 
+\family typewriter
+D1
+\family default
+ from 
+\family typewriter
+0(A6,A0.L)
+\family default
+ to get the block size, and 
+\emph on
+Robert is your mother's brother
+\emph default
+.
+ Obviously, if you have 
+\begin_inset Quotes eld
+\end_inset
+
+unrelatived
+\begin_inset Quotes erd
+\end_inset
+
+ the base address of the allocated space, you would use the data from 
+\family typewriter
+8(A0)
+\family default
+ and load 
+\family typewriter
+D1
+\family default
+ from 
+\family typewriter
+(A0)
+\family default
+ prior to freeing the space again.
+\end_layout
+
+\begin_layout Standard
+Once all the user heap space has been freed up and is no longer required,
+ the chances are that your application is about to exit.
+ At this point, it could exit and automatically free up the 64 Kb chunk
+ of common heap, without any further work on the code's part, or, the code
+ could be nice and free it's own allocation with the 
+\family typewriter
+SMS.RCHP
+\family default
+ trap call.
+\end_layout
+
+\begin_layout Subsubsection
+Relative Addresses
+\end_layout
+
+\begin_layout Standard
+In the listings above, you will note that I add or subtract 
+\family typewriter
+A6
+\family default
+ from 
+\family typewriter
+A0
+\family default
+ and 
+\family typewriter
+A1
+\family default
+ at various places in the code.
+ This is because when using these traps to manipulate user heap space, those
+ registers have to be relative to 
+\family typewriter
+A6
+\family default
+.
+ It's a bit of a faff and there are a couple of ways around this problem:
+\end_layout
+
+\begin_layout Itemize
+Do as I have done, and add or subtract 
+\family typewriter
+A6
+\family default
+ as necessary, then address user heap areas using offsets on 
+\family typewriter
+(A0)
+\family default
+ as required.
+\end_layout
+
+\begin_layout Itemize
+Do all your addressing as offsets on 
+\family typewriter
+(A6,A0.L)
+\family default
+ as necessary, although this addressing mode takes 2 extra clock cycles
+ over just 
+\family typewriter
+(A0)
+\family default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+True, but each and every 
+\family typewriter
+ADD
+\family default
+ or 
+\family typewriter
+SUB
+\family default
+ of 
+\family typewriter
+A6
+\family default
+ to/from 
+\family typewriter
+A0
+\family default
+ or 
+\family typewriter
+A1
+\family default
+ will cost you 6 clock cycles, so there!
+\end_layout
+
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+Zero 
+\family typewriter
+A6
+\family default
+ at the start of the code, and then the addresses will be both absolute
+ and relative at the same time, so you can use offsets on 
+\family typewriter
+(A0)
+\family default
+ or 
+\family typewriter
+(A6,A0.L)
+\family default
+ as you prefer;
+\end_layout
+
+\begin_layout Itemize
+Use the appropriate vector calls rather than the trap calls, those use absolute
+ addresses.
+ Speaking of which....
+\end_layout
+
+\begin_layout Subsection
+Vectors
+\end_layout
+
+\begin_layout Standard
+There are a pair of vectored routines, 
+\family typewriter
+MEM.ALHP
+\family default
+ and 
+\family typewriter
+MEM.REHP
+\family default
+, which are 
+\emph on
+non-atomic
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+In other words, the operation could get interrupted and the scheduler entered.
+\end_layout
+
+\end_inset
+
+
+\emph default
+ versions of the user heap trap calls.
+ They take exactly the same parameters as the two trap calls, but do not
+ require 
+\family typewriter
+A6
+\family default
+ to be considered.
+ Even better, there is no need to mess around keeping everything relative
+ to 
+\family typewriter
+A6
+\family default
+ as the two vectors don't care about such necessities!
+\end_layout
+
+\begin_layout Standard
+Converting the listings above to use vectors instead of traps, gives us
+ the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:User-Heap-Vectors-Example"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+sms.achp  equ $18
+\end_layout
+
+\begin_layout Plain Layout
+
+mem.rehp  equ $DA
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; First, allocate a 64Kb common heap area:
+\end_layout
+
+\begin_layout Plain Layout
+
+start   
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #sms.achp,d0          ; Trap code
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #65536,d1            ; 64Kb required
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq #-1,d2                ; This job will be the owner
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap #1                     ; Allocate the space
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Did it work?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s heapOk                ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Handle out of memory errors here.
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; Back to SuperBasic
+\end_layout
+
+\begin_layout Plain Layout
+
+        
+\end_layout
+
+\begin_layout Plain Layout
+
+; We have a common heap, convert it to a user heap :
+\end_layout
+
+\begin_layout Plain Layout
+
+heapOk
+\end_layout
+
+\begin_layout Plain Layout
+
+	move.w mem.rehp,a2          ; Vector 
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a1               ; Pointer to pointer to free space
+\end_layout
+
+\begin_layout Plain Layout
+
+    clr.l (a1)                  ; Initialise user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #65536,d1            ; We have 64 Kb to play with
+\end_layout
+
+\begin_layout Plain Layout
+
+    jsr (a2)                    ; Convert to a user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Did it work
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s useHeap               ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; No
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+myHeap
+\end_layout
+
+\begin_layout Plain Layout
+
+	ds.l 1                      ; Pointer to free space
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+mem.alhp  equ $D8
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Allocate space in the user heap.
+\end_layout
+
+\begin_layout Plain Layout
+
+useHeap
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #200+8,d1            ; I need 200 bytes of user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a0               ; MyHeap = Free space pointer
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w mem.alhp,a2          ; Vector
+\end_layout
+
+\begin_layout Plain Layout
+
+    jsr (a2)                    ; Get some user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Did it work?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s doStuff               ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; No
+\end_layout
+
+\begin_layout Plain Layout
+
+        
+\end_layout
+
+\begin_layout Plain Layout
+
+; Now we have allocated some user heap, use it somehow
+\end_layout
+
+\begin_layout Plain Layout
+
+doStuff 
+\end_layout
+
+\begin_layout Plain Layout
+
+   move.l #$12345678,8(a0)      ; Avoid writing the header bytes
+\end_layout
+
+\begin_layout Plain Layout
+
+   ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; Now deallocate the user heap space.
+\end_layout
+
+\begin_layout Plain Layout
+
+freeUser  
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a1               ; Pointer to pointer to free space
+\end_layout
+
+\begin_layout Plain Layout
+
+	move.w mem.rehp,a2          ; Vector 
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l (a0),d1              ; Block length to free up
+\end_layout
+
+\begin_layout Plain Layout
+
+    jsr (a2)                    ; Free the space
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; Back to SuperBASIC
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+User Heap Vectors Example
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:User-Heap-Vectors-Example"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If you trace the code using QMON2
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Other monitors are available....
+\end_layout
+
+\end_inset
+
+ then you will see that when you arrive at the label 
+\family typewriter
+doStuff
+\family default
+, the base address of the user heap allocated at 
+\family typewriter
+(A0)
+\family default
+, holds the length of the block, which is 208 or $D0
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+And that value confused me as QMON listed the instruction to load 
+\family typewriter
+D1
+\family default
+ as 
+\family typewriter
+MOVE.L #$D0,D1
+\family default
+ and I was initially confused as I didn't have an instruction to move 
+\family typewriter
+D0
+\family default
+ into 
+\family typewriter
+D1
+\family default
+.
+ Then I read the screen a little bit better and understood!
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsubsection
+Freeing User Heap Space Quickly
+\end_layout
+
+\begin_layout Standard
+If you have, for example, some deeply recursive code which allocates space
+ in the user heap, how do you cope with an error whereby you have to free
+ up all the allocated bits that were ok until the problem arrived? I'm thinking
+ perhaps of an expression evaluator as a specific example, but it could
+ be a parser or a compiler building a symbol table or parse tree etc.
+ I'm also thinking of the problem where the code doesn't just give up, but
+ informs the user – 
+\emph on
+expression too complex
+\emph default
+ or 
+\emph on
+invalid operation
+\emph default
+ etc – but then loops back to the prompt for more input.
+\end_layout
+
+\begin_layout Standard
+If, in the case of the expression evaluator, the code will have allocated
+ lots of chunks of user heap to build the expression tree
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Usually an Abstract Syntax Tree or AST.
+\end_layout
+
+\end_inset
+
+ then those nodes in the tree need to be deallocated before the next expression
+ can be evaluated, otherwise, at some point, the user heap space will be
+ full of nodes that are no longer required, but are hogging all the space.
+\end_layout
+
+\begin_layout Standard
+The easiest manner of deallocating all allocated space in the user heap
+ is simply to clear the pointer to the free space to zero, then call the
+ 
+\family typewriter
+SMS.REHP
+\family default
+ trap or the 
+\family typewriter
+MEM.REHP
+\family default
+ vector and link the entire user heap to free space again.
+ Something similar to Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:User-Heap-Total-Deallocation"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr getCommonHeap           ; Allocate heap space or die
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s mainLoop              ; Skip to main loop
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+userHeap 
+\end_layout
+
+\begin_layout Plain Layout
+
+    dc.l 1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+; On first entry:
+\end_layout
+
+\begin_layout Plain Layout
+
+; Link the allocated space in the common heap into a user heap.
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; On subsequent entries:
+\end_layout
+
+\begin_layout Plain Layout
+
+; Wipe everything from the user heap.
+\end_layout
+
+\begin_layout Plain Layout
+
+mainLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea myHeap,a1               ; Pointer to pointer to free space
+\end_layout
+
+\begin_layout Plain Layout
+
+    clr.l (a1)                  ; Initialise user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w mem.rehp,a2          ; Vector 
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l #heapSize,d1         ; Size of user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    jsr (a2)                    ; Convert/wipe user heap
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l d0                    ; Did it work
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s useHeap               ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts                         ; No, exit with error code
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+; None of these will return if an error occurs.
+ The errors
+\end_layout
+
+\begin_layout Plain Layout
+
+; will be handled below, the stack unwound and any user
+\end_layout
+
+\begin_layout Plain Layout
+
+; heap allocations freed.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr getUserInput            ; Get next expression or exit
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr lexer                   ; Build token list
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr parser                  ; Build AST
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr evaluate                ; Evaluate the expression
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s mainLoop              ; Keep going
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+lexError
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr doLexError              ; Handle lexer errors
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s mainLoop              ; And go again
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+parseError
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr doParseError            ; Handle parser errors
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s mainLoop              ; And go again
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+EvalError
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr overflow                ; Check/Handle overflow
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr divZero                 ; Check/handle divide by zero
+\end_layout
+
+\begin_layout Plain Layout
+
+    bsr ...
+                     ; Etc
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra.s mainLoop              ; And go again
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+User Heap Total Deallocation
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:User-Heap-Total-Deallocation"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+On the first entry to 
+\family typewriter
+mainLoop
+\family default
+, the common heap allocation is linked into the user heap's free space,
+ the whole allocation is free for use as a user heap.
+ On subsequent passes through 
+\family typewriter
+mainLoop
+\family default
+, the user heap is effectively reinitialised, thus freeing up every piece
+ of allocated space which was allocated before the code went into error
+ recovery.
+\end_layout
+
+\begin_layout Standard
+Not shown in the example code above is the handling of the 
+\family typewriter
+A7
+\family default
+ stack, which needs to be preserved at the start of the 
+\family typewriter
+mainLoop
+\family default
+ and reset after each and every error so that it is correctly set each time
+ we pass by the 
+\family typewriter
+mainLoop
+\family default
+ address.
+\end_layout
+
+\begin_layout Standard
+Can you tell I'm writing an expression evaluator then? 
+\end_layout
+
+\end_body
+\end_document

@@ -479,6 +479,34 @@ before
 \end_layout
 
 \begin_layout Section
+Code Listings
+\end_layout
+
+\begin_layout Standard
+I'm using a different manner of including listings in the eMagazine.
+ From this issue onwards, the vast majority of code will be taken directly
+ from the source files and not copied and pasted as I have been doing.
+ This way, I 
+\emph on
+should
+\emph default
+ reduce the number of errors I make when copying and pasting – or forgetting
+ to! Basically, from here on in, the errors anyone finds will be all my
+ own fault!
+\end_layout
+
+\begin_layout Standard
+I'm also not including the bigger comments in the source code, but the source
+ files will still have them present.
+ There's no point having the text explaining things that the source comments
+ are also explaining.
+\end_layout
+
+\begin_layout Standard
+Not all this issue's listings have been converted over.
+\end_layout
+
+\begin_layout Section
 And Finally...
 \end_layout
 

@@ -39,3 +39,98 @@ Changes for this issue and onwards:
     If larger, remove spaces? [OPTIONAL]
 
 
+ALTERNATIVELY:
+
+
+Can I do this?
+In Assembly Language?
+
+
+Example:
+
+With (a,b,c) : (a * b + (c * 2)) ;
+
+Should:
+
+* Create a job to:
+* Open a window
+* Prompt for values for A, B and C
+* Run the calculation
+* Print the results
+* Pause for a keypress
+* Die.
+
+
+Lexer Rules
+
+Tid     : [A-Za-z][A-Za-z_]* ;
+Tnumber : [0-9]+    ;   // Negatives?
+Twith   : "WITH"    ;
+Tcolon  : ":"       ;
+Tsemi   : ";"       ;
+Tleft   : "("       ;
+Tright  : ")"       ;
+Tmult   : "*"       ;
+Tdiv    : "/"       ;
+Tplus   : "+"       ;
+Tminus  : "-"       ;
+Tcomma  : ","       ;
+
+
+Parser Rules
+
+pCalc   : pDefn Tcolon pExpr Tsemi       ;
+pDefn   : Twith Tleft pVarList Tright    ;
+pVarList: Tid (Tcomma Tid)*              ;
+pExpr   : pTerm (Tplus | tMinus) pTerm   ;
+pExpr   : pFactor (Tmult | Tdiv) pFactor ;
+pFactor : Tleft pExpr Tright 
+        | Tnumber
+        | pVar                           ;
+
+
+AST
+
+            root
+     varList     expression
+
+
+Code Generated
+
+Boilerplate.
+    job header
+    Open channel
+    attributes
+    pause
+    keypress
+    die
+    Prompts
+    Get input
+
+Storage for result 32 bits:
+    vResult ds.l 1
+
+For each var:
+    "var_"name ds.w 1      ; 16 bits available
+
+    Enter value for 'name':
+    Accept value
+    Write to "var_"name's storage.
+end for
+
+calculate
+
+    For each operation in expr tree
+        Clear D5?
+        Read operation
+        Load left to D7
+        Load right to D6
+        Perform operation
+        Save pending result in D5?
+    End for
+
+        Save D5 in result.
+        Print result.
+
+
+
