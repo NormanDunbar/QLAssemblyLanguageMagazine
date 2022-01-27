@@ -1299,7 +1299,7 @@ The QL's internal floating point format is a 2 byte exponent and a 4 byte
 \begin_inset Formula $1.23\times10^{3}$
 \end_inset
 
-then the mantissa is the 
+ then the mantissa is the 
 \begin_inset Formula $1.23$
 \end_inset
 
@@ -1378,8 +1378,7 @@ mantissa*10^{exponent}
 \end_layout
 
 \begin_layout Standard
-The same is true in base 2, or binary.
- The value is 
+The same is true in binary but there the value is 
 \begin_inset Formula $mantissa*2^{exponent}$
 \end_inset
 
@@ -1397,12 +1396,13 @@ In SMSQ/E, the mantissa is normalised when bit 31 or bit 30 of the mantissa
 \end_layout
 
 \begin_layout Standard
-12 bits is 2,048 so the exponent has 12 bits of precision.
- However, it is signed so the range is from 2
+12 bits is 2,048.
+ $800 in hexadecimal, so the exponent has 12 bits of precision.
+ However, it is offset by $800, so the range is from 2
 \begin_inset script superscript
 
 \begin_layout Plain Layout
--2048
+-2,048
 \end_layout
 
 \end_inset
@@ -1411,7 +1411,7 @@ In SMSQ/E, the mantissa is normalised when bit 31 or bit 30 of the mantissa
 \begin_inset script superscript
 
 \begin_layout Plain Layout
-2047
+2,047
 \end_layout
 
 \end_inset
@@ -1435,10 +1435,7 @@ In SMSQ/E, the mantissa is normalised when bit 31 or bit 30 of the mantissa
 \end_inset
 
  which is a decent enough range.
-\end_layout
-
-\begin_layout Standard
-The exponent is also offset by $800, which makes the actual value equal
+ Because the exponent is offset, this makes the floating point value equal
  to:
 \end_layout
 
@@ -1455,6 +1452,55 @@ mantissa*2^{exponent-\$800}
 
 \begin_layout Standard
 Zero is a special case where the exponent and mantissa are both zero.
+\end_layout
+
+\begin_layout Standard
+The bits in the mantissa represent fractions, but in power's of 2.
+ They can be thought of as 
+\begin_inset Formula $\frac{1}{2^{31-bit}}$
+\end_inset
+
+ but , as with many things mathematical, this can also be expressed as 
+\begin_inset Formula $2^{-(31-bit)}$
+\end_inset
+
+.
+ The fractional parts of the mantissa start with bit 30, the most significant
+ bit, which represents 
+\begin_inset Formula $\frac{1}{2^{1}}$
+\end_inset
+
+, 
+\begin_inset Formula $2^{-1}$
+\end_inset
+
+ or 0.5, down to bit 0, representing 
+\begin_inset Formula $\frac{1}{2^{31}}$
+\end_inset
+
+, 
+\begin_inset Formula $2^{-31}$
+\end_inset
+
+ or 
+\emph on
+not very much at all
+\emph default
+!
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Ok, ok, it's 
+\begin_inset Formula $\frac{1}{2,147,483,648}$
+\end_inset
+
+, which is pretty small.
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
@@ -1492,13 +1538,13 @@ The exponent is $0804, subtracting $0800 we get $04, so 10 is 0.625 multiplied
 \begin_inset script superscript
 
 \begin_layout Plain Layout
-4
+4 
 \end_layout
 
 \end_inset
 
 or 16.
- !0 is indeed equal to 0.625 times 16.
+ 10 is indeed equal to 0.625 times 16.
 \end_layout
 
 \begin_layout Standard
@@ -1530,32 +1576,7 @@ Bits 30, 0.5, and 28, 0.125, are both set, so we have a value again, of 0.625.
 \end_layout
 
 \begin_layout Standard
-The bits in the mantissa represent 
-\begin_inset Formula $\frac{1}{2^{31-bit}}$
-\end_inset
-
-starting at bit 30 which is the most significant bit, representing 
-\begin_inset Formula $\frac{1}{2^{1}}$
-\end_inset
-
- or 0.5, down to bit 0, representing 
-\begin_inset Formula $\frac{1}{2^{31}}$
-\end_inset
-
-or 
-\begin_inset Quotes qld
-\end_inset
-
-not very much at all!
-\begin_inset Quotes qrd
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-So, back to the code.
- If we assume 
+If we assume 
 \family typewriter
 D7.L
 \family default
@@ -1575,31 +1596,1049 @@ Z
 \end_layout
 
 \begin_layout Standard
-If 
+If we take 
 \family typewriter
-D7.L
+D7
 \family default
- is holding 10, then setting set 
+ as having the value $1E240 which is 123,456 in decimal.
+ We start off by setting up the various registers, 
 \family typewriter
-D5.W
+D5
 \family default
- to $081f as a first attempt at an exponent.
- Where did this value come from? I have no idea! I suspect it might be the
- highest possible exponent value for a long word.
- Adding 
+ gets a copy of the low word, 
 \family typewriter
-D7.L
+D6
 \family default
- to itself will overflow if Bit 31 is set.
- If so, then we have got a normalised number and we can stack it.
+ the whole $1E240.
+ Because we are not dealing with zero, we drop down to set 
+\family typewriter
+D5
+\family default
+ to the first guess exponent, $081F, and adding 
+\family typewriter
+D7
+\family default
+ to itself which results in 
+\family typewriter
+D7
+\family default
+ = $3C480.
+ This didn't overflow, so we still have a valid mantissa which is twice
+ as big as it was.
 \end_layout
 
 \begin_layout Standard
-We then enter a loop where we try halving the exponent and
+As we have now doubled the mantissa, we must also halve the exponent, which
+ means subtracting 1 from 
+\family typewriter
+D5
+\family default
+ to get $081E.
 \end_layout
 
-\begin_layout Section
-UNFINISHED !!!!
+\begin_layout Standard
+The new mantissa is copied into 
+\family typewriter
+D6
+\family default
+ where we will keep it for those occasions when shifting it by 
+\family typewriter
+D0
+\family default
+ bits results in overflow.
+ 
+\family typewriter
+D0
+\family default
+ is initialised to $10 – we will attempt a 16 bit shift first of all.
+\end_layout
+
+\begin_layout Standard
+We 
+\emph on
+could
+\emph default
+ shift by a single bit each time, and halve the exponent each time there's
+ no overflow, but this method is quicker.
+ If 
+\family typewriter
+D7
+\family default
+ 
+\emph on
+can
+\emph default
+ be shifted 16 bits left, then that that's one shift, not 16
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+I have a funny feeling this code is something from Simon N.
+ Goodwin!
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We are now at label 
+\family typewriter
+pulNormalise
+\family default
+ for the first time, and here we enter the normalisation loop.
+ We will multiply 
+\family typewriter
+D7
+\family default
+ by 
+\begin_inset Quotes qld
+\end_inset
+
+lots of bits
+\begin_inset Quotes qrd
+\end_inset
+
+ each time as long as we don't get overflow.
+ If we do hit overflow, we have gone too far and need to back up a bit,
+ and multiply by half as many 
+\begin_inset Quotes qld
+\end_inset
+
+lots of bits
+\begin_inset Quotes qrd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We copy the most recent valid mantissa from 
+\family typewriter
+D6
+\family default
+ to 
+\family typewriter
+D7
+\family default
+ ready to try again, and shift it left by the $10 bits held in 
+\family typewriter
+D0
+\family default
+.
+ This caused overflow as 
+\family typewriter
+D7
+\family default
+ was holding $3C480, which is %0000 0000 0000 0011 in the high word, so
+ there were only 14 bits we could have shifted.
+ As 
+\family typewriter
+V
+\family default
+ was set, we skip to the label 
+\family typewriter
+pulTooBig
+\family default
+ where we adjust 
+\family typewriter
+D0
+\family default
+ from $10 to $08 and skip back to 
+\family typewriter
+pulNormalise
+\family default
+ again.
+\end_layout
+
+\begin_layout Standard
+On the second pass through the loop, we copy the last valid mantissa back
+ into 
+\family typewriter
+D7
+\family default
+, and attempt to shift by 8 bits.
+ This results in 
+\family typewriter
+D7
+\family default
+ now holding the value $3C48000 but this time, there was no overflow.
+ As this was a successful multiplication of the mantissa, we subtract the
+ correct powers of two from the exponent, which happens to be 
+\family typewriter
+D0
+\family default
+'s value, 8.
+ Finally, we copy the new valid mantissa into 
+\family typewriter
+D6
+\family default
+, just in case, and drop into 
+\family typewriter
+pulTooBig
+\family default
+ to divide 
+\family typewriter
+D0
+\family default
+ down to 4, ready for another attempt.
+\end_layout
+
+\begin_layout Standard
+On the third pass, we again copy the most recent valid mantissa back to
+ 
+\family typewriter
+D7
+\family default
+, and multiply by 4 bits.
+ This gives a result of $3C480000 in 
+\family typewriter
+D7
+\family default
+ and no still overflow, so we have a new valid mantissa.
+ The exponent is adjusted by the correct powers of two and the new mantissa
+ is copied to a safe place in 
+\family typewriter
+D6
+\family default
+ before 
+\family typewriter
+D0
+\family default
+ is again divided down to 2 at label 
+\family typewriter
+pulTooBig
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+The fourth pass through the loop multiplies 
+\family typewriter
+D7
+\family default
+ up to $F1200000 but causes overflow, we have to skip to 
+\family typewriter
+pulTooBig
+\family default
+ to drop 
+\family typewriter
+D0
+\family default
+ down to 1 for another attempt.
+\end_layout
+
+\begin_layout Standard
+The fifth pass through the loop shifts 
+\family typewriter
+D7
+\family default
+ to get a result for the mantissa of $78900000 with no overflow.
+ As before, the exponent is divided to cater for the multiplication, and
+ the new mantissa is copied to 
+\family typewriter
+D6
+\family default
+ for safety.
+ At label 
+\family typewriter
+pulTooBig
+\family default
+, 
+\family typewriter
+D0
+\family default
+ is divided down but is now zero.
+ We are now holding a normalised mantissa in 
+\family typewriter
+D7
+\family default
+.
+ The loop is finished and we drop to the label 
+\family typewriter
+pulNormalised
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Remember when we calculated that only had 14 bits to shift to normalise
+ 
+\family typewriter
+D7
+\family default
+, and shifting by 16 caused overflow? Add up all the successful shifts,
+ 
+\begin_inset Formula $8+4+1$
+\end_inset
+
+, then add one more for the initial doubling of 
+\family typewriter
+D7
+\family default
+, and you get 14.
+\end_layout
+
+\begin_layout Standard
+Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Floating-point-conversion-of-123456"
+
+\end_inset
+
+ shows each pass and the various values as a summary.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="9" columns="7">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Pass
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+D7 Input
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+D5 Input
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Shifts
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Overflow
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+D7 Output
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+D5 Output
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Start
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0001 E240
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$81F
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Init
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0001 E240
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$81F
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+It was an addition, but that's equivalent to a shift.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0003 C480
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$81E
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0003 C480
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$81E
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+16
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Yes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$81E
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$0003 C480
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$81E
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$03C4 8000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$816
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$03C4 8000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$816
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$3C48 0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$812
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$3C48 0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$812
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Yes
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$812
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$3C48 0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$812
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+No
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$7890 0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$811
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+End
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$7890 0000
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+$811
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Floating point conversion of 123456
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Floating-point-conversion-of-123456"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At this point, the exponent is $0811 and the mantissa is $78900000.
+ Is this correct? We can convert the exponent to the correct powers of two
+ by subtracting $800 to get $11, or 17 in decimal.
+\end_layout
+
+\begin_layout Standard
+The mantissa, $78900000, is %0111 1000 1001 0000 0000 0000 0000 0000 but
+ as we can safely ignore the trailing zeros, we have %0111 1000 1001 in
+ the highest three nibbles.
+ (Bits 31 - 20.)
+\end_layout
+
+\begin_layout Standard
+The sign bit, bit 31, is a zero, so the mantissa is positive.
+\end_layout
+
+\begin_layout Standard
+Bits 30, 29, 28, 27, 23 and 20 are set, but we need to subtract those from
+ 31 to get bits 1,2,3,4,8 and 11 for out fractional powers of two.
+ The mantissa is a fraction, in the format of 0.something, remember?
+\end_layout
+
+\begin_layout Standard
+The bit values represent the powers of two that we take the reciprocal of
+ and add them up, to get the actual fractional value for the mantissa.
+ This sum is 
+\begin_inset Formula $\frac{1}{2^{1}}+\frac{1}{2^{2}}+\frac{1}{2^{3}}+\frac{1}{2^{4}}+\frac{1}{2^{8}}+\frac{1}{2^{11}}$
+\end_inset
+
+ which works out as 
+\begin_inset Formula $\frac{1}{2}+\frac{1}{4}+\frac{1}{8}+\frac{1}{16}+\frac{1}{256}+\frac{1}{2048}$
+\end_inset
+
+ and converting that to decimal fractions, not those nasty 
+\emph on
+vulgar
+\emph default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Fractions in the format 
+\begin_inset Formula $\frac{a}{b}$
+\end_inset
+
+in the UK at least, are called vulgar fractions.
+\end_layout
+
+\end_inset
+
+ ones, we get 
+\begin_inset Formula $0.5+0.25+0.125+0.0625+0.003,906,25+0.000,488,281$
+\end_inset
+
+, giving a mantissa of 
+\begin_inset Formula $0.941,894,531$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+We can now work out the value as 
+\begin_inset Formula $0.941,894,531*2^{17}$
+\end_inset
+
+which, funnily enough, is 
+\begin_inset Formula $123,456$
+\end_inset
+
+, 
+\begin_inset Formula $2^{17}$
+\end_inset
+
+ being 
+\begin_inset Formula $131,072$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+How easy was that then? 
 \end_layout
 
 \end_body
