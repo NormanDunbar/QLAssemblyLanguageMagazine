@@ -410,7 +410,6 @@ Thanks Wolfgang.
 
 \section{Bug Fixes for Ql2Win/Win2ql}
 
-
 \subsection{Ql2Win}
 
 The changes to the source code for the bugs identified by Wolfgang
@@ -508,7 +507,7 @@ overflow
     bra     errorExit         ; Oops!
 \end{lstlisting}
 
-The observant among us -- which usually excluded myself -- will
+The observant among us -- which usually excludes myself -- will
 notice that I test for any input even when we hit end of file. This
 helps deal with Wolfgang's over observation that we can lose the last
 line of the input file if it doesn't fill the buffer.
@@ -614,6 +613,6 @@ input even when we hit end of file, as before, so that when the last
 line of a file doesn't fill the buffer it will still be written out.
 
 As with ql2win, it will not have a QL line ending LF added if there
-wasn't one presnt when the line was read. If it comes without a Windows
+wasn't one presnet when the line was read. If it comes without a Windows
 line terminator, it goes out without a QL one as well. Seems fair
 to me?

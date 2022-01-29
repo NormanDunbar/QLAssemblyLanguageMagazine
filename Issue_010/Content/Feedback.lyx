@@ -1924,58 +1924,6 @@ Thanks Wolfgang.
 Bug Fixes for Ql2Win/Win2ql
 \end_layout
 
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-A file with only 
-\begin_inset Quotes eld
-\end_inset
-
-Hello World
-\begin_inset Quotes erd
-\end_inset
-
- and no LF and no CR and a buffer size of 4+2 words, gets truncated to 8
- bytes (buffer size) because there's no LF for ql2win and no crlf for win2ql.
- NEEDS TO BE FIXED.
-\end_layout
-
-\begin_layout Plain Layout
-Test file:
-\end_layout
-
-\begin_layout Plain Layout
-open #3,...
-\end_layout
-
-\begin_layout Plain Layout
-print #3,
-\begin_inset Quotes erd
-\end_inset
-
-Hello World
-\begin_inset Quotes erd
-\end_inset
-
- ;
-\end_layout
-
-\begin_layout Plain Layout
-close #3
-\end_layout
-
-\begin_layout Plain Layout
-QUESTION: Do we get EOF if we run out of bytes to fill the buffer, or on
- the following read?
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Subsection
 Ql2Win
 \end_layout
@@ -2354,7 +2302,7 @@ overflow
 \end_layout
 
 \begin_layout Standard
-The observant among us – which usually excluded myself – will notice that
+The observant among us – which usually excludes myself – will notice that
  I test for any input even when we hit end of file.
  This helps deal with Wolfgang's over observation that we can lose the last
  line of the input file if it doesn't fill the buffer.
@@ -2738,7 +2686,7 @@ This is pretty much the same changes as for ql2win.
 
 \begin_layout Standard
 As with ql2win, it will not have a QL line ending LF added if there wasn't
- one presnt when the line was read.
+ one presnet when the line was read.
  If it comes without a Windows line terminator, it goes out without a QL
  one as well.
  Seems fair to me?
