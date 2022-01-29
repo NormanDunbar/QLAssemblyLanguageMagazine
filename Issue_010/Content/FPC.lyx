@@ -288,6 +288,7 @@ sysutils
 
 \begin_layout Standard
 \begin_inset listings
+lstparams "language={[Borland6]Pascal},showstringspaces=false,tabsize=4"
 inline false
 status open
 
