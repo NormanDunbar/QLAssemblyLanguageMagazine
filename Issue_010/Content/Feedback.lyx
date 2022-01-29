@@ -268,89 +268,10 @@ Wolfgang's Feedback on Label Alignment
 \end_layout
 
 \begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-TODO: Correct ql2win/win2ql to correctly trap the buffer overflow errors
- -5 and -18 as below, and ignore them.
- Also fix code so that if the last line has no linefeed, the buffer gets
- written out at EOF, if it has contents.
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-ALSO TODO: BUG FIX THIS:
-\end_layout
-
-\begin_layout Plain Layout
-I noted a more serious problem in your code for the filter programs :
-\end_layout
-
-\begin_layout Plain Layout
-At some stage you use the following line
-\end_layout
-
-\begin_layout Plain Layout
-moveq #buffSize,d4
-\end_layout
-
-\begin_layout Plain Layout
-where buffSize is 2*64, i.e.
- 128.
-\end_layout
-
-\begin_layout Plain Layout
-But moveq handles 0-127 as positive, above that as negative, so that the
-\end_layout
-
-\begin_layout Plain Layout
-value in D4 becomes $ffffff80.
- This means that when you make the IO
-\end_layout
-
-\begin_layout Plain Layout
-calls (move.w d4,d2), the OS thinks its buffer is $ff80 bytes long.
- That
-\end_layout
-
-\begin_layout Plain Layout
-could be a serious problem (suppose a line is longer than 128 bytes,
-\end_layout
-
-\begin_layout Plain Layout
-you get a nice buffer overflow)...
- Note that the documentation states
-\end_layout
-
-\begin_layout Plain Layout
-than the buffer length in D2 should be a positive word.
-\end_layout
-
-\begin_layout Plain Layout
-CHECKED: Correct.
- Need to change to move.w #128,d4 instead of moveq.
- Moveq.w rejects 128 as a value (GWASS).
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
-\begin_layout Standard
-I received an email from Wolfgang Lenerz about a foible he has discovered
- in the way I format my source code for Assembly Language programs and utilities.
- This is quite weird, in my opinion, but never the less, it needs looking
- into.
+Wolfgang Lenerz also mentioned a foible he has discovered in the way I format
+ my source code for Assembly Language programs and utilities.
+ This is quite a weird foible, in my opinion, but never the less it needs
+ looking into.
  Here are Wolfgang's comments:
 \end_layout
 
@@ -1997,6 +1918,830 @@ always
 
 \begin_layout Standard
 Thanks Wolfgang.
+\end_layout
+
+\begin_layout Section
+Bug Fixes for Ql2Win/Win2ql
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+A file with only 
+\begin_inset Quotes eld
+\end_inset
+
+Hello World
+\begin_inset Quotes erd
+\end_inset
+
+ and no LF and no CR and a buffer size of 4+2 words, gets truncated to 8
+ bytes (buffer size) because there's no LF for ql2win and no crlf for win2ql.
+ NEEDS TO BE FIXED.
+\end_layout
+
+\begin_layout Plain Layout
+Test file:
+\end_layout
+
+\begin_layout Plain Layout
+open #3,...
+\end_layout
+
+\begin_layout Plain Layout
+print #3,
+\begin_inset Quotes erd
+\end_inset
+
+Hello World
+\begin_inset Quotes erd
+\end_inset
+
+ ;
+\end_layout
+
+\begin_layout Plain Layout
+close #3
+\end_layout
+
+\begin_layout Plain Layout
+QUESTION: Do we get EOF if we run out of bytes to fill the buffer, or on
+ the following read?
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Ql2Win
+\end_layout
+
+\begin_layout Standard
+The changes to the source code for the bugs identified by Wolfgang are documente
+d below.
+\end_layout
+
+\begin_layout Standard
+To fix the buffer overflow problem identified by Wolfgang, add two extra
+ equates near line 29, which currently reads as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+err_bp      equ     -15
+\end_layout
+
+\begin_layout Plain Layout
+
+err_eof     equ     -10
+\end_layout
+
+\begin_layout Plain Layout
+
+me          equ     -1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Change it to this instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+err_bp      equ     -15
+\end_layout
+
+\begin_layout Plain Layout
+
+err_eof     equ     -10
+\end_layout
+
+\begin_layout Plain Layout
+
+err_bffl    equ     -5
+\end_layout
+
+\begin_layout Plain Layout
+
+err_ovfl    equ     -18
+\end_layout
+
+\begin_layout Plain Layout
+
+me          equ     -1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have added, in SMSQ/E nomenclature, 
+\family typewriter
+err_bffl
+\family default
+ and 
+\family typewriter
+err_ovfl
+\family default
+ as Wolfgang has noted that occasionally, the error returned in 
+\family typewriter
+err_ovfl
+\family default
+ instead of 
+\family typewriter
+err_bffl
+\family default
+.
+ We will use these equates shortly, but first, let's fix the buffer size
+ problem.
+ Around line 83, you'll find this code:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ql2win
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #buffSize,d4      ; Storage for buffer size for D2
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     buffer,a3         ; Start of (write) buffer
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The problem, identified by Wolfgang, is the 
+\family typewriter
+moveq #buffsize,d4
+\family default
+ instruction.
+ Any buffer over 127 bytes will be sign extended to a long word.
+ This would make the lower word $FF80 in the case of 128 byte buffers, and
+ as the buffer size is assumed to be positive, this makes for an assumed
+ buffer size of 65,408 bytes rather than the actual 128.
+ As soon as a line longer than 128 is read, bang!
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+moveq
+\family default
+ should be changed to a 
+\family typewriter
+move.w
+\family default
+ as in the following:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ql2win
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  #buffSize,d4      ; Storage for buffer size for D2
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     buffer,a3         ; Start of (write) buffer
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Right then, back to the buffer overflow problems.
+ The code starting at line 102 is where we need to test for the two new
+ error codes.
+ It currently looks like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_fline,d0      ; Fetch lines ending with LF
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d4,d2             ; Buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a4,a0             ; Channel to read
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a3,a1             ; Read buffer start
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3                ; Read a line from input file
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0                ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_EOF,d0       ; All done yet?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq     allDone           ; Yes.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit         ; Oops!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We need to change it to this instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_fline,d0      ; Fetch lines ending with LF
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d4,d2             ; Buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a4,a0             ; Channel to read
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a3,a1             ; Read buffer start
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3                ; Read a line from input file
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0                ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_EOF,d0       ; All done yet?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   overflow          ; Not yet
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.w   d1                ; Did we read anything?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   gotLine           ; Yes, deal with it
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq     allDone           ; All done now
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+overflow
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_BFFL,d0      ; Buffer overflow?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes, write it out unchanged
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_OVFL,d0      ; Buffer overflow (apparently!)
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes, write it out unchanged   
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit         ; Oops!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The observant among us – which usually excluded myself – will notice that
+ I test for any input even when we hit end of file.
+ This helps deal with Wolfgang's over observation that we can lose the last
+ line of the input file if it doesn't fill the buffer.
+\end_layout
+
+\begin_layout Standard
+It will not have a CR/LF added though, if it doesn't have one when read.
+ If it comes without a QL line terminator, it goes out without a Windows
+ one as well.
+ Seems fair to me?
+\end_layout
+
+\begin_layout Standard
+With these changes, and a suitable test file, the code works as good as
+ it did before.
+ All lines, no matter how long, will be correctly written out and converted
+ to Windows format line endings.
+\end_layout
+
+\begin_layout Standard
+I've included a fixed version of the code in the code repository for this
+ issue, so that you don't have to fix it yourself!
+\end_layout
+
+\begin_layout Subsection
+Win2ql
+\end_layout
+
+\begin_layout Standard
+As with ql2win, add two extra equates near line 29, which currently reads
+ as:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+err_bp      equ     -15
+\end_layout
+
+\begin_layout Plain Layout
+
+err_eof     equ     -10
+\end_layout
+
+\begin_layout Plain Layout
+
+me          equ     -1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Change it to this instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+err_bp      equ     -15
+\end_layout
+
+\begin_layout Plain Layout
+
+err_eof     equ     -10
+\end_layout
+
+\begin_layout Plain Layout
+
+err_bffl    equ     -5
+\end_layout
+
+\begin_layout Plain Layout
+
+err_ovfl    equ     -18
+\end_layout
+
+\begin_layout Plain Layout
+
+me          equ     -1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We have added 
+\family typewriter
+err_bffl
+\family default
+ and 
+\family typewriter
+err_ovfl
+\family default
+ as previously.
+ The buffer size problem is next in the source, around line 83, you'll find
+ this code:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+win2ql
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #buffSize,d4      ; Storage for buffer size for D2
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     buffer,a3         ; Start of (write) buffer
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Once again, the 
+\family typewriter
+moveq
+\family default
+ should be changed to a 
+\family typewriter
+move.w
+\family default
+ as in the following:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+win2ql
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #timeout,d3       ; Timeout
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  #buffSize,d4      ; Storage for buffer size for D2
+\end_layout
+
+\begin_layout Plain Layout
+
+    lea     buffer,a3         ; Start of (write) buffer
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Back to the buffer overflow problems.
+ The code currently starting at line 100 is where we need to test for the
+ two new error codes.
+ It currently looks like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_fline,d0      ; Fetch lines ending with LF
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d4,d2             ; Buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a4,a0             ; Channel to read
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a3,a1             ; Read buffer start
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3                ; Read a line from input file
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0                ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_EOF,d0       ; All done yet?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq     allDone           ; Yes.
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit         ; Oops!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We need to change it to this instead:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+readLoop
+\end_layout
+
+\begin_layout Plain Layout
+
+    moveq   #io_fline,d0      ; Fetch lines ending with LF
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.w  d4,d2             ; Buffer size
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a4,a0             ; Channel to read
+\end_layout
+
+\begin_layout Plain Layout
+
+    movea.l a3,a1             ; Read buffer start
+\end_layout
+
+\begin_layout Plain Layout
+
+    trap    #3                ; Read a line from input file
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.l   d0                ; OK?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_EOF,d0       ; All done yet?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   overflow          ; Not yet
+\end_layout
+
+\begin_layout Plain Layout
+
+    tst.w   d1                ; Did we read anything?
+\end_layout
+
+\begin_layout Plain Layout
+
+    bne.s   gotLine           ; Yes, deal with it
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq     allDone           ; All done now
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+overflow
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_BFFL,d0      ; Buffer overflow?
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes, write it out unchanged
+\end_layout
+
+\begin_layout Plain Layout
+
+    cmpi.l  #ERR_OVFL,d0      ; Buffer overflow (apparently!)
+\end_layout
+
+\begin_layout Plain Layout
+
+    beq.s   gotLine           ; Yes, write it out unchanged   
+\end_layout
+
+\begin_layout Plain Layout
+
+    bra     errorExit         ; Oops!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This is pretty much the same changes as for ql2win.
+ I test for any input even when we hit end of file, as before, so that when
+ the last line of a file doesn't fill the buffer it will still be written
+ out.
+\end_layout
+
+\begin_layout Standard
+As with ql2win, it will not have a QL line ending LF added if there wasn't
+ one presnt when the line was read.
+ If it comes without a Windows line terminator, it goes out without a QL
+ one as well.
+ Seems fair to me?
 \end_layout
 
 \end_body
