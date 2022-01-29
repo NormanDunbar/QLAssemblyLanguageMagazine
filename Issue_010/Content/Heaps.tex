@@ -1,0 +1,830 @@
+
+\chapter{Heaps}
+
+\textbf{Note}: Unless otherwise noted in the text, code listings in
+this chapter are fragments only, they do not make up a full, working
+application.
+
+There are two kinds of heap in the QL:
+\begin{itemize}
+\item The \emph{Common Heap.}
+\item \emph{User Heap(s).}
+\end{itemize}
+What's the difference? Well, details are below but in summary:
+\begin{itemize}
+\item Allocation requests in the common heap will have a 16 byte overhead
+added to the space requested, and the amount requested will be rounded
+up to a multiple of 16. However, if this leaves a 16 byte gap, then
+the value will be rounded up to a multiple of 32 instead. \textbf{Warning}:
+This is an implementation detail and you should not rely on the rounding
+being 16 or 32. Check \texttt{D1} on return and make sure you got
+what you requested\footnote{Thanks Marcel.};
+\item The value returned in \texttt{D1}, the amount of space allocated,
+\emph{includes} the 16 byte overhead plus the rounding;
+\item The 16 byte overhead is prior to the address returned in \texttt{A0}
+for the base of the space allocated;
+\item When deallocating common heap, you don't need to remember the size
+that was allocated;
+\item Common heap addresses are absolute;
+\item User heap space requests are rounded to multiples of 8 bytes;
+\item There is an 8 byte overhead, but this is \emph{not added} to the size
+requested;
+\item The overhead is at the two long words pointed to by the address returned
+in \texttt{A0} for the base of the area allocated;
+\item When deallocating user heap space, you need to remember the size of
+the space allocated.
+\item User heap addresses are relative to \texttt{A6}.
+\end{itemize}
+
+\section{Common Heap}
+
+The common heap is an area of RAM, allocated from the free space area
+in the memory map, between the addresses pointed to by \texttt{SYS\_CHPB}
+-- the base of the common heap area -- and \texttt{SYS\_FSBB} --
+the base of the free memory area -- both relative to \texttt{A6}
+of course! The common heap is mainly used by QDOS/SMSQ to hold such
+things as channel definition blocks and other bits of working storage
+required by various drivers. Individual jobs can also request areas
+of space in the common heap for their own use.
+\begin{itemize}
+\item When a channel is closed the space allocated in the common heap will
+be reclaimed automatically; 
+\item Likewise, if a driver is (able to be) removed from the system, it's
+working storage space will be reclaimed;
+\item When a job is removed from the system, perhaps forcibly, then any
+areas of common heap owned by the job are also reclaimed by the system.
+\end{itemize}
+All of the above can also ``voluntarily'' free up any space obtained
+in the common heap, when it is done with.
+
+To try to avoid fragmenting the common heap, if is advisable to free
+up space in the opposite order from that in which is was allocated.
+For example, if a job requests 10 Kb, 5 Kb then 30 Kb from the common
+heap, it should, but it's not mandatory, to free the 30 Kb allocation,
+then the 5 Kb allocation and finally, the 10 Kb allocation. This doesn't
+work all the time -- some other jobs may have allocated space between
+those mentioned and freeing will still leave the common heap a little
+more fragmented than is desirable.
+
+\textbf{Note}: There are similar problems with heap allocation on
+other operating systems, not just the QL. The advice on those systems
+is also, deallocate in the opposite order that you allocated.
+
+A job should, really, request a single chunk of common heap and use
+that as a user heap, allocating space from the user heap rather than
+the common heap, especially if the allocations are small in size\footnote{Based on which definition of ``small'' I wonder?}
+as this will help to reduce common heap fragmentation. User heaps
+are discussed in the next section.
+
+Fragmentation of the common heap can lead to situations such like
+a channel which cannot be opened as there isn't enough \emph{contiguous}
+free space to create a channel definition block. 
+
+Note that when allocating common heap space, the amount of RAM allocated
+will be rounded up to a multiple of 16 (or, potentially, 32) bytes.
+Each chunk of common heap allocated will have a 16 byte overhead on
+top of the space requested. For example:
+\begin{itemize}
+\item The code requests 10 bytes of common heap;
+\item The allocation will be 16 bytes after rounding up;
+\item The total space allocated from the common heap's free space will be
+32 to include the 16 byte overhead;
+\item The value returned in \texttt{D1}, the amount of space allocated,
+will include the overhead and rounding -- it will be 32.
+\end{itemize}
+The 16 byte overhead holds the data detailed in Table \ref{tab:Common-Heap-Header}.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|c|>{\raggedright}p{0.6\textwidth}|}
+\hline 
+\textbf{Offset(A0)} & \textbf{Size} & \textbf{Description}\tabularnewline
+\hline 
+\hline 
+-\$010 & Long & Length of this block.\tabularnewline
+\hline 
+-\$0C & Long & Either a pointer to the address of the I/O driver code which will
+free this block; or a pointer to the next free area in the common
+heap; or zero.\tabularnewline
+\hline 
+-\$08 & Long & ID of the job which owns this area of common heap.\tabularnewline
+\hline 
+-\$04 & Long & Address of a byte to be set when this area of heap is freed.\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{Common Heap Header\label{tab:Common-Heap-Header}}
+\end{table}
+
+The long word at offset -\$0C will normally be zero for space allocated
+by jobs -- not drivers -- as the free space list in the common heap
+is maintained by a separate linked list of pointers, based on the
+system variable \texttt{SYS\_FSBB}.
+
+Most jobs I've looked at, including many\footnote{Ahem, all!} of
+my own, don't bother with \emph{user} heaps -- see next section --
+and simply allocate space in the \emph{common} heap as and when required.
+Perhaps the authors, myself included, need to think about which heap
+is best for the application?
+
+\subsection{Traps}
+
+Note that when allocating common heap space, the amount of RAM allocated
+will be rounded up to a multiple of 16 (or 32) bytes. 
+
+There are two traps to manage allocations in the common heap.
+
+\subsubsection{Sms.achp}
+
+This trap call used to be known as \texttt{MT\_ALLOC} in QDOS, but
+is now called \texttt{SMS.ACHP} in SMSQ/E. The obligatory table of
+parameters can be seen in Table \ref{tab:SMS.ACHP-Parameters}.
+
+\texttt{D3} is interesting, Pennel doesn't mention it, but the SMSQ/E
+Manual (version 4.5) says that memory will be allocated in Fast RAM
+if \texttt{D3} is zero, and in ST compatible RAM if ``acsi'', on
+those machines with ST and Fast RAM.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|>{\raggedright}p{0.5\textwidth}|}
+\hline 
+\multicolumn{2}{|c|}{\textbf{Calling Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & SMS.ACHP = \$18\tabularnewline
+\hline 
+D1.L & Number of bytes required.\tabularnewline
+\hline 
+D2.L & ID of owning job. -1 indicates the current job.\tabularnewline
+\hline 
+D3.L & Zero, or ``acsi'' for Atari TT and machines with ST and Fast RAM. \tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Return Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & Error code, or zero for no errors.\tabularnewline
+\hline 
+D1.L & Actual number of bytes allocated, including the 16 byte overhead.\tabularnewline
+\hline 
+D2 & Corrupted.\tabularnewline
+\hline 
+D3 & Corrupted.\tabularnewline
+\hline 
+A0.L & Base address of the allocated space. This is the first byte after
+the header for the block.\tabularnewline
+\hline 
+A1 & Corrupted.\tabularnewline
+\hline 
+A2 & Corrupted.\tabularnewline
+\hline 
+A3 & Corrupted.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Errors in D0}}\tabularnewline
+\hline 
+ERR.IJOB & Invalid job ID\tabularnewline
+\hline 
+ERR.IMEM & Out of memory\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{SMS.ACHP Parameters\label{tab:SMS.ACHP-Parameters}}
+
+\end{table}
+
+
+\subsubsection{Example of Use}
+
+Listing \ref{lis:Common-Heap-Allocation-Example} shows a small example
+of requesting 1 byte of space from the common heap, then returning
+it to the heap. I tested the code by running it through QMON2 to check
+on the numbers returned in the appropriate registers and confirm the
+rounding and so on. I also checked the 16 bytes prior to the base
+address in \texttt{A0} and the overhead data can be seen there.
+
+The figures listed are examples from my execution, your figures, should
+you attempt this code, will most likely differ,
+
+\begin{lstlisting}[caption={Common Heap Allocation Example},label={lis:Common-Heap-Allocation-Example}]
+sms.achp  equ $18               ; Allocate common heap
+sms.rchp  equ $19               ; Free common heap 
+
+start
+    moveq #sms.achp,d0          ; Trap code
+    moveq #1,d1                 ; A single byte
+    moveq #-1,d2                ; For this job 
+    moveq #0,d3                 ; For SMSQ/E on ST machines
+    trap #1                     ; allocate
+    tst.l d0                    ; Ok?
+    bne.s allocated             ; Yes, free the heap space
+    rts                         ; No, return error of S*BASIC
+
+allocated
+    moveq #sms.rchp,d0          ; Trap code
+    trap #1                     ; Free heap space
+    rts                         ; There are no errors, ever!
+
+\end{lstlisting}
+
+When I executed the code in Listing \ref{lis:Common-Heap-Allocation-Example}
+and traced it with QMON2, I extracted the following detail:
+\begin{itemize}
+\item The base of the allocated block of RAM was at address \$1014A0, this
+was the address passed back in \texttt{A0.L};
+\item \texttt{D1.L} returned the value \$20 -- for 32 bytes allocated in
+total;
+\item The 16 bytes prior to the base address were:
+\begin{itemize}
+\item \texttt{-16(A0)} = \$00000020 = the size of the block allocated;
+\item -\texttt{12(A0)} = \$00000000 = Pointer to next free section of common
+heap, or driver deallocation code;
+\item \texttt{-8(A0)} = \$00000000 = Owning job Id;
+\item \texttt{-4(A0)} = \$00000000 = Address of byte to be set when this
+block is freed.
+\end{itemize}
+\end{itemize}
+Interesting would you say? I requested a single byte yet I see that
+32 bytes were allocated. This confirms that the 16 byte overhead is
+\emph{included} in the allocated space value returned in \texttt{D1},
+which none of the docs\footnote{Pennel, Dickens and QDOS/SMSQ Reference Manual, 4.5.}
+mention. 
+
+I did some other tests with different request sizes and in all cases,
+it appears that the rounding is to 16 bytes and not to 8\footnote{I wonder if Pennel says 8 because that's what QDOS did, but SMSQ/E
+uses a 16 byte rounding instead?} as indicated in the documentation.
+
+\subsubsection{Sms.rchp}
+
+This trap call used to be known as \texttt{MT\_RECHP} in QDOS, but
+is now called \texttt{SMS.RCHP} in SMSQ/E. The obligatory table of
+parameters can be seen in Table \ref{tab:SMS.RCHP-Parameters}.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|>{\raggedright}p{0.5\textwidth}|}
+\hline 
+\multicolumn{2}{|c|}{\textbf{Calling Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & SMS.RCHP = \$19\tabularnewline
+\hline 
+A0.L & Base address of the allocated space.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Return Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & Ignore, no errors are returned.\tabularnewline
+\hline 
+D1L & Corrupted.\tabularnewline
+\hline 
+D2 & Corrupted.\tabularnewline
+\hline 
+D3 & Corrupted.\tabularnewline
+\hline 
+A0L & Corrupted.\tabularnewline
+\hline 
+A1 & Corrupted.\tabularnewline
+\hline 
+A2 & Corrupted.\tabularnewline
+\hline 
+A3 & Corrupted.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Errors in D0}}\tabularnewline
+\hline 
+\multicolumn{2}{|l|}{None -- the trap call never fails.}\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{SMS.RCHP Parameters\label{tab:SMS.RCHP-Parameters}}
+\end{table}
+
+Listing \ref{lis:Common-Heap-Allocation-Example} shows an example
+of the use of this trap.
+
+\subsection{Vectors}
+
+There are a pair of vectored routines, \texttt{MEM.ACHP} and \texttt{MEM.RCHP},
+which enable code to manipulate space in the common heap. These vectors
+are atomic and must be called with the processor running in Supervisor
+Mode. They are normally used by device drivers to allocate space in
+the common heap for channel definition blocks for the Open function
+of the driver. The entire area allocated is zero filled if enough
+RAM existed in one contiguous block.
+
+The 16 byte header for the area allocated is not filled in by the
+vectored code, it is the responsibility of the device driver code
+to do this. 
+
+Other than to mention that they exist, their use from within a device
+driver is beyond the scope of this eMagazine, and so they will not
+be discussed further.
+
+\section{User Heaps}
+
+If your job requires allocating small chunks of RAM, perhaps for a
+linked list, or a tree of structures, then rather than slicing and
+dicing the common heap into tiny bits, it is advisable to allocate
+a large, single, chunk of common heap and use that as a user heap
+to allocate the small chunks. The advantage of this process is that
+when done, you simple deallocate the common heap space and free up
+a large chunk on one go, rather than having to free up lots of small
+chunks. This helps to prevent fragmentation of the common heap.
+
+The steps involved in this process are:
+\begin{itemize}
+\item Allocate a suitable sized area of common heap to be used for your
+user heap;
+\item Link the allocated area into your job's user heap space;
+\item Allocate space in the user heap, as and when required;
+\item Use and abuse the user heap space allocated;
+\item Optionally, but good practice, deallocate used space when finished
+with;
+\item Release the common heap at job end -- this may be manually done,
+or left to QDOS/SMSQ to do it automatically.
+\end{itemize}
+Note that when allocating user heap space, the amount of RAM allocated
+will be rounded up to a multiple of 8 bytes. Each chunk of user heap
+allocated will have an 8 byte overhead on top of the space requested,
+and possibly rounded up. For example:
+\begin{itemize}
+\item Request 10 bytes of user heap;
+\item The allocation will be 16 bytes after rounding up;
+\item The total space allocated from the user heap's free space will be
+16 as the 8 byte overhead is \emph{not added} to the requested size!
+\end{itemize}
+The 8 byte overhead holds the data detailed in Table \ref{tab:User-Heap-Header}.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|c|>{\raggedright}p{0.6\textwidth}|}
+\hline 
+\textbf{Offset} & \textbf{Size} & \textbf{Description}\tabularnewline
+\hline 
+\hline 
+\$00 & Long & Length of this block.\tabularnewline
+\hline 
+\$04 & Long & A \emph{relative} pointer to the next free space in the user heap
+space.\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{User Heap Header\label{tab:User-Heap-Header}}
+\end{table}
+
+The overhead will be written \emph{to the start of the allocated heap
+space}, at the address returned in \texttt{A0}, and is considered
+part of the user heap allocation. This is different to the overhead
+in common heap space.
+
+You will need to save the size of each and every user heap allocation
+so that it can be returned to the heap's free space when done with.
+You can do this manually -- possibly dangerous if you get the sizes
+wrong -- if you only have a couple of allocations, or request 8 bytes
+more for each allocation and use the space allocated from address
+\texttt{8(A0,A6)} on return, rather than that from \texttt{0(A0,A6)}.
+You can also, if applicable, simple rerun the code to create the user
+heap space which will free up all allocated chunks in the user heap
+in one fell swoop.
+
+\subsection{Traps}
+
+Note that when allocating user heap space, the amount of RAM allocated
+will be rounded up to a multiple of 8 bytes. Each allocation will
+itself have an 8 byte overhead as discussed in Table \ref{tab:User-Heap-Header},
+the 8 bytes is taken out of the space requested and is the first two
+long words in the allocated section of the heap. 
+
+In other words, if you need 10 bytes, ask for 18 because the first
+8 bytes, at the address returned in \texttt{A0}, will contain the
+8 byte overhead. This is useful to keep a hold of as the length of
+the block is needed when returning the allocated RAM back to the user
+heap free space with \texttt{SMS.REHP}.
+
+All addresses are relative to \texttt{A6} when allocating or deallocating
+user heap space.
+
+\subsubsection{Sms.alhp}
+
+Table \ref{tab:SMS.ALHP-Parameters} shows the registers that need
+setting up to call the \texttt{SMS.ALHP} trap to allocate memory in
+a user heap. The return parameters are interesting too.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|>{\raggedright}p{0.5\textwidth}|}
+\hline 
+\multicolumn{2}{|c|}{\textbf{Calling Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & SMS.ALHP = \$0C\tabularnewline
+\hline 
+D1.L & Number of bytes required. Does not include the 8 byte overhead. Perhaps
+ask for 8 extra bytes?\tabularnewline
+\hline 
+A0.L & Pointer to a pointer to the free space list. Relative to A6.\tabularnewline
+\hline 
+A6.L & Base address of job.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Return Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & Error code, or zero for no errors.\tabularnewline
+\hline 
+D1.L & Actual number of bytes allocated -- should be the number requested
+and includes the 8 byte overhead.\tabularnewline
+\hline 
+D2 & Corrupted.\tabularnewline
+\hline 
+D3 & Corrupted.\tabularnewline
+\hline 
+A0.L & Base address of the allocated space. This points to the first byte
+of the header for the block. Relative to A6.\tabularnewline
+\hline 
+A1 & Corrupted.\tabularnewline
+\hline 
+A2 & Corrupted.\tabularnewline
+\hline 
+A3 & Corrupted.\tabularnewline
+\hline 
+A6 & Preserved.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Errors in D0}}\tabularnewline
+\hline 
+ERR.IMEM & No area of free space was large enough to allocate.\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{SMS.ALHP Parameters\label{tab:SMS.ALHP-Parameters}}
+\end{table}
+
+
+\subsubsection{Sms.rehp}
+
+This trap call is used when initially adding an area of RAM to be
+used as a user heap, or when freeing an allocation within the user
+heap. In the former case, the long word at \texttt{(A6,A1.L)} should
+be zero, in the latter, it will be some other, non-zero value. Listings
+\ref{lis:User-Heap-Creation-Example} and \ref{lis:User-Heap-Deallocation}
+show examples of both.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|>{\raggedright}p{0.5\textwidth}|}
+\hline 
+\multicolumn{2}{|c|}{\textbf{Calling Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & SMS.REHP = \$0D\tabularnewline
+\hline 
+D1.L & Length of space to link (back) into a heap\tabularnewline
+\hline 
+A0.L & Base address of the space to be linked in/back. Relative to A6.\tabularnewline
+\hline 
+A1.L & Pointer to a pointer to the free space list. Relative to A6.\tabularnewline
+\hline 
+A6.L & Base address of job.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Return Parameters}}\tabularnewline
+\hline 
+\textbf{Register} & \textbf{Usage}\tabularnewline
+\hline 
+D0.L & Ignore, no errors are returned.\tabularnewline
+\hline 
+D1L & Corrupted.\tabularnewline
+\hline 
+D2 & Corrupted.\tabularnewline
+\hline 
+D3 & Corrupted.\tabularnewline
+\hline 
+A0L & Corrupted.\tabularnewline
+\hline 
+A1 & Corrupted.\tabularnewline
+\hline 
+A2 & Corrupted.\tabularnewline
+\hline 
+A3 & Corrupted.\tabularnewline
+\hline 
+\multicolumn{2}{|c|}{\textbf{Errors in D0}}\tabularnewline
+\hline 
+\multicolumn{2}{|l|}{None -- the trap call never fails.}\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{SMS.RCHP Parameters\label{tab:SMS.RCHP-Parameters-1}}
+\end{table}
+
+
+\subsubsection{User Heap Example}
+
+Listing \ref{lis:User-Heap-Creation-Example} shows a small example
+where a chunk of 64 Kb of common heap is requested from the system,
+and, if successfully allocated, is converted to a user heap. the code
+checks return values from traps -- it's assembled to be \texttt{CALL}ed
+from SuperBASIC/SBASIC -- and if any errors occur, the code exits
+back to SuperBASIC/SBASIC with the error code.
+
+The allocated area of common heap is then converted to a user heap
+by simply making sure that the free space address, pointed to by the
+long word at \texttt{myHeap}, is zero, then calling the \texttt{SMS.REHP}
+trap.
+
+\begin{lstlisting}[caption={User Heap Creation Example},label={lis:User-Heap-Creation-Example}]
+sms.achp  equ $18
+sms.rehp  equ $0d
+
+; First, allocate a 64Kb common heap area:
+start   
+    moveq #sms.achp,d0          ; Trap code
+    move.l #65536,d1            ; 64Kb required
+    moveq #-1,d2                ; This job will be the owner
+    trap #1                     ; Allocate the space
+    tst.l d0                    ; Did it work?
+    beq.s heapOk                ; Yes
+
+; Handle out of memory errors here.
+    rts                         ; Back to SuperBasic
+        
+; We have a common heap, convert it to a user heap :
+heapOk  
+    moveq #sms.rehp,d0          ; Trap code
+    suba.l a6,a0                ; We need A0 to be A6 relative
+    lea myHeap,a1               ; Pointer to heap header
+    move.l 0,(a1)               ; Indicate this is a new heap
+    suba.l a6,a1                ; This needs to be relative A6
+    trap #1                     ; That should do it (No errors)
+    bra.s useHeap               ; Go and use the heap space
+
+myHeap
+    ds.l 1                      ; Pointer to free space
+
+\end{lstlisting}
+
+Once we have an area of RAM set aside as a user heap, we can begin
+to use it. Listing \ref{lis:User-Heap-Allocation} is an example of
+allocating 200 bytes from the newly created user heap.
+
+\begin{lstlisting}[caption={User Heap Allocation},label={lis:User-Heap-Allocation}]
+sms.alhp  equ $0c
+
+; Allocate space in the user heap.
+useHeap
+    moveq #sms.alhp,d0          ; Trap code
+    move.l #200,d1              ; I need 200 bytes of user heap
+    lea myHeap,a0               ; MyHeap = Free space pointer
+    suba.l a6,a0                ; Relative to A6        
+    trap #1                     ; Allocate 200 bytes
+    tst.l d0                    ; Did it work?
+    bra.s doStuff               ; Go and use the allocation
+
+; Handle out of user heap memory errors here
+    rts                         ; Back to SuperBasic
+        
+; Now we have allocated some user heap, use it somehow
+doStuff 
+    adda.l a6,a0                ; Absolute the address
+
+\end{lstlisting}
+
+At this point, running via QMON2, I checked the allocated user heap
+space to see if the 8 byte overhead was prior to the address returned
+in \texttt{A0}, as per the common heap; or at the returned address.
+The overhead is indeed at the address pointed to by \texttt{(A6,A0.L)}
+on return and after ``unrelativing'' the address, \texttt{0(A0)}
+holds the long word \$000000C8 which is the length of the block, the
+long word at \texttt{4(A0)} is zero.
+
+When we have finished using the 200 bytes, we can return it to the
+user heap, in case we need more space at some other point in the code.
+This uses the same trap call which created the user heap in the first
+place, but this time, the pointer to the free space, \texttt{myHeap},
+will not be zero as it points to the first free chunk of user heap.
+
+\begin{lstlisting}[caption={User Heap Deallocation},label={lis:User-Heap-Deallocation}]
+freeUser  
+    moveq #sms.rehp,d0          ; Trap code
+    move.l #200,d1              ; Size is 200 bytes
+    suba.l a6,a0                ; A0 has to be relative a6
+    lea myHeap,a1               ; Pointer to top of heap
+    suba.l a6,a1                ; Which has also to be relative A6
+    trap #1                     ; Deallocate the 200 byte area
+    rts                         ; Back to SuperBasic
+
+\end{lstlisting}
+
+You will note that I have hard coded the block size in register \texttt{D1}
+for this trap call. This is one way to do it especially if you only
+required a couple of chunks of user heap, keeping a note of the sizes
+isn't difficult in that case. However, if you are allocating lots
+of user heap space, or chunks of many different sizes, what to do?
+
+My advice would be, allocate space for 8 bytes plus what your code
+needs, and use the data from \texttt{8(A6,A0.L)} onwards, and do not
+touch anything below that address. When you are done with the space
+and about to free it, simply load \texttt{D1} from \texttt{0(A6,A0.L)}
+to get the block size, and \emph{Robert is your mother's brother}.
+Obviously, if you have ``unrelatived'' the base address of the allocated
+space, you would use the data from \texttt{8(A0)} and load \texttt{D1}
+from \texttt{(A0)} prior to freeing the space again.
+
+Once all the user heap space has been freed up and is no longer required,
+the chances are that your application is about to exit. At this point,
+it could exit and automatically free up the 64 Kb chunk of common
+heap, without any further work on the code's part, or, the code could
+be nice and free it's own allocation with the \texttt{SMS.RCHP} trap
+call.
+
+\subsubsection{Relative Addresses}
+
+In the listings above, you will note that I add or subtract \texttt{A6}
+from \texttt{A0} and \texttt{A1} at various places in the code. This
+is because when using these traps to manipulate user heap space, those
+registers have to be relative to \texttt{A6}. It's a bit of a faff
+and there are a couple of ways around this problem:
+\begin{itemize}
+\item Do as I have done, and add or subtract \texttt{A6} as necessary, then
+address user heap areas using offsets on \texttt{(A0)} as required.
+\item Do all your addressing as offsets on \texttt{(A6,A0.L)} as necessary,
+although this addressing mode takes 2 extra clock cycles over just
+\texttt{(A0)}\footnote{True, but each and every \texttt{ADD} or \texttt{SUB} of \texttt{A6}
+to/from \texttt{A0} or \texttt{A1} will cost you 6 clock cycles, so
+there!};
+\item Zero \texttt{A6} at the start of the code, and then the addresses
+will be both absolute and relative at the same time, so you can use
+offsets on \texttt{(A0)} or \texttt{(A6,A0.L)} as you prefer;
+\item Use the appropriate vector calls rather than the trap calls, those
+use absolute addresses. Speaking of which....
+\end{itemize}
+
+\subsection{Vectors}
+
+There are a pair of vectored routines, \texttt{MEM.ALHP} and \texttt{MEM.REHP},
+which are \emph{non-atomic}\footnote{In other words, the operation could get interrupted and the scheduler
+entered.} versions of the user heap trap calls. They take exactly the same
+parameters as the two trap calls, but do not require \texttt{A6} to
+be considered. Even better, there is no need to mess around keeping
+everything relative to \texttt{A6} as the two vectors don't care about
+such necessities!
+
+Converting the listings above to use vectors instead of traps, gives
+us the code in Listing \ref{lis:User-Heap-Vectors-Example}.
+
+\begin{lstlisting}[caption={User Heap Vectors Example},label={lis:User-Heap-Vectors-Example}]
+sms.achp  equ $18
+mem.rehp  equ $DA
+
+; First, allocate a 64Kb common heap area:
+start   
+    moveq #sms.achp,d0          ; Trap code
+    move.l #65536,d1            ; 64Kb required
+    moveq #-1,d2                ; This job will be the owner
+    trap #1                     ; Allocate the space
+    tst.l d0                    ; Did it work?
+    beq.s heapOk                ; Yes
+
+; Handle out of memory errors here.
+    rts                         ; Back to SuperBasic
+        
+; We have a common heap, convert it to a user heap :
+heapOk
+	move.w mem.rehp,a2          ; Vector 
+    lea myHeap,a1               ; Pointer to pointer to free space
+    clr.l (a1)                  ; Initialise user heap
+    move.l #65536,d1            ; We have 64 Kb to play with
+    jsr (a2)                    ; Convert to a user heap
+    tst.l d0                    ; Did it work
+    beq.s useHeap               ; Yes
+    rts                         ; No
+
+myHeap
+	ds.l 1                      ; Pointer to free space
+
+mem.alhp  equ $D8
+
+; Allocate space in the user heap.
+useHeap
+    move.l #200+8,d1            ; I need 200 bytes of user heap
+    lea myHeap,a0               ; MyHeap = Free space pointer
+    move.w mem.alhp,a2          ; Vector
+    jsr (a2)                    ; Get some user heap
+    tst.l d0                    ; Did it work?
+    bra.s doStuff               ; Yes
+    rts                         ; No
+        
+; Now we have allocated some user heap, use it somehow
+doStuff 
+   move.l #$12345678,8(a0)      ; Avoid writing the header bytes
+   ...
+
+; Now deallocate the user heap space.
+freeUser  
+    lea myHeap,a1               ; Pointer to pointer to free space
+	move.w mem.rehp,a2          ; Vector 
+    move.l (a0),d1              ; Block length to free up
+    jsr (a2)                    ; Free the space
+    rts                         ; Back to SuperBASIC
+
+\end{lstlisting}
+
+If you trace the code using QMON2\footnote{Other monitors are available....}
+then you will see that when you arrive at the label \texttt{doStuff},
+the base address of the user heap allocated at \texttt{(A0)}, holds
+the length of the block, which is 208 or \$D0\footnote{And that value confused me as QMON listed the instruction to load
+\texttt{D1} as \texttt{MOVE.L \#\$D0,D1} and I was initially confused
+as I didn't have an instruction to move \texttt{D0} into \texttt{D1}.
+Then I read the screen a little bit better and understood!}.
+
+\subsubsection{Freeing User Heap Space Quickly}
+
+If you have, for example, some deeply recursive code which allocates
+space in the user heap, how do you cope with an error whereby you
+have to free up all the allocated bits that were ok until the problem
+arrived? I'm thinking perhaps of an expression evaluator as a specific
+example, but it could be a parser or a compiler building a symbol
+table or parse tree etc. I'm also thinking of the problem where the
+code doesn't just give up, but informs the user -- \emph{expression
+too complex} or \emph{invalid operation} etc -- but then loops back
+to the prompt for more input.
+
+If, in the case of the expression evaluator, the code will have allocated
+lots of chunks of user heap to build the expression tree\footnote{Usually an Abstract Syntax Tree or AST.}
+then those nodes in the tree need to be deallocated before the next
+expression can be evaluated, otherwise, at some point, the user heap
+space will be full of nodes that are no longer required, but are hogging
+all the space.
+
+The easiest manner of deallocating all allocated space in the user
+heap is simply to clear the pointer to the free space to zero, then
+call the \texttt{SMS.REHP} trap or the \texttt{MEM.REHP} vector and
+link the entire user heap to free space again. Something similar to
+Listing \ref{lis:User-Heap-Total-Deallocation}.
+
+\begin{lstlisting}[caption={User Heap Total Deallocation},label={lis:User-Heap-Total-Deallocation}]
+start
+    bsr getCommonHeap           ; Allocate heap space or die
+    bra.s mainLoop              ; Skip to main loop
+
+userHeap 
+    dc.l 1
+
+; On first entry:
+; Link the allocated space in the common heap into a user heap.
+;
+; On subsequent entries:
+; Wipe everything from the user heap.
+mainLoop
+    lea myHeap,a1               ; Pointer to pointer to free space
+    clr.l (a1)                  ; Initialise user heap
+    move.w mem.rehp,a2          ; Vector 
+    move.l #heapSize,d1         ; Size of user heap
+    jsr (a2)                    ; Convert/wipe user heap
+    tst.l d0                    ; Did it work
+    beq.s useHeap               ; Yes
+    rts                         ; No, exit with error code
+;
+; None of these will return if an error occurs. The errors
+; will be handled below, the stack unwound and any user
+; heap allocations freed.
+    bsr getUserInput            ; Get next expression or exit
+    bsr lexer                   ; Build token list
+    bsr parser                  ; Build AST
+    bsr evaluate                ; Evaluate the expression
+    bra.s mainLoop              ; Keep going
+
+lexError
+    bsr doLexError              ; Handle lexer errors
+    bra.s mainLoop              ; And go again
+
+parseError
+    bsr doParseError            ; Handle parser errors
+    bra.s mainLoop              ; And go again
+
+EvalError
+    bsr overflow                ; Check/Handle overflow
+    bsr divZero                 ; Check/handle divide by zero
+    bsr ...                     ; Etc
+    bra.s mainLoop              ; And go again
+
+    ...
+
+\end{lstlisting}
+
+On the first entry to \texttt{mainLoop}, the common heap allocation
+is linked into the user heap's free space, the whole allocation is
+free for use as a user heap. On subsequent passes through \texttt{mainLoop},
+the user heap is effectively reinitialised, thus freeing up every
+piece of allocated space which was allocated before the code went
+into error recovery.
+
+Not shown in the example code above is the handling of the \texttt{A7}
+stack, which needs to be preserved at the start of the \texttt{mainLoop}
+and reset after each and every error so that it is correctly set each
+time we pass by the \texttt{mainLoop} address.
+
+Can you tell I'm writing an expression evaluator then? 

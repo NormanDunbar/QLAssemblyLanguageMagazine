@@ -1,0 +1,493 @@
+
+\chapter{Unsigned Peeks}
+
+There's a thread on the \href{https://qlforum.co.uk/viewtopic.php?f=3&t=4027&sid=7a218630d06b1d78c6bb436e1fbf32f9}{QL Forum}\footnote{https://qlforum.co.uk/viewtopic.php?f=3\&t=4027\&sid=7a218630d06b1d78c6bb436e1fbf32f9}
+about how difficult it might be to write programs in S{*}BASIC on
+SMSQ/E. There is a pile of useful information there. One of the more
+interesting comments was about a hardware timer to get proper delays
+in code, but this required the use of \texttt{PEEK\_L}. And, as we
+all know, \texttt{PEEK\_L} returns a float, and is signed. 
+
+I responded on \href{https://qlforum.co.uk/viewtopic.php?f=3&t=4027&p=45290\#p45290}{this post}\footnote{https://qlforum.co.uk/viewtopic.php?f=3\&t=4027\&p=45290\#p45290}
+with an example of some code to get around that problem by adding
+2\textsuperscript{31} if the result was negative. Sadly, in my posting,
+I actually typed 2\textsuperscript{32}-- Duh! 
+
+Marcel responded that \emph{someone could do a }\texttt{\emph{PEEK\_UL}}\emph{
+function} to get an unsigned result. This caused confusion for a bit
+as nobody knew that \texttt{PEEK\_UL} existed and when they tried,
+it was, of course, not found. Marcel \emph{may} have been hinting
+that \emph{someone could easily write an unsigned version of the }\texttt{\emph{PEEK\_L}}\emph{
+(and }\texttt{\emph{PEEK\_W}}\emph{) functions}. So I did! And here
+they is.
+
+You'd \emph{think} there was nothing to it really, and there isn't,
+but along the way to producing this code, I had to delve into some
+old code of mine\footnote{Well, it's either mine or I stole it from somewhere, I can't remember
+that far back!} to convert a long value to a floating point value on the maths stack.
+For the life of me, I couldn't remember how I did it, so I fell down
+that rabbit hole until I had a vague understanding of QL Floating
+Point and the conversion code.
+
+SMSQ/E has a maths package operation to convert a long value on the
+maths stack into a float, however, QDOS doesn't have this option --
+it's interestingly missing from the maths package op code -- so there
+are two versions of the source code and binary files on the accompanying
+code download for this issue.
+
+The SMSQ/E version is 230 bytes while the QDOS version is longer,
+at 258. The QDOS version is, however, safe to run on SMSQ/E as well.
+Just don't try running the SMSQ/E version on QDOS -- I have no idea
+what will happen.
+
+\section{PEEK\_UW and PEEK\_UL}
+
+\texttt{PEEK\_W} and \texttt{PEEK\_L} on the QL are signed. They return
+positive and negative values. This is sometimes a bit of a pain because,
+taking \texttt{PEEK\_L} as an example, fetching any value over \$7FFFFFFF
+or 2,147,483,647, will result in the value going negative. This may
+not be what you desire. The solution is easy, add 2\textsuperscript{15}
+or 2\textsuperscript{31}, depending on whether you are peeking for
+words or longs, to the result on return to S{*}BASIC. Sometimes you
+forget, well, I do, and so, these two new functions will do the testing
+and adding for us, leaving S{*}BASIC to get on with interpreting the
+rest of the code.
+
+Listing \ref{lis:Unsigned-Peeks-Equates} is the start of the source
+code, and shows the various equates I've used in the code. These are,
+as mentioned in the News Section, now using the SMSQ/E mnemonics,
+don't worry if you are using QDOS as it's the values that count --
+I could have called them Fred, Barney Wilma, Betty etc, but that's
+not a meaningful set of names\footnote{Unless we are writing a Flintstones application I suppose.}. 
+
+\lstinputlisting[linerange={10-26},caption={Unsigned Peeks - Equates},label={lis:Unsigned-Peeks-Equates}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+The only thing I'd draw your attention to is the two flags I've set
+up to determine if we are peeking words or longs, those being \texttt{peek\_w}
+and \texttt{peek\_l}. I've given those a value which just happens
+to correspond to the exponent for a floating point value of either
+2\textsuperscript{15} or 2\textsuperscript{31} -- this is a cunning
+plan to save me some work later on!
+
+The code proper begins at the label start, which you can see in Listing
+\ref{lis:Unsigned-Peeks-Extend-SBASIC} where we have the standard
+code to link in new procedures and/or functions, and the requisite
+definition block in Listing \ref{lis:Unsigned-Peeks-Procedure-function-definition-block}
+where we are defining no new procedures, only two new functions, \texttt{PEEK\_UL}
+and \texttt{PEEK\_UW}.
+
+\lstinputlisting[linerange={31-35},caption={Unsigned Peeks - Linking into S*BASIC},label={lis:Unsigned-Peeks-Extend-SBASIC}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+\lstinputlisting[linerange={40-50},caption={Unsigned Peeks - Procedure/Function definition block},label={lis:Unsigned-Peeks-Procedure-function-definition-block}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+Both new functions share a lot of common code. To this end, I set
+a flag to determine which is being called so that the places where
+things differ, can easily tell the functions apart. \texttt{PEEK\_W}
+begins, as Listing \ref{lis:Unsigned-Peeks-Peek-uw} shows, by setting
+the correct flag in \texttt{D4.W}, before jumping off to join the
+first section of common code.
+
+\lstinputlisting[linerange={59-61},caption={Unsigned Peeks - Peek\_uw},label={lis:Unsigned-Peeks-Peek-uw}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+Listing \ref{lis:Unsigned-Peeks-Peek_ul} is the beginning of the
+\texttt{PEEK\_UL} function. It also sets a flag before dropping into
+the common code for both functions. 
+
+\lstinputlisting[linerange={69-80},caption={Unsigned Peeks - Peek\_ul},label={lis:Unsigned-Peeks-Peek_ul}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+Both functions require a single parameter, so we subtract \texttt{A3.L}
+from \texttt{A5.L} and if the result is not 8 bytes, then we exit
+back to S{*}BASIC with a bad parameter error. \texttt{A3.L} points
+to the last function parameter on the name table, and \texttt{A5.L}
+to the first. Each name table entry takes 8 bytes.
+
+If we do have 8 bytes of a difference, then we know that there's exactly
+one parameter waiting, so we can go fetch it. Listing \ref{lis:Unsigned-Peeks-Fetching-one-parameter}
+shows the code to fetch the address parameter as a long value.
+
+\lstinputlisting[linerange={86-90},caption={Unsigned Peeks - Fetching one parameter},label={lis:Unsigned-Peeks-Fetching-one-parameter}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+When fetching parameters for a procedure or function, \texttt{D3.W}
+holds the count of parameters actually fetched. Just as an extra check,
+we test this, in Listing \ref{lis:Unsigned-Peeks-Testing-parameters-fetched},
+to make sure that we did indeed only fetch a single parameter.
+
+\lstinputlisting[linerange={96-98},showlines=true,caption={Unsigned Peeks - Testing parameters fetched},label={lis:Unsigned-Peeks-Testing-parameters-fetched}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+If we somehow managed to fetch more, or less, than one parameter,
+we bale out to S{*}BASIC with a bad parameter error. If not, then
+we continue to pull the passed address off of the maths stack into
+\texttt{A2.L} and then we `peek' the long value at the requested
+address into \texttt{D7.L} as per Listing \ref{lis:Unsigned-Peeks-Getting-the-address-and-peeking}
+
+\lstinputlisting[linerange={104-106},caption={Unsigned Peeks - Getting the address, and peeking it},label={lis:Unsigned-Peeks-Getting-the-address-and-peeking}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+At t his point, we have pretty much executed a \texttt{PEEK\_L} function
+call, but we might want only the first word if we are executing \texttt{PEEK\_UW}.
+If so, we need to return only the current high word of \texttt{D7.L},
+so Listing ? is the code that does the check. If we are indeed running
+\texttt{PEEK\_UW}, then the low word is cleared and then the upper
+word is swapped into the lower word, giving the correct value in \texttt{D7.L}
+for \texttt{PEEK\_UW}.
+
+\lstinputlisting[linerange={112-116, 121-121},caption={Unsigned Peeks - Fixup for PEEK\_UW},label={lis:Unsigned-Peeks-Fixup-for-peek-uw}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+Both functions come together again at label \texttt{pulGotPeek}, where
+\texttt{D7.L} holds the possibly negative value we need to return
+to S{*}BASIC. Unfortunately, this is also exactly where they diverge
+again, however, I'm only discussing the SMSQ/E version here. I've
+explained converting a long word into floating point the end of this
+chapter, if you are interested?
+
+The differences are these:
+\begin{itemize}
+\item SMSQ/E has a maths package operation, \texttt{OP.FLONG}, to take the
+long word on the top of the maths stack, and convert it to a floating
+point value at TOS, adjusting \texttt{A1.L} as necessary (subtracting
+2 from it -- the difference between a 6 byte float and a 4 byte long)
+\item QDOS requires the developer, me, to allocate an additional 2 bytes
+on the maths stack. There is already 4 bytes available as we pulled
+the address parameter as a long word, which takes 4 bytes.
+\item It the space allocation succeeds then we can convert, manually, and
+normalise the long word in \texttt{D7.L} into a float and stack it.
+\item In the QDOS variant, the developer, me again, has to be very careful
+to keep the TOS pointer in A1 correct at all times. 
+\end{itemize}
+Listing \ref{lis:Unsigned-Peeks-Floating-a-long-smsq-style} is the
+simple way that SMSQ/E converts a long word to a floating point value.
+
+\lstinputlisting[linerange={185-190},caption={Unsigned Peeks - Floating a Long SMSQ/E style},label={lis:Unsigned-Peeks-Floating-a-long-smsq-style}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+We need to stack the value in \texttt{D7.L} so we can do that easily
+as we know that there are 4 bytes available on the maths stack, and
+that \texttt{A1.L} is still correctly pointing at the TOS where we
+need our long word to be. As with almost everything S{*}BASIC, addresses
+are relative to \texttt{A6}. 
+
+After stacking \texttt{D7.L}, we simply call a subroutine, \texttt{pulDoMathsOp},
+which can be seen later in Listing \ref{lis:Unsigned-Peeks-Execute-maths-package-operation},
+to do the hard work of converting the value. If that worked, then
+we skip off to \texttt{pulTestNegative}, where we join up with the
+code for QDOS again.
+
+\lstinputlisting[linerange={201-203},caption={Unsigned Peeks - Testing for negativity},label={lis:Unsigned-Peeks-Testing-for-negativity}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+Listing \ref{lis:Unsigned-Peeks-Testing-for-negativity} checks the
+byte at the high end of the mantissa for the floating point value
+on the maths stack. Bit 31 of the mantissa is the sign bit and that
+corresponds to bit 7 in this particular byte. If the bit is clear,
+then we have a positive number as there's no need to do the addition
+to make it positive.
+
+If the bit is set, then the value is negative, and we need to add
+2\textsuperscript{15} or 2\textsuperscript{31} depending on the
+function currently executing. Listing \ref{lis:Unsigned-Peeks-Adjusting-for-negativity}
+shows how I decided to do it.
+
+\lstinputlisting[linerange={215-223},caption={Unsigned Peeks - Adjusting for negativity},label={lis:Unsigned-Peeks-Adjusting-for-negativity}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+The first thing we have to do is request 6 bytes, enough room for
+a new floating point value, on the maths stack. This is done by a
+subroutine, \texttt{pulGetSpace} in Listing \ref{lis:Unsigned-Peeks-Allocating-maths-stack-space}
+which will make sure that the space is allocated and adjusts \texttt{A1.L}
+as necessary.
+
+We can now stack the floating point representation of 2\textsuperscript{15}
+or 2\textsuperscript{31} appropriately. Remember that flag I used
+to determine whether we were in \texttt{PEEK\_UW} or \texttt{PEEK\_UL}?
+Well, that value just happens to be the exponent for 2\textsuperscript{15}
+or 2\textsuperscript{31}and so we can stack the exponent directly
+from the flag register, \texttt{D4.W}. The mantissa for both values
+is the same, so that gets stacked next. We now have \texttt{(A6,A1.L)}
+pointing at 2\textsuperscript{15} or 2\textsuperscript{31} on TOS,
+and the peek value at Next On Stack, NOS. We need to add them together.
+
+SMSQ/E and QDOS both have the same maths package operation to add
+two floats, \texttt{QA.ADD}. This has the side effect of replacing
+NOS with the result of the addition and removes TOS making the existing
+NOS the new TOS. \texttt{A1.L} is now 6 larger than previously, and
+we need this to be saved away. The subroutine \texttt{pulDoMathsOp},
+in Listing \ref{lis:Unsigned-Peeks-Execute-maths-package-operation}
+does this for us.
+
+The value at TOS is now guaranteed to be positive, so we can carry
+on and return the result to S{*}BASIC. Listing \ref{lis:Unsigned-Peeks-Return-to-s-basic}
+is how we do that.
+
+\lstinputlisting[linerange={230-233},caption={Unsigned Peeks - Return to S*BASIC},label={lis:Unsigned-Peeks-Return-to-s-basic}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+\texttt{D4.W} is set to 2 to indicate a float result is on the maths
+stack at TOS and we return with no errors.
+
+That's basically all there is to it! Except for a couple of small
+subroutines. Listing \ref{lis:Unsigned-Peeks-Allocating-maths-stack-space}
+is the subroutine \texttt{pulGetSpace} which requests space for the
+maths stack and keeps the various pointers correctly aligned.
+
+\lstinputlisting[linerange={247-256},caption={Unsigned Peeks - Allocating maths stack space},label={lis:Unsigned-Peeks-Allocating-maths-stack-space}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+The code expects \texttt{D1.L} to contain the number of bytes needed
+and \texttt{A1.L} to point at the maths stack TOS, relative to \texttt{A6.L}.
+The \texttt{QA.RESRI} vector code trashes registers \texttt{D2}, \texttt{D3},
+\texttt{A1} and \texttt{A2}, but we have to reload \texttt{A1.L} from
+\texttt{SB\_ARTHP} anyway, so that's no matter. 
+
+The subroutine requests \texttt{D1.L} bytes of space, then retrieves
+the potentially new value for \texttt{A1.L} from \texttt{SB\_ARTHP}
+before subtracting \texttt{D1.L} to get the new TOS. This value is
+saved back in \texttt{SB\_ARTHP} as it must be.
+
+On exit, \texttt{A1.L} is the new TOS pointer, ready for use by our
+code.
+
+Listing \ref{lis:Unsigned-Peeks-Execute-maths-package-operation}
+is the final subroutine. This one, \texttt{pulDoMathsOp}, executes
+a single maths package operation according to the code in \texttt{D0.W}.
+
+\lstinputlisting[linerange={272-281},caption={Unsigned Peeks - Execute maths package operation},label={lis:Unsigned-Peeks-Execute-maths-package-operation}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_SMSQ.asm}
+
+The subroutine expects an operation code, as a word, in \texttt{D0.W}
+and executes it. If all went well, then the TOS might have changed,
+so to keep things right, the potential new TOS is pulled from \texttt{SB\_ARTHP}
+back into \texttt{A1.L} before setting no errors in D0, and returning
+to the caller.
+
+If errors were detected, the code makes an early exit back to the
+caller with \texttt{D0} set to the error code, and the \texttt{Z}
+flag unset.
+
+\subsection{QDOS Conversion of Long to Float}
+
+AS mentioned above, QDOS requires manual intervention to convert a
+long word into a floating point value. We already have room for a
+long word, but we need an additional two bytes for a float, so first
+of all, we have to request two extra bytes. Listing ? shows how we
+do this by setting \texttt{D1.L} to 2, and calling the \texttt{pulGetSpace}
+subroutine, in Listing ?, to do the hard work of getting the space
+and keeping the pointers aligned. On return, \texttt{A1.L} is set
+ready for us to use to stack a 6 byte float value. 
+
+\lstinputlisting[linerange={134-136},caption={Unsigned Peeks - QDOS Making stack space},label={lis:Unsigned-Peeks-QDOS-making-stack-space}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_QDOS.asm}
+
+Unfortunately, QDOS is bereft in the maths package operations to convert
+a long word to a float, so we have to do it manually. Listing \ref{lis:Unsigned-Peeks-QDOS-Convering-long-to-float}
+does the hard work for us. At the end, we should have the exponent
+value in register \texttt{D5.W} and the mantissa in register \texttt{D6.L}. 
+
+\lstinputlisting[linerange={144-168},caption={Unsigned Peeks - QDOS Converting Long to Float},label={lis:Unsigned-Peeks-QDOS-Convering-long-to-float}]{/home/norman/SourceCode/Assembly eMagazine/Issue_010/Code/PeekUnsigned/Peek_ul_QDOS.asm}
+
+How does it work? I was hoping you wouldn't ask!
+
+\subsection{QL Floating Point Values}
+
+The QL's internal floating point format is a 2 byte exponent and a
+4 byte mantissa. What are they? Well, if you have a number such as
+$1.23\times10^{3}$ then the mantissa is the $1.23$ and the exponent
+is $3$ and the number is \textquotedbl normalised\textquotedbl{} when
+the mantissa is \textquotedbl n.something\textquotedbl . Zero is a
+special case.
+
+$1.23\times10^{3}$ could easily be written as $12.3\times10^{2}$
+or $123\times10^{1}$ they all result in 1,230. A properly normalised
+number, in this notation, is a single digit prior to the decimal point,
+so $1.23\times10^{3}$ is the correct value.
+
+The exponent is the power of 10 that the mantissa is to be multiplied
+by, to get the actual\footnote{Watch out for errors though, floating point is notorious for errors.
+Many floating point values cannot be represented exactly. One third
+for example. } value, in other words, the value is:
+
+\[
+mantissa*10^{exponent}
+\]
+
+The same is true in binary but there the value is $mantissa*2^{exponent}$
+as we are working in base 2, not base 10. 
+
+In SMSQ/E, the mantissa is normalised when bit 31 or bit 30 of the
+mantissa is set. Bit 31 will be set if the number is negative, and
+bit 30 if positive. The exponent only has the bottom 12 bits available
+as the top nibble is used to determine if this is a decimal float
+value, a binary float value or a hexadecimal float value.
+
+12 bits is 2,048. \$800 in hexadecimal, so the exponent has 12 bits
+of precision. However, it is offset by \$800, so the range is from
+2\textsuperscript{-2,048} to 2\textsuperscript{2,047} which is from
+3.094\textsuperscript{-617} to 1.616\textsuperscript{616} which
+is a decent enough range. Because the exponent is offset, this makes
+the floating point value equal to:
+
+\[
+mantissa*2^{exponent-\$800}
+\]
+
+Zero is a special case where the exponent and mantissa are both zero.
+
+The bits in the mantissa represent fractions, but in power's of 2.
+They can be thought of as $\frac{1}{2^{31-bit}}$ but , as with many
+things mathematical, this can also be expressed as $2^{-(31-bit)}$.
+The fractional parts of the mantissa start with bit 30, the most significant
+bit, which represents $\frac{1}{2^{1}}$, $2^{-1}$ or 0.5, down to
+bit 0, representing $\frac{1}{2^{31}}$, $2^{-31}$ or \emph{not very
+much at all}!\footnote{Ok, ok, it's $\frac{1}{2,147,483,648}$, which is pretty small.}
+
+A couple of examples:
+\begin{itemize}
+\item 10.0 is represented as \$0804 50000000
+\item -10.0 is represented by \$07FC D0000000
+\end{itemize}
+Taking 10 first.
+
+The mantissa is \%0101 0000 0000 0000 0000 0000 0000 0000 so we are
+only interested in the \%0101 bits, the trailing zeros can be ignored.
+
+The sign bit is zero, so the number is positive. So far so good. Bit
+30, which represents 0.5 is set, as is bit 28 which represents 0.125,
+the mantissa is therefore the addition of these fractions. The result
+is 0.625.
+
+The exponent is \$0804, subtracting \$0800 we get \$04, so 10 is 0.625
+multiplied by 2\textsuperscript{4 }or 16. 10 is indeed equal to 0.625
+times 16.
+
+Negative 10 next.
+
+The mantissa is \%1101 0000 0000 0000 0000 0000 0000 0000 and again,
+we can ignore all the trailing zero, keeping only \%1101.
+
+Bit 31 is 1 so we are dealing with a negative number.
+
+Bits 30, 0.5, and 28, 0.125, are both set, so we have a value again,
+of 0.625. Subtracting \$800 from \$7FC results in \$FFFC or -4, and
+0.625 times 2\textsuperscript{-4} is -10. 
+
+If we assume \texttt{D7.L} is zero, then we have the easy case where
+we move it into \texttt{D5.W} and \texttt{D6.L}, it will set the \texttt{Z}
+flag and we are ready to stack the value.
+
+If we take \texttt{D7} as having the value \$1E240 which is 123,456
+in decimal. We start off by setting up the various registers, \texttt{D5}
+gets a copy of the low word, \texttt{D6} the whole \$1E240. Because
+we are not dealing with zero, we drop down to set \texttt{D5} to the
+first guess exponent, \$081F, and adding \texttt{D7} to itself which
+results in \texttt{D7} = \$3C480. This didn't overflow, so we still
+have a valid mantissa which is twice as big as it was.
+
+As we have now doubled the mantissa, we must also halve the exponent,
+which means subtracting 1 from \texttt{D5} to get \$081E.
+
+The new mantissa is copied into \texttt{D6} where we will keep it
+for those occasions when shifting it by \texttt{D0} bits results in
+overflow. \texttt{D0} is initialised to \$10 -- we will attempt a
+16 bit shift first of all.
+
+We \emph{could} shift by a single bit each time, and halve the exponent
+each time there's no overflow, but this method is quicker. If \texttt{D7}
+\emph{can} be shifted 16 bits left, then that that's one shift, not
+16\footnote{I have a funny feeling this code is something from Simon N. Goodwin!}.
+
+We are now at label \texttt{pulNormalise} for the first time, and
+here we enter the normalisation loop. We will multiply \texttt{D7}
+by \textquotedbl lots of bits\textquotedbl{} each time as long as we
+don't get overflow. If we do hit overflow, we have gone too far and
+need to back up a bit, and multiply by half as many \textquotedbl lots
+of bits\textquotedbl .
+
+We copy the most recent valid mantissa from \texttt{D6} to \texttt{D7}
+ready to try again, and shift it left by the \$10 bits held in \texttt{D0}.
+This caused overflow as \texttt{D7} was holding \$3C480, which is
+\%0000 0000 0000 0011 in the high word, so there were only 14 bits
+we could have shifted. As \texttt{V} was set, we skip to the label
+\texttt{pulTooBig} where we adjust \texttt{D0} from \$10 to \$08 and
+skip back to \texttt{pulNormalise} again.
+
+On the second pass through the loop, we copy the last valid mantissa
+back into \texttt{D7}, and attempt to shift by 8 bits. This results
+in \texttt{D7} now holding the value \$3C48000 but this time, there
+was no overflow. As this was a successful multiplication of the mantissa,
+we subtract the correct powers of two from the exponent, which happens
+to be \texttt{D0}'s value, 8. Finally, we copy the new valid mantissa
+into \texttt{D6}, just in case, and drop into \texttt{pulTooBig} to
+divide \texttt{D0} down to 4, ready for another attempt.
+
+On the third pass, we again copy the most recent valid mantissa back
+to \texttt{D7}, and multiply by 4 bits. This gives a result of \$3C480000
+in \texttt{D7} and no still overflow, so we have a new valid mantissa.
+The exponent is adjusted by the correct powers of two and the new
+mantissa is copied to a safe place in \texttt{D6} before \texttt{D0}
+is again divided down to 2 at label \texttt{pulTooBig}.
+
+The fourth pass through the loop multiplies \texttt{D7} up to \$F1200000
+but causes overflow, we have to skip to \texttt{pulTooBig} to drop
+\texttt{D0} down to 1 for another attempt.
+
+The fifth pass through the loop shifts \texttt{D7} to get a result
+for the mantissa of \$78900000 with no overflow. As before, the exponent
+is divided to cater for the multiplication, and the new mantissa is
+copied to \texttt{D6} for safety. At label \texttt{pulTooBig}, \texttt{D0}
+is divided down but is now zero. We are now holding a normalised mantissa
+in \texttt{D7}. The loop is finished and we drop to the label \texttt{pulNormalised}.
+
+Remember when we calculated that only had 14 bits to shift to normalise
+\texttt{D7}, and shifting by 16 caused overflow? Add up all the successful
+shifts, $8+4+1$, then add one more for the initial doubling of \texttt{D7},
+and you get 14.
+
+Table \ref{tab:Floating-point-conversion-of-123456} shows each pass
+and the various values as a summary.
+
+\begin{table}
+\begin{centering}
+\begin{tabular}{|c|c|c|c|c|c|c|}
+\hline 
+\textbf{Pass} & \textbf{D7 Input} & \textbf{D5 Input} & \textbf{Shifts} & \textbf{Overflow} & \textbf{D7 Output} & \textbf{D5 Output}\tabularnewline
+\hline 
+\hline 
+Start & \$0001 E240 & \$81F & - & - & - & -\tabularnewline
+\hline 
+Init & \$0001 E240 & \$81F & 1\tablefootnote{It was an addition, but that's equivalent to a shift.} & No & \$0003 C480 & \$81E\tabularnewline
+\hline 
+1 & \$0003 C480 & \$81E & 16 & Yes & - & \$81E\tabularnewline
+\hline 
+2 & \$0003 C480 & \$81E & 8 & No & \$03C4 8000 & \$816\tabularnewline
+\hline 
+3 & \$03C4 8000 & \$816 & 4 & No & \$3C48 0000 & \$812\tabularnewline
+\hline 
+4 & \$3C48 0000 & \$812 & 2 & Yes & - & \$812\tabularnewline
+\hline 
+5 & \$3C48 0000 & \$812 & 1 & No & \$7890 0000 & \$811\tabularnewline
+\hline 
+End & \$7890 0000 & \$811 & 0 & - & - & -\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{Floating point conversion of 123456\label{tab:Floating-point-conversion-of-123456}}
+
+\end{table}
+
+At this point, the exponent is \$0811 and the mantissa is \$78900000.
+Is this correct? We can convert the exponent to the correct powers
+of two by subtracting \$800 to get \$11, or 17 in decimal.
+
+The mantissa, \$78900000, is \%0111 1000 1001 0000 0000 0000 0000
+0000 but as we can safely ignore the trailing zeros, we have \%0111
+1000 1001 in the highest three nibbles. (Bits 31 - 20.)
+
+The sign bit, bit 31, is a zero, so the mantissa is positive.
+
+Bits 30, 29, 28, 27, 23 and 20 are set, but we need to subtract those
+from 31 to get bits 1,2,3,4,8 and 11 for out fractional powers of
+two. The mantissa is a fraction, in the format of 0.something, remember?
+
+The bit values represent the powers of two that we take the reciprocal
+of and add them up, to get the actual fractional value for the mantissa.
+This sum is $\frac{1}{2^{1}}+\frac{1}{2^{2}}+\frac{1}{2^{3}}+\frac{1}{2^{4}}+\frac{1}{2^{8}}+\frac{1}{2^{11}}$
+which works out as $\frac{1}{2}+\frac{1}{4}+\frac{1}{8}+\frac{1}{16}+\frac{1}{256}+\frac{1}{2048}$
+and converting that to decimal fractions, not those nasty \emph{vulgar}\footnote{Fractions in the format $\frac{a}{b}$in the UK at least, are called
+vulgar fractions.} ones, we get $0.5+0.25+0.125+0.0625+0.003,906,25+0.000,488,281$,
+giving a mantissa of $0.941,894,531$.
+
+We can now work out the value as $0.941,894,531*2^{17}$which, funnily
+enough, is $123,456$, $2^{17}$ being $131,072$.
+
+How easy was that then? 
