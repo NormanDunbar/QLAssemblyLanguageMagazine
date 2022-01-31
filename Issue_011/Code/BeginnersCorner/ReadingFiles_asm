@@ -1,0 +1,254 @@
+;==============================================================
+; A simple multi-tasking job for Issue 11, Beginner's Corner:
+;
+; OPEN #3,"ram1_test_txt" 
+; REPeat readLoop 
+;   IF EOF(#3) Then EXIT readLoop: END IF
+;   a$ = INPUT(#3)
+;   PRINT a$
+; END REPeat readLoop 
+; CLOSE #3
+;==============================================================
+; Norman Dunbar
+; 30 January 2022.
+;==============================================================
+
+;--------------------------------------------------------------
+; Some definitions to make life simple(r)!
+;--------------------------------------------------------------
+TIMEOUT     equ -1              ; Infinite timeout
+ME          equ -1              ; Current job id
+
+WHITE       equ 7               ; White colour
+BLACK       equ 0               ; Black colour
+
+BORDCOLOUR  equ WHITE           ; Border colour
+BORDWIDTH   equ 1               ; Border width
+PAPER       equ BLACK           ; Paper colour
+INK         equ WHITE           ; Text colour
+
+CON_W       equ 310             ; Console width
+CON_H       equ 120             ;    "    height
+CON_X       equ 50              ;    "    X position
+CON_Y       equ 50              ;    "    Y position
+
+BUFFERSIZE  equ 30              ; Input buffer size (in words)
+
+OPEN_IN     equ 1               ; File mode, OPEN_IN
+
+;--------------------------------------------------------------
+; GWASS also doesn't know about SMSQ/E names, so these are now
+; required.
+;--------------------------------------------------------------
+OPW.SCR     equ $c8             ; Open a screen, border, etc
+IOW.CLRA    equ $20             ; CLS
+IOA.OPEN    equ $01             ; Open a file
+IOA.CLOS    equ $02             ; Close a file
+ERR.EOF     equ -10             ; End of File error
+ERR.BFFL    equ -5              ; Buffer overflow error
+ERR.OVFL    equ -18             ; Overflow error
+SMS.SSJB    equ $08             ; Suspend a job
+SMS.FRJB    equ $05             ; Force remove a job
+IOB.FLIN    equ $02             ; Fetch a line of text plus LF
+UT.WTEXT    equ $d0             ; Print some text
+
+;--------------------------------------------------------------
+; Job's require a header. This is basically boilerplate, except
+; for the job name's length and the name of the job. This will
+; need to be EXEC/EXEC_W/EX or EW'd to execute it.
+;--------------------------------------------------------------
+Start
+    bra.s openScreen            ; Skip over job header
+    dc.l 0                      ; 4 bytes, can be any value
+    dc.w $4afb                  ; Job flag, must be $4afb
+
+jobName
+    dc.w jobNameEnd-*-2         ; Length of job name
+    dc.b "Reading Files"        ; Bytes of job name
+jobNameEnd
+    equ *
+
+    ds.w 0                      ; Ensure address alignment
+
+
+;--------------------------------------------------------------
+; Open a SCR_ channel for output.
+;--------------------------------------------------------------
+; Needs a channel open first. This can be done in a couple of
+; ways, but this is probably the easiest. It will open a scr_
+; channel of the required size and border,paper, strip, ink it.
+;--------------------------------------------------------------
+; This returns A0 as the channel ID.
+; We don't care about the other registers at this point!
+;--------------------------------------------------------------
+scrDefine
+    dc.b BORDCOLOUR             ; Border colour
+    dc.b BORDWIDTH              ; And width
+    dc.b PAPER                  ; Paper/strip colour
+    dc.b INK                    ; Ink colour
+    dc.w CON_W                  ; Width
+    dc.w CON_H                  ; Height
+    dc.w CON_X                  ; X pos
+    dc.w CON_Y                  ; Y pos
+
+fileDefine
+    dc.w fdEnd-*-2              ; Filename length
+    dc.b "ram1_test_txt"        ; Filename bytes
+fdEnd
+    equ *                       ; End of filename
+
+    ds.w 0                      ; Preserve alignment
+
+openScreen
+    lea scrDefine,a1            ; Parameters
+    move.w OPW.SCR,a2           ; Scr_ channel required
+    jsr (a2)                    ; Open Console & set colours
+    bne die                     ; If it failed - bale out
+    move.l a0,a5                ; Save channel id for screen
+
+;--------------------------------------------------------------
+; We only get here if it worked. A0 now holds the channel id.
+; Because later code will overwrite A0, we save the channel id
+; in A5 which is mostly unused elsewhere.
+;--------------------------------------------------------------
+
+;--------------------------------------------------------------
+; CLS - Clear the screen. 
+;--------------------------------------------------------------
+; Expects A0 to be the channel ID.
+; Preserves A0 and D3, corrupts D1,A1.
+; D6 will hold a copy of the timeout in D3 as later code to 
+; print the string will corrupt D3. It's quicker to save in a
+; register than in memory or on the stack.
+;--------------------------------------------------------------
+clsScreen
+    moveq #IOW.CLRA,d0          ; CLS whole window
+    moveq #timeout,d3           ; Infinite timeout
+    move.l d3,d6                ; Save timeout for later
+    trap #3                     ; Do it
+    tst.l d0                    ; Any errors, probably not
+    bne die                     ; Yes, bale out
+
+;--------------------------------------------------------------
+; Open File
+;--------------------------------------------------------------
+; Opens the file ram1_test_txt and bales out if that failed. 
+; The file is expected to exist.
+;
+; This will overwrite the channel ID for the screen, but we
+; already saved that in A5.
+;--------------------------------------------------------------
+openFile
+    moveq #IOA.OPEN,d0          ; Trap code, open a file
+    moveq #ME,d1                ; I own the channel
+    moveq #OPEN_IN,d3           ; OPEN_IN mode
+    lea fileDefine,a0           ; File name    
+    trap #2                     ; Open File
+    tst.l d0                    ; OK?
+    bne die                     ; No, bale out
+
+;--------------------------------------------------------------
+; Read File
+;--------------------------------------------------------------
+; Grab some input from the file. The timeout and channel id
+; are still valid. We point A1 at input_buffer+2 as we need the
+; start of the buffer to hold the length of the text that
+; follows.
+; BEWARE: EOF is set true when we read some data that hits EOF
+; not like S*BASIC. We need to process the data read before we
+; close files and exit.
+; If data were read, it is printed, then we loop back to read
+; again, this time we get EOF again, but zero bytes read. We 
+; then suspend the job, close files and exit.
+;--------------------------------------------------------------
+readFile
+    move.l d6,d3                ; Restore the timeout
+    moveq #IOB.FLIN,d0          ; Fetch input with Linefeed
+    move.w #BUFFERSIZE,d2       ; How big is my buffer?
+    lea inputBuffer+2,a1        ; Input buffer space
+    trap #3                     ; Fetch input D1.W = size
+    tst.l d0                    ; Errors?
+    beq.s setString             ; Nope
+    cmpi.l #ERR.BFFL,d0         ; Overflow?
+    beq.s setString             ; Yes, print what we got
+    cmpi.l #ERR.OVFL,d0         ; Other overflow?
+    beq.s setString             ; Yes, print what we got
+    cmpi.l #ERR.EOF,d0          ; End of file?
+    tst.w d1                    ; Did we read anything?
+    beq.s suspendJob            ; No, close the file
+
+;--------------------------------------------------------------
+; We need the string size in the first two bytes of the buffer
+; and D1 just happens to have it. 
+;--------------------------------------------------------------
+setString
+    lea inputBuffer,a1          ; The buffer start this time
+    move.w d1,(a1)              ; Store the input size (inc LF)
+
+;--------------------------------------------------------------
+; Print String
+;--------------------------------------------------------------
+; Print the string read from the text file, including the line
+; feed at the end. A1 points to the text's word size, D3 will
+; be corrupted by this vector call (timeout) but the channel
+; id in A0 will not. D3 will be refreshed from D6 where we have
+; a safe copy already.
+;--------------------------------------------------------------
+printInput
+    exg a0,a5                   ; Swap file and screen ids
+    move.w UT.WTEXT,a2          ; Print a string of bytes
+    jsr (a2)                    ; Print it
+    bne.s die                   ; Ooops, error
+    exg a0,a5                   ; Swap back again
+    bra.s readFile              ; Loop around again
+
+;--------------------------------------------------------------
+; Suspend the job for a few seconds to let the user see the 
+; output. Then close the files and die. Will corrupt A0 but who
+; cares!
+;--------------------------------------------------------------
+suspendJob
+    moveq #SMS.SSJB,d0          ; Suspend a job
+    moveq #-1,d1                ; This job
+    move.w #300,d3              ; 6 seconds is 300 frames
+    movea.l #0,a1               ; No byte to be cleared
+    trap #1                     ; Suspend the job
+                               
+;--------------------------------------------------------------
+; Close all files
+;--------------------------------------------------------------
+; Closes the text file and then the screen channel. This is not
+; strictly necessary as SMSQ/E will do it when the job exits
+; but, for neatness!
+;--------------------------------------------------------------
+closeFiles
+    bsr.s closeFile             ; Close the text file
+    exg a0,a5                   ; Get the screen channel id
+    bsr.s closeFile             ; And close it too.
+
+;--------------------------------------------------------------
+; The job is complete, remove it from the system. Any error
+; codes in D0 are copied to D3 ready for EXEC_W/EW to collect.
+; EXEC/EX don't bother.
+;--------------------------------------------------------------
+die
+    move.l d0,d3                ; Any errors?
+    moveq #SMS.FRJB,d0          ; Force Remove a job
+    moveq #-1,d1                ; -1 means "this job"
+    trap #1                     ; Kill this job
+
+;--------------------------------------------------------------
+; Close a File 
+;--------------------------------------------------------------
+; Expects the channel id in A0 and closes that channel.
+; Corrupts D0 and A0, but we don;t care at this point!
+;--------------------------------------------------------------
+closeFile
+    moveq #IOA.CLOS,d0          ; Trap code, close file
+    trap #2                     ; Close the text file first
+    tst.l d0
+    bne.s die
+    rts
+
+inputBuffer
+    ds.w    BUFFERSIZE+2        ; Buffer for data input

@@ -1,0 +1,17 @@
+Changes for this issue and onwards:
+
+1. DONE: Use SMSQ/E trap names etc. Do we need a header file or
+   just use the ones we need? Note that the SMSQ names use
+   a dot, not an underscore. Do we need both?
+
+2. ONGOING: Beginner's Guide to SMSQ/E traps/vectors etc.
+
+3. TODO: QMAC/QLINK/QMAKE tutorial.
+
+4. TODO: Assembler Workbench ditto?
+
+5. TODO: GWASL/GWASS ditto?
+
+6. TODO: Parser/Compiler? (See number 7!)
+
+

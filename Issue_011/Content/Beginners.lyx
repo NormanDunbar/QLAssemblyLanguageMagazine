@@ -1,0 +1,1915 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Beginners' Corner
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+In this issue of Beginners' Corner, we are taking a look at file and simple
+ screen handling.
+\end_layout
+
+\begin_layout Section
+Reading Files
+\end_layout
+
+\begin_layout Standard
+This code in S*BASIC looks simple enough, and 
+\emph on
+should
+\emph default
+ be able to be converted quite simply to assembly, so let's do it.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={[Visual]Basic},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+OPEN #3,
+\begin_inset Quotes erd
+\end_inset
+
+ram1_test_txt
+\begin_inset Quotes erd
+\end_inset
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+REPeat readLoop 
+\end_layout
+
+\begin_layout Plain Layout
+
+  IF EOF(#3) Then EXIT readLoop: END IF
+\end_layout
+
+\begin_layout Plain Layout
+
+  a$ = INPUT(#3)
+\end_layout
+
+\begin_layout Plain Layout
+
+  PRINT a$
+\end_layout
+
+\begin_layout Plain Layout
+
+END REPeat readLoop 
+\end_layout
+
+\begin_layout Plain Layout
+
+CLOSE #3
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Converting to Assembly
+\end_layout
+
+\begin_layout Standard
+The following steps are required in the assembly language source code:
+\end_layout
+
+\begin_layout Itemize
+Decide whether the code will be 
+\family typewriter
+CALL
+\family default
+ed or 
+\family typewriter
+EXEC
+\family default
+'d.
+\end_layout
+
+\begin_layout Itemize
+Set up a buffer to hold the data we read from the file.
+ How big should we make it? How long is a piece of string
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Silly question! It's obviously twice as long as half a piece of string!
+\end_layout
+
+\end_inset
+
+?
+\end_layout
+
+\begin_layout Itemize
+Open a channel to the screen.
+ This can be a 
+\family typewriter
+CON_
+\family default
+ or a 
+\family typewriter
+SCR_
+\family default
+ channel.
+ 
+\family typewriter
+SCR_
+\family default
+ is most appropriate as we don't need to fetch any input from it.
+\end_layout
+
+\begin_layout Itemize
+We can set the paper, strip and ink colours as required.
+ The default green on black isn't very nice on my old eyes, so that's got
+ to go!
+\end_layout
+
+\begin_layout Itemize
+Clear the screen channel.
+\end_layout
+
+\begin_layout Itemize
+Open the file and handle errors if it's not found.
+\end_layout
+
+\begin_layout Itemize
+Loop around, reading text from the string and printing it, exiting when
+ end of file is detected.
+\end_layout
+
+\begin_layout Itemize
+Close the file at the end of the loop.
+\end_layout
+
+\begin_layout Itemize
+Exit back to S*BASIC.
+\end_layout
+
+\begin_layout Standard
+As I prefer setting up and using separate jobs, I'll make this a job and
+ it will be 
+\family typewriter
+EXEC
+\family default
+'d.
+\end_layout
+
+\begin_layout Section
+Code Walkthrough
+\end_layout
+
+\begin_layout Standard
+As this is Beginner's Corner, the following code fragments will be explained
+ on excruciating detail.
+ Experienced coders should probably look away now!
+\end_layout
+
+\begin_layout Standard
+The full code is in the code repository for this issue.
+\end_layout
+
+\begin_layout Subsection
+Preliminaries
+\end_layout
+
+\begin_layout Standard
+The code file, 
+\family typewriter
+ReadingFiles_asm
+\family default
+, begins with some constants – 
+\emph on
+equates
+\emph default
+ – which make life easier if we have to make changes at some future point.
+ They also have reasonably explanatory names, which helps document the code.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-constants"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the constants used in defining the screen channel we wish to use, and
+ a couple more to define buffer sizes, to indicate the current job identifier
+ and an infinite timeout.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={19-37},caption={ReadingFiles - Constants},label={lis:ReadingFiles-constants}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Following on from the program constants, we have a list of the various trap
+ and vector codes to enable us to access routines within SMSQ/E and QDOS.
+ Even though I'm using the SMSQ/E names, that code will still work on QDOS
+ as they are the same as QDOS.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-smsq-e-constants"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the list of SMSQ/E constants we need in this program.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={43-53},caption={ReadingFiles - SMSQ/E Constants},label={lis:ReadingFiles-smsq-e-constants}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And now the code proper begins.
+ As I have decided to create a separate job (or task) for this demonstration,
+ we need a standard job header.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-job-header"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the necessary code for just about any job in SMSQ/E.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={60-71},caption={ReadingFiles - Job header},label={lis:ReadingFiles-job-header}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At label 
+\family typewriter
+Start
+\family default
+, the code skips the header and branches off to the 
+\family typewriter
+openScreen
+\family default
+ label.
+ Following that we have a 4 byte filler followed by the word $4AFB which
+ SMSQ/E uses to recognise a job header.
+ Following the flag word, we have the job's name in the form of a standard
+ SMSQ/E string with a leading byte counter followed by the bytes of the
+ string.
+\end_layout
+
+\begin_layout Standard
+The strings length word might look a bit strange, however, we simply take
+ the address of label 
+\family typewriter
+jobNameEnd
+\family default
+, subtract the current address (that of 
+\family typewriter
+jobName
+\family default
+) from it, then subtract another 2.
+ This gives me the length of the text making up the job name.
+ It also means that I can change the job name at any time and not have to
+ worry about counting characters!
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Tip
+\series default
+: The '*' used in this way, tells the assembler to use the current address.
+\end_layout
+
+\begin_layout Standard
+The last line in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-job-header"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ simply makes sure that the next address will be even if the job name contained
+ an odd number of characters.
+ It reserves zero words of space, but because this is word sized, the assembler
+ forces the current address to an even address if necessary.
+\end_layout
+
+\begin_layout Standard
+That completes the preliminaries of the job.
+ Next we move on to the code proper, opening the screen channel.
+\end_layout
+
+\begin_layout Subsection
+Opening the Screen Channel
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-screen-definition"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the definition of the screen channel we wish to open.
+ It consists of 4 bytes defining colours and border sizes, followed by 4
+ words defining the screen channel size.
+ The values used here were defined as constants in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-constants"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and can be changed there if necessary.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={84-92},caption={ReadingFiles - Screen definition},label={lis:ReadingFiles-screen-definition}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The definition block is used by the 
+\family typewriter
+OPW.SCR
+\family default
+ vectored routine to open a channel to the screen, set the paper, strip
+ and ink colours, as well as setting the border colour and width.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-open-screen-channel"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the code to do exactly that.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={102-107},caption={ReadingFiles - Open screen channel},label={lis:ReadingFiles-open-screen-channel}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+OPW.SCR
+\family default
+ vector requires the address of the definition block in register 
+\family typewriter
+A1
+\family default
+ and when executed will return the channel id in register 
+\family typewriter
+A0
+\family default
+ – most channel functions use 
+\family typewriter
+A0
+\family default
+ for the channel id – and there will be an error code, or zero, in 
+\family typewriter
+D0
+\family default
+.
+ If there were no errors, the 
+\family typewriter
+Z
+\family default
+ flag will be set and we test this to ensure we can continue.
+\end_layout
+
+\begin_layout Standard
+In the event of errors, we exit the program via the 
+\family typewriter
+die
+\family default
+ routine, described later.
+ Otherwise, we copy the screen channel id into register 
+\family typewriter
+A5
+\family default
+ as the code coming later to print to the screen will require the screen
+ channel id in 
+\family typewriter
+A0
+\family default
+ and at that time, 
+\family typewriter
+A0
+\family default
+ will be holding the text file channel id.
+\end_layout
+
+\begin_layout Subsection
+Clearing the Screen
+\end_layout
+
+\begin_layout Standard
+After opening the channel, we should clear the screen to get rid of any
+ existing detritus that might be in the space where we opened the channel.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-clearing-the-screen-channel"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code to clear the entire screen channel.
+ SMSQ/E allows different parts of the screen to be cleared, but we need
+ to clear all of it.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={124-130},caption={ReadingFiles - Clearing the screen channel},label={lis:ReadingFiles-clearing-the-screen-channel}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+This code requires the screen channel in register 
+\family typewriter
+A0
+\family default
+, where it currently is, and a timeout in register 
+\family typewriter
+D3
+\family default
+.
+ We use an infinite timeout in this case as we wish the action to complete
+ before returning to our code.
+ Most SMSQ/E trap calls preserve the timeout in 
+\family typewriter
+D3
+\family default
+, but when we open the text file, and when we print data to the screen,
+ 
+\family typewriter
+D3
+\family default
+ will be corrupted, so we take a copy into register 
+\family typewriter
+D6
+\family default
+ for safety.
+\end_layout
+
+\begin_layout Standard
+In the unlikely event of errors being detected when clearing the screen,
+ we exit the job via the routine at label, 
+\family typewriter
+die
+\family default
+.
+\end_layout
+
+\begin_layout Subsection
+Opening the Text File
+\end_layout
+
+\begin_layout Standard
+Now the good stuff! We get to open the text file named 
+\family typewriter
+ram1_test_txt
+\family default
+, which must exist.
+ In order to do this, we need to have certain registers set as follows:
+\end_layout
+
+\begin_layout Itemize
+The trap code, 
+\family typewriter
+IOA.OPEN
+\family default
+ should be in 
+\family typewriter
+D0
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+A job id, for the job to own the channel, is in 
+\family typewriter
+D1
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+The open mode is in 
+\family typewriter
+D3
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A0
+\family default
+ points at the standard SMSQ/E string defining the job name;
+\end_layout
+
+\begin_layout Standard
+There are a number of open modes that we can use when opening a file:
+\end_layout
+
+\begin_layout Itemize
+0 = OPEN - the file specified must exist;
+\end_layout
+
+\begin_layout Itemize
+1 = OPEN_IN - the file specified must exist;
+\end_layout
+
+\begin_layout Itemize
+2 = OPEN_NEW - the file specified should not exist;
+\end_layout
+
+\begin_layout Itemize
+3 = OPEN_OVER - the file specified may, or may not exist;
+\end_layout
+
+\begin_layout Itemize
+4 = OPEN_DIR - opens an existing directory.
+\end_layout
+
+\begin_layout Standard
+We are using the OPEN_IN mode in this example, so the file must exist.
+ This is handy as we are intending to read and display its contents!
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-opening-the-text-file"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code that opens the file.
+ In the event of errors, the job simply exits in the usual manner, via 
+\family typewriter
+die
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={141-148},caption={ReadingFiles - Opening  the text file},label={lis:ReadingFiles-opening-the-text-file}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+On return from the trap, the channel ID will be in register 
+\family typewriter
+A0
+\family default
+.
+ This has of course overwritten the screen channel id that we have, but
+ as we kept a copy of that in 
+\family typewriter
+A5
+\family default
+, it's not a problem.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-text-file-definition"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the text file's definition in the code.
+ This is slightly out of line, as the definition is just below the screen
+ definition block in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-screen-definition"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ but is documented here for clarity.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={94-100},caption={ReadingFiles - Text file definition},label={lis:ReadingFiles-text-file-definition}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As with the job name, we calculate the size of the file name to ensure we
+ get it correct, and so that we can easily change the file name, if necessary,
+ without having to keep counting characters.
+\end_layout
+
+\begin_layout Standard
+Once we have the file open, we can start a loop to read the contents.
+\end_layout
+
+\begin_layout Subsection
+Reading a Line of Text
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-reading-a-buffer-of-text"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the code which reads a buffer full of text from the text file, into
+ our program.
+ How big is the buffer? How do we know?
+\end_layout
+
+\begin_layout Standard
+In S*BASIC it's quite simple, just read a line of text into a string variable.
+ S*BASIC will read as many characters as it can into the string, until it
+ hits EOF or reads a linefeed.
+ Our code has a fixed buffer size, and I've made it deliberately small in
+ this demonstration, to show how a long line can be read without causing
+ buffer overflows and perhaps, corrupting the job code in the process.
+ Normally, a buffer would be big enough – whatever that means.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={164-171},caption={ReadingFiles - Reading a buffer of text},label={lis:ReadingFiles-reading-a-buffer-of-text}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As mentioned above, opening the text file corrupted 
+\family typewriter
+D3
+\family default
+, so we copy it back from the safe place, register 
+\family typewriter
+D6
+\family default
+.
+ The registers required to read a line of text, terminated by a linefeed,
+ from a file, are:
+\end_layout
+
+\begin_layout Itemize
+The trap code, 
+\family typewriter
+IOB.FLIN
+\family default
+, should be in 
+\family typewriter
+D0
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+D2
+\family default
+ should hold the buffer size – the maximum number of characters we can read;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+D3
+\family default
+ is the timeout;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A0
+\family default
+ is the channel id;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A1
+\family default
+ points at the location in the buffer where the text will be copied into.
+\end_layout
+
+\begin_layout Standard
+As we intend to print the text we read from the file, we set 
+\family typewriter
+A1
+\family default
+ to be two bytes higher than the start of the buffer.
+ This leaves space to store the string length word prior to printing.
+ This converts the buffer into a standard SMSQ/E string and makes for easy
+ printing.
+ 
+\end_layout
+
+\begin_layout Standard
+On return from the trap, we test for errors and if none were found, we skip
+ to label 
+\family typewriter
+setString
+\family default
+, where we store the date length in the two empty bytes at the beginning
+ of the buffer, to make the data into a string, ready to print.
+ On return from this trap, the following registers are set:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+D0
+\family default
+ has the error code, or zero;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+D1.W
+\family default
+ has the size of the data successfully read, which includes the linefeed,
+ if one is present;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A1.L
+\family default
+ points to the first byte after the last byte of data read, within the buffer.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-input-buffer-definition"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is again, out of line with the actual code file, it comes at the very end,
+ but it is the buffer definition and is relevant to this discussion.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={253-254},caption={ReadingFiles - Input buffer definition},label={lis:ReadingFiles-input-buffer-definition}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The size of the buffer is defined in our constants, way back in Listing
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-constants"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ I've deliberately kept it small for this demonstration, as I previously
+ mentioned.
+\end_layout
+
+\begin_layout Standard
+In the event that we hit an error when reading the text file, what do we
+ do? Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-text-file-error-handling"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the error handling code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={172-178},caption={ReadingFiles - Text file error handling},label={lis:ReadingFiles-text-file-error-handling}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If 
+\family typewriter
+D0
+\family default
+ had been zero, then we would have successfully read a line of text, terminated
+ by a linefeed, which was smaller (or equal) to the maximum buffer size
+ allowed.
+ 
+\end_layout
+
+\begin_layout Standard
+If, on the other hand, no linefeed was found before we filled the buffer,
+ then we should receive 
+\family typewriter
+ERR.BFFL
+\family default
+ on return from the trap.
+ This indicates that we filled the buffer.
+ This is not a proper error, it just means we have an extra long line in
+ the file which is bigger than the buffer.
+ We can still print it, so we can skip to 
+\family typewriter
+setString
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+The same is true if we detected 
+\family typewriter
+ERR.OVFL
+\family default
+.
+ This is something that Wolfgang Lenerz advised me to test for, in the last
+ issue, as sometimes SMSQ/E (or QDOS?) can return this error instead of
+ 
+\family typewriter
+ERR.BFFL
+\family default
+.
+ The action is the same, it's not a proper error, we just filled the buffer,
+ so we can skip to 
+\family typewriter
+setString
+\family default
+ ready to print the data.
+\end_layout
+
+\begin_layout Standard
+The next error we need to test for is end of file, 
+\family typewriter
+ERR.EOF
+\family default
+.
+ This is different from S*BASIC, in that we get the error at the same time
+ as the read which provided some data, but hit the EOF in the file as well.
+ In S*BASIC, this almost never happens when reading into a string, it's
+ only returned after a further attempt to read from the file.
+ 
+\end_layout
+
+\begin_layout Standard
+If the end of file has been reached, did we read any data into the buffer?
+ By testing 
+\family typewriter
+D1.W
+\family default
+ we can tell.
+ If there was no data read, 
+\family typewriter
+D1.W
+\family default
+ will be zero and the Z flag will be set by the test.
+ In this case, we skip to 
+\family typewriter
+suspendJob
+\family default
+ as there's nothing else to do.
+\end_layout
+
+\begin_layout Standard
+If there was data in the buffer, we need to process it as normal, so we
+ drop into Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-buffer-conversion-to-string"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ where we set up the string, ready to be printed.
+ This is described next.
+ After printing, however, we will skip back to the start of the read loop,
+ 
+\family typewriter
+readFile
+\family default
+, but this time, we will get the 
+\family typewriter
+ERR.EOF
+\family default
+ error again but 
+\family typewriter
+D1.W
+\family default
+ will be zero, so we have a get out of the loop clause!
+\end_layout
+
+\begin_layout Subsection
+Printing the Text
+\end_layout
+
+\begin_layout Standard
+In order to print the string, we need the buffer to be in the style of a
+ standard SMSQ/E string.
+ This requires the string length to be in a word at the start of the string.
+ When we read the data from the file, it was written to the third byte in
+ the buffer, leaving room at the start for a word to hold the string (data)
+ length.
+ 
+\end_layout
+
+\begin_layout Standard
+On return from the 
+\family typewriter
+IOB.FLIN
+\family default
+ trap, register 
+\family typewriter
+D1.W
+\family default
+ has the number of bytes read.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-buffer-conversion-to-string"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows that word being stored at the start of the buffer, converting the
+ buffer into a string, ready to print.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={184-186},caption={ReadingFiles - Buffer conversion to a string},label={lis:ReadingFiles-buffer-conversion-to-string}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In the event that a linefeed was detected, printing the data will also print
+ the linefeed, starting a new line in the screen channel for the next line
+ of text.
+ If no linefeed was found, the data will be printed, but no linefeed means
+ that printing will begin again at the next space in the screen channel.
+ This way, long lines can be printed correctly as each buffer full of text
+ is simply printed next to the previous one, until a linefeed is found.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-printing-the-data"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ prints the buffer as a standard string.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={197-203},caption={ReadingFiles - Printing the data},label={lis:ReadingFiles-printing-the-data}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We currently have the channel id for the text file in 
+\family typewriter
+A0
+\family default
+ and we ned the screen channel id for printing.
+ As we took a copy of that channel id in register 
+\family typewriter
+A5
+\family default
+, we can swap the two channel ids over.
+ This means that 
+\family typewriter
+A0
+\family default
+ ends up with the screen channel id, and 
+\family typewriter
+A5
+\family default
+ the text file id.
+\end_layout
+
+\begin_layout Standard
+We then load 
+\family typewriter
+A2
+\family default
+ with the vector for the 
+\family typewriter
+UT.WTEXT
+\family default
+ routine, which expects the following parameters:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A0
+\family default
+ is the channel id;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A1
+\family default
+ is the start of the string to be printed, the length word.
+\end_layout
+
+\begin_layout Standard
+After the code executes, 
+\family typewriter
+D1-D3
+\family default
+ and 
+\family typewriter
+A1
+\family default
+ are corrupted.
+ 
+\family typewriter
+D0
+\family default
+ will hold zero or an error code.
+ If errors are detected, we bale out of the job via the 
+\family typewriter
+die
+\family default
+ routine.
+ Otherwise, we swap the two channel ids back again, and skip back to the
+ start of the reading loop to get the next line of text from the file.
+\end_layout
+
+\begin_layout Subsection
+Suspending the Job
+\end_layout
+
+\begin_layout Standard
+This section of the code just delays closing the files for a few seconds
+ so that the user can see the screen channel has the full text copied from
+ the text file.
+ It pauses for 300 frames – in the UK/Europe there are 50 frames per second,
+ in the USA it's 60.
+ This gives a 6 second delay in the UK/Europe, and 5 seconds in the USA.
+ To suspend a job, you need the following registers setting:
+\end_layout
+
+\begin_layout Itemize
+The trap code, 
+\family typewriter
+SMS.SSJB
+\family default
+ is in 
+\family typewriter
+D0
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+The job id is in 
+\family typewriter
+D1
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+The number of frames to suspend for is in 
+\family typewriter
+D3
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+A1
+\family default
+ is set to the address of a byte which will be cleared when the job's suspension
+ is done and the job is active again.
+ It can be zero if not required.
+\end_layout
+
+\begin_layout Standard
+On exit from the suspension, register 
+\family typewriter
+A0
+\family default
+ is set to point at the job's header, while 
+\family typewriter
+A1
+\family default
+ is preserved.
+ Now, in my copy of Pennel, I have a hand written note saying 
+\emph on
+no it bloody isn't!
+\emph default
+ so I'm assuming I hit a problem some time back and noted it.
+ Who is right? The documentation or 
+\begin_inset Quotes eld
+\end_inset
+
+past
+\begin_inset Quotes erd
+\end_inset
+
+ me? My motto is 
+\emph on
+Don't think, find out
+\emph default
+ so let's go! QMON2, here we come....
+\end_layout
+
+\begin_layout Standard
+Setting a breakpoint at 
+\family typewriter
+suspendJob
+\family default
+, and running the job breaks at that label.
+ If I set 
+\family typewriter
+A1
+\family default
+ to zero, then it is preserved after the suspension is over.
+ So far, so good.
+ What if 
+\family typewriter
+A1
+\family default
+ was not zero? Well, I tried that too – and it was also preserved.
+ I'm running on SMSQ/E so maybe the problem I noted was in QDOS and has
+ been fixed in SMSQ/E.
+ 
+\end_layout
+
+\begin_layout Standard
+Anyway, Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-suspending-the-job"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the job suspension code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={210-215},caption={ReadingFiles - Suspending the job},label={lis:ReadingFiles-suspending-the-job}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Closing Files
+\end_layout
+
+\begin_layout Standard
+While it is not strictly required to close files when finished with them,
+ it's considered good practice and should be done in applications where
+ a file is opened and read once, perhaps at the start, but never used afterwards.
+ In those jobs, holding the file open wastes resources, and can prevent
+ the file from being edited to make changes.
+ 
+\end_layout
+
+\begin_layout Standard
+The best advice is to keep files open only as long as you need to.
+ However, I don't follow my own advice at times, so don't do as I do, do
+ as I say! 
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-closing-all-files"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code to close both files.
+ As we are doing the same thing more than once, we use a subroutine to close
+ one file, and simply call it twice with the text file id, then with the
+ screen channel id.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={224-227},caption={ReadingFiles - Closing all files},label={lis:ReadingFiles-closing-all-files}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first file to be closed is the text file, simply because we have the
+ channel id in register 
+\family typewriter
+A0
+\family default
+, we call the subroutine closeFile to do the actual closing.
+ Closing a file doesn't usually return errors.
+ QDOS did return 
+\family typewriter
+ERR_NO
+\family default
+ (SMSQ/E uses 
+\family typewriter
+ERR.ICHN
+\family default
+) for Channel not open, but SMSQ/E doesn't bother, and doesn't return an
+ error.
+\end_layout
+
+\begin_layout Standard
+On return, we swap 
+\family typewriter
+A0
+\family default
+ and 
+\family typewriter
+A5
+\family default
+ to get the screen channel id into 
+\family typewriter
+A0
+\family default
+, and head off to close that channel too.
+\end_layout
+
+\begin_layout Standard
+The code to close one file is shown later, in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-closing-one-file"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Done!
+\end_layout
+
+\begin_layout Standard
+Nearly done.
+ The job has closed all its open files, and is ready to exit.
+ We pass any error codes from 
+\family typewriter
+D0
+\family default
+ to 
+\family typewriter
+D3
+\family default
+, as is required, and call the 
+\family typewriter
+SMS.FRJB
+\family default
+ trap call to kill the job and return the error code to S*BASIC.
+ The parameters required are:
+\end_layout
+
+\begin_layout Itemize
+The trap code, 
+\family typewriter
+SMS.FRJB
+\family default
+ is in 
+\family typewriter
+D0
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+The error code to return to S*BASIC is in 
+\family typewriter
+D3
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Obviously, this trap call never returns.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={234-238},caption={ReadingFiles - Death of a job},label={lis:ReadingFiles-death-of-a-job}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The error code will be reported by S*BASIC if, and only if, the job was
+ started with 
+\family typewriter
+EXEC_W
+\family default
+, 
+\family typewriter
+EW
+\family default
+ or any similar function which executes the job, then waits for it to complete.
+\end_layout
+
+\begin_layout Standard
+Jobs started with 
+\family typewriter
+EXEC
+\family default
+, 
+\family typewriter
+EX
+\family default
+ or similar, cannot report the jobs exit code as 
+\family typewriter
+EXEC
+\family default
+, 
+\family typewriter
+EX
+\family default
+ etc return immediately after starting the job, they have no way of knowing
+ how or if the job ended as some jobs can run 
+\begin_inset Quotes eld
+\end_inset
+
+for ever
+\begin_inset Quotes erd
+\end_inset
+
+ such as clocks.
+ S*BASIC has no way of knowing how the job ended.
+\end_layout
+
+\begin_layout Subsection
+Subroutine(s)
+\end_layout
+
+\begin_layout Standard
+There is a single subroutine in this issue's code.
+ The code to close a single file.
+ Listing 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:ReadingFiles-closing-one-file"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code.
+ Closing a file requires these parameters:
+\end_layout
+
+\begin_layout Itemize
+The trap code, 
+\family typewriter
+IOA.CLOS
+\family default
+ in 
+\family typewriter
+D0
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+The channel id in 
+\family typewriter
+A0
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+SMSQ/E returns no errors in 
+\family typewriter
+D0
+\family default
+ but QDOS does, if the file is not open, QDOS will return 
+\family typewriter
+ERR.ICHN
+\family default
+, which in QDOS terminology ios ERR_NO.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm"
+lstparams "linerange={246-251},caption={ReadingFiles - Closing one file},label={lis:ReadingFiles-closing-one-file}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Assembling the Code
+\end_layout
+
+\begin_layout Standard
+If I were to assume that you have downloaded 
+\begin_inset CommandInset href
+LatexCommand href
+name "GWASS"
+target "http://www.dilwyn.me.uk/asm/gwassp22.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/asm/gwassp22.zip
+\end_layout
+
+\end_inset
+
+ for QPC2 and other 68020 based emulators, or 
+\begin_inset CommandInset href
+LatexCommand href
+name "GWASL"
+target "http://www.dilwyn.me.uk/asm/gwaslp08.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/asm/gwaslp08.zip
+\end_layout
+
+\end_inset
+
+ for the QL and 68008 based emulators, and have the code saved as 
+\family typewriter
+ram1_ReadingFiles_asm
+\family default
+, then assembling the code is as simple as this:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EXEC
+\family default
+ 
+\family typewriter
+gwass60_bin
+\family default
+ or 
+\family typewriter
+EXEC gwasl_bin
+\family default
+ to start the assembler;
+\end_layout
+
+\begin_layout Itemize
+Select the option to start assembling;
+\end_layout
+
+\begin_layout Itemize
+Type in the filename: 
+\family typewriter
+ram1_ReadingFiles_asm
+\end_layout
+
+\begin_layout Itemize
+Wait.
+\end_layout
+
+\begin_layout Standard
+After a successful assemble, 
+\family typewriter
+ram1_ReadingFiles_bin
+\family default
+ will be the executable job.
+ To run it:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EXEC
+\family default
+ 
+\family typewriter
+ram1_ReadingFiles_bin: REMark Alternatively, EX ram1_ReadingFiles_bin
+\end_layout
+
+\begin_layout Standard
+On a successful execution, a small window will open, with black paper, white
+ ink and a white, one pixel border.
+ Some lines of text will be displayed, and after a delay of about 5 or 6
+ seconds, the screen channel will be closed and vanish.
+\end_layout
+
+\begin_layout Standard
+And finally, Figure 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:ReadingFiles-final-output"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows what the final output should look like.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Graphics
+	filename /home/norman/SourceCode/Assembly eMagazine/Issue_011/images/ReadingFiles.png
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+ReadingFiles final output
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:ReadingFiles-final-output"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Summary
+\end_layout
+
+\begin_layout Standard
+So that's the Assembly Language version of how to open a file, read it and
+ display the contents on the screen, before closing it.
+\end_layout
+
+\begin_layout Standard
+In future issues, I'll be continuing to delve into a few more of these with,
+ hopefully, enough explanation for beginners to get started with.
+\end_layout
+
+\begin_layout Standard
+Get hold of the SMSQ/E Reference Manual from:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "Here"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf
+\end_layout
+
+\end_inset
+
+ for the PDF version; or
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "Here"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt
+\end_layout
+
+\end_inset
+
+ for the ODT version.
+\end_layout
+
+\end_body
+\end_document
