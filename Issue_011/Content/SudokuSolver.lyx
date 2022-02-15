@@ -1,0 +1,2959 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=none,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Sudoku Solver
+\end_layout
+
+\begin_layout Standard
+This is the most brutal program I think I've ever written.
+ It's a Sudoku puzzle 
+\begin_inset Quotes eld
+\end_inset
+
+solver
+\begin_inset Quotes erd
+\end_inset
+
+ in as much as it will, eventually, find a solution if a puzzle can be solved,
+ but it does it by brute force and complete ignorance of how a puzzle should
+ be solved – using logic and deduction (induction?) – and, it's recursive!
+\end_layout
+
+\begin_layout Standard
+To put it mildly, it starts with a grid from which some entries are missing,
+ it looks for the one closest to the top left corner, and tries the digits
+ 1 to 9 in that location.
+ If the digit can be put there – it's not already in the same row, column
+ or small box – then it effectively has a new grid to solve, and calls itself
+ recursively, to solve the new board.
+ If it successfully places another digit, then it recurses again and so
+ on.
+ Eventually though, the board will be solved, or a digit will not be able
+ to be placed.
+ 
+\end_layout
+
+\begin_layout Standard
+In the latter case, the recursive call will return – 
+\emph on
+backtrack
+\emph default
+ – to the calling code, reset it's variables, and try again with a different
+ starting digit.
+ This will progress until the puzzle is solved or every possible combination
+ of digits for every possible blank space, has been tried.
+\end_layout
+
+\begin_layout Standard
+Now, you might think this will need a lot of stack space for the recursive
+ calls, but it needs 
+\begin_inset Formula $4+(20*depth)$
+\end_inset
+
+ bytes of stack.
+ By default, the solver has a 4,000 byte data space, and so far, I have
+ yet to blow that out with any puzzles.
+ That's enough for 199.8 recursive calls.
+\end_layout
+
+\begin_layout Standard
+Did I mention, the code assembles to 1,028 bytes? And that includes a demo
+ puzzle and the ability to load games from disc?
+\end_layout
+
+\begin_layout Standard
+The idea for this 
+\begin_inset Quotes eld
+\end_inset
+
+utility
+\begin_inset Quotes erd
+\end_inset
+
+ came from a 
+\emph on
+You Tube
+\emph default
+ video
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+No, I don't have the URL I'm afraid, I didn't actually watch it – I just
+ saw the description.
+\end_layout
+
+\end_inset
+
+ that was recommended to me, for some reason, by You Tube's so called AI,
+ which seemed to think that I was interested in a Java Programming series.
+ I'm not and I wasn't, but one of the offered videos was a Sudoku Solver
+ in Java.
+ So I stole the idea and wrote it in Assembly!
+\end_layout
+
+\begin_layout Section
+Quick Explanation
+\end_layout
+
+\begin_layout Standard
+Picture a grid with three blank cells
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+I did say, 
+\emph on
+extremely
+\emph default
+ simplified!
+\end_layout
+
+\end_inset
+
+ and the following explanation extremely simplified.
+ The solution will progress as follows:
+\end_layout
+
+\begin_layout Enumerate
+Try a 
+\begin_inset Quotes els
+\end_inset
+
+1
+\begin_inset Quotes ers
+\end_inset
+
+ in the first cell, 
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+, if it is legal move, recurse to solve the grid with 2 blank cells;
+\end_layout
+
+\begin_layout Enumerate
+A 
+\begin_inset Quotes els
+\end_inset
+
+1
+\begin_inset Quotes ers
+\end_inset
+
+ in the new first cell will obviously be illegal, from the previous step,
+ so try a 
+\begin_inset Quotes els
+\end_inset
+
+2
+\begin_inset Quotes ers
+\end_inset
+
+, 
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+.
+ If legal, recurse to solve the grid with a single blank cell;
+\end_layout
+
+\begin_layout Enumerate
+Both 
+\begin_inset Quotes els
+\end_inset
+
+1
+\begin_inset Quotes ers
+\end_inset
+
+ and 
+\begin_inset Quotes els
+\end_inset
+
+2
+\begin_inset Quotes ers
+\end_inset
+
+ are illegal here, so all of the digits 
+\begin_inset Quotes els
+\end_inset
+
+3
+\begin_inset Quotes ers
+\end_inset
+
+ through 
+\begin_inset Quotes els
+\end_inset
+
+9
+\begin_inset Quotes ers
+\end_inset
+
+ will be tried until one is legal.
+ If so, the grid is solved, 
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+, and the code returns through all of the recursive calls to the top level,
+ and finishes;
+\end_layout
+
+\begin_layout Enumerate
+If none of the digits 
+\begin_inset Quotes els
+\end_inset
+
+3
+\begin_inset Quotes ers
+\end_inset
+
+ through 
+\begin_inset Quotes els
+\end_inset
+
+9
+\begin_inset Quotes ers
+\end_inset
+
+ are legal, 
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+, then the grid is unsolved, so we return to the grid with two blank cells
+ and try the remaining numbers – 
+\begin_inset Quotes els
+\end_inset
+
+3
+\begin_inset Quotes ers
+\end_inset
+
+ through 
+\begin_inset Quotes els
+\end_inset
+
+9
+\begin_inset Quotes ers
+\end_inset
+
+.
+ Starting with 
+\begin_inset Quotes els
+\end_inset
+
+3
+\begin_inset Quotes ers
+\end_inset
+
+, 
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+, and another recursive call to see if the grid with one blank cell can
+ now be solved;
+\end_layout
+
+\begin_layout Enumerate
+If we find that we didn't get a solution to the two blank cells grid, we
+ return back to the grid with three blanks, and try the next number that
+ legally fits, 
+\begin_inset Tabular
+<lyxtabular version="3" rows="1" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+, and recurse again to solve the new grid with two and then one blank cells;
+\end_layout
+
+\begin_layout Enumerate
+This process repeats until we end up with either a solution, we fitted three
+ legal digits in the three blank cells; or no solution – the grid is unsolvable.
+\end_layout
+
+\begin_layout Section
+The Solver
+\end_layout
+
+\begin_layout Standard
+To use the solver, simply EX/EXEC it and you will be presented with a menu
+ offering three choices:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes els
+\end_inset
+
+Q
+\begin_inset Quotes ers
+\end_inset
+
+ or 
+\begin_inset Quotes els
+\end_inset
+
+q
+\begin_inset Quotes ers
+\end_inset
+
+ to quit;
+\end_layout
+
+\begin_layout Itemize
+ENTER to run the built in demonstration puzzle;
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Quotes els
+\end_inset
+
+L
+\begin_inset Quotes ers
+\end_inset
+
+ or 
+\begin_inset Quotes els
+\end_inset
+
+l
+\begin_inset Quotes ers
+\end_inset
+
+ to load a puzzle.
+ You will be further prompted for the file name which should contain 81
+ bytes of grid data – the puzzle only caters for 9 by 9 grids at present
+ – which can be a stream of 81 bytes or separated into 9 lines of 9 bytes
+ using linefeeds.
+ Digits are represented by themselves, obviously, and blanks are represented
+ by whichever character you wish to use.
+ Linefeeds are ignored but anything else that isn't a digit is deemed to
+ be a space.
+\end_layout
+
+\begin_layout Itemize
+After a puzzle is solved, or not, you are required to press ENTER to quit.
+\end_layout
+
+\begin_layout Standard
+The load feature only accesses the first 81 bytes of data, ignoring linefeeds,
+ to obtain the grid data.
+ You can fill the file with anything you like after the first 81 bytes (or
+ 90 if linefeeds are present).
+\end_layout
+
+\begin_layout Standard
+The code repository for this issue contains a couple of example files to
+ load – 
+\family typewriter
+Sudoku_easy
+\family default
+, 
+\family typewriter
+Sudoku_hard
+\family default
+ and 
+\family typewriter
+Sudoku_expert
+\family default
+ – but don't be misled, those are simply the puzzle levels from the Sudoku
+ app on my table that I stole the grids from! In practice, the easy version
+ takes longer for the brute force algorithm to solve than it does for the
+ other two.
+\end_layout
+
+\begin_layout Standard
+The code is written in plain 68008 instructions, there are no 68020 etc
+ options used, so it will run on a bare bones QL.
+ I have no idea how efficiently it will run though.
+ My QPC setup – Linux under Wine, 64 bit dual core – takes a few seconds
+ to solve the demo and the hard and expert loadable files, but longer of
+ seconds to solve the easy loadable puzzle.
+ 
+\end_layout
+
+\begin_layout Standard
+On with the code.
+\end_layout
+
+\begin_layout Section
+The Solver Code
+\end_layout
+
+\begin_layout Standard
+The code is supplied in a format that makes it easy to assemble with my
+ preferred assembler, GWASS, but with a couple of very minor changes, it
+ can be assembled also by QMAC.
+ The changes are just to remove two comment markers, a semicolon form the
+ job header and the end of the file.
+ All will be explained below.
+\end_layout
+
+\begin_layout Subsection
+Equates
+\end_layout
+
+\begin_layout Standard
+At the start of the file, 
+\family typewriter
+SudokuSolver_asm
+\family default
+, we begin with a list of equates.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:equates"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows them all in gory detail.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={1-36},caption={Equates},label={lis:equates}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Most of these are fairly constant, but you might wish to adjust 
+\family typewriter
+CON_X
+\family default
+ and/or 
+\family typewriter
+CON_Y
+\family default
+ if you would like a different placement on the screen.
+\end_layout
+
+\begin_layout Subsection
+Job Header
+\end_layout
+
+\begin_layout Standard
+The standard job header is next and Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:job-header"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows it.
+ The code is laid out in such a way that the 
+\begin_inset Quotes eld
+\end_inset
+
+end
+\begin_inset Quotes erd
+\end_inset
+
+ part of the job name is followed by an alignment byte, if necessary, to
+ force the following address to be word aligned – even – if the job name
+ happens to be an odd number of characters.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={45-58},caption={Job Header},label={lis:job-header}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+equ *
+\family default
+ is necessary on the same line as the label for QMAC to be able to assemble
+ the code without errors and is also the reason why the job name is in single
+ quotes – QMAC doesn't appear to like double quotes
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+Although a thought strikes me.
+ I wonder if the double quotes I use in Linux, where I type the source code,
+ is a different character to the QL double quotes? I must find out.
+\end_layout
+
+\end_inset
+
+ and throws errors.
+\end_layout
+
+\begin_layout Standard
+You will notice a comment line, 
+\family typewriter
+section code
+\family default
+, near the start? This is needed to be uncommented for QMAC.
+ Delete the semicolon at the start of the line if you are using the QMAC
+ assembler.
+\end_layout
+
+\begin_layout Subsection
+Main Control Code
+\end_layout
+
+\begin_layout Standard
+Following the job header, we have the main controlling code for the application.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:main-control-code"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ has the details.
+\end_layout
+
+\begin_layout Standard
+We begin by calling 
+\family typewriter
+openScreen
+\family default
+ to open the screen console we will be using, then printing the job name
+ and the menu.
+ On return from the menu, which will only occur if the user chose not to
+ quit, we will start to solve whichever board we now have in memory.
+ The code at 
+\family typewriter
+solveBoard
+\family default
+ does this, and calls itself recursively as necessary in order to solve
+ the puzzle.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={67-100},caption={Main Control Code},label={lis:main-control-code}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+On return from the attempt to solve the board, we display a message regarding
+ the success or failure of the attempt, then wait for the user to press
+ ENTER and quite the program.
+\end_layout
+
+\begin_layout Standard
+It would be a simple task to perhaps, make the code loop around and display
+ the menu again, allowing the user to choose to load and solve another board?
+ I leave this as homework and look forward to seeing your results.
+\end_layout
+
+\begin_layout Subsection
+Printing the Board
+\end_layout
+
+\begin_layout Standard
+It's no god solving, or not, the puzzle but never displaying the results.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:print-board"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the 
+\family typewriter
+printBoard
+\family default
+ code which does exactly that, it prints out the board converting any zeros
+ in the board data into spaces and printing the vertical and horizontal
+ separators to attempt to make the output resemble a Sudoku grid.
+ All registers are preserved except 
+\family typewriter
+D0
+\family default
+ and on entry, the code expects register 
+\family typewriter
+A3
+\family default
+ to be holding the address of the start of the board data.
+ The board is printed on every call to 
+\family typewriter
+solveBoard
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+The code should be easy to follow.
+ It starts by setting the cursor position to row 2, column 0 on the screen,
+ and using 
+\family typewriter
+D6
+\family default
+ as a loop counter for the 81 bytes of data to be processed.
+ Each byte is loaded into 
+\family typewriter
+D1
+\family default
+ and if not a zero, must be a digit.
+ The binary value in 
+\family typewriter
+D1
+\family default
+ is then converted to an ASCII digit by adding the code for the ASCII character
+ '0' and is printed using the handy subroutine 
+\family typewriter
+printeByte
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+If the value in 
+\family typewriter
+D1
+\family default
+ was a zero, we set 
+\family typewriter
+D1
+\family default
+ to the value of an ASCII space minus an ASCII zero.
+ $20 - $30 in other words and drop in to convert back to an ASCII space,
+ before printing it.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={114-168},caption={Printing the Puzzle Grid},label={lis:print-board}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After printing a digit or space, we check to see if we need a linefeed after
+ every 9th character printed.
+ We copy 
+\family typewriter
+D6
+\family default
+, our cell counter, to 
+\family typewriter
+D1
+\family default
+ and divide by 9 and if the remainder is 8 we print a linefeed.
+ We are counting from 0 to 80, so need a linefeed after the counter reached
+ 8, 17, 26 and so on.
+ After printing the linefeed we don;t bother checking for vertical separators
+ as they never occur at the end of a line, but we do need to consider the
+ horizontal separators every 3 rows.
+ These occur when the cell counter is at value 26 or 53, and if so, we print
+ the separator.
+\end_layout
+
+\begin_layout Standard
+If a linefeed is not required, a vertical separator might be needed.
+ The cell counter is again copied to D1 but this time divided by 3.
+ If the remainder is 2, then we print a vertical separator otherwise, we
+ don't print anything else.
+\end_layout
+
+\begin_layout Standard
+At 
+\family typewriter
+pbLoopEnd
+\family default
+, we increment the cell counter and if not finished, skip back to the start
+ of the loop to print the next cell's data.
+ If we are finished, we restore the registers we needed to preserve, and
+ return to wherever we were called from.
+\end_layout
+
+\begin_layout Subsection
+Solving the Board
+\end_layout
+
+\begin_layout Standard
+Now we are ready to solve the board, and I use the term 
+\emph on
+solve
+\emph default
+ in its vaguest sense! The algorithm is as shown in listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:Solving-the-puzzle-pseudo-code"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, which is pseudo code for what I figured out would probably work!
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "language={[Visual]Basic},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+Def FN solveBoard
+\end_layout
+
+\begin_layout Plain Layout
+
+   local r,c,tryMe
+\end_layout
+
+\begin_layout Plain Layout
+
+;
+\end_layout
+
+\begin_layout Plain Layout
+
+    for (r = 0; r < gridSize; r++) {
+\end_layout
+
+\begin_layout Plain Layout
+
+        for (c = 0; c < gridSize; c++) {
+\end_layout
+
+\begin_layout Plain Layout
+
+            if (board[r][c] == 0) {
+\end_layout
+
+\begin_layout Plain Layout
+
+                for (tryMe = 1; tryMe <= gridSize; tryMe++) {
+\end_layout
+
+\begin_layout Plain Layout
+
+                    if (isValidHere() {
+\end_layout
+
+\begin_layout Plain Layout
+
+                        board[r][c] = tryMe;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+                        if (solveBoard(board)) {
+\end_layout
+
+\begin_layout Plain Layout
+
+                            return true;
+\end_layout
+
+\begin_layout Plain Layout
+
+                        } else {
+\end_layout
+
+\begin_layout Plain Layout
+
+                            board[r][c] = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+                        }
+\end_layout
+
+\begin_layout Plain Layout
+
+                    } end if validHere
+\end_layout
+
+\begin_layout Plain Layout
+
+                } end for tryMe
+\end_layout
+
+\begin_layout Plain Layout
+
+                return false;
+\end_layout
+
+\begin_layout Plain Layout
+
+            } end if board[][] = 0
+\end_layout
+
+\begin_layout Plain Layout
+
+        } end for c
+\end_layout
+
+\begin_layout Plain Layout
+
+    } end for r
+\end_layout
+
+\begin_layout Plain Layout
+
+    return true
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+Solving the Puzzle Pseudo Code
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:Solving-the-puzzle-pseudo-code"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We scan each row, and then scan each column within that row.
+ If the board data holds a zero for this cell, then we have a blank to find
+ a value for.
+ The iterate through each digit from 1 to 9 and check if it can be legally
+ places in this cell, if so, it is tried and a recursive call made to solve
+ the new board with one cell less to find a value for.
+\end_layout
+
+\begin_layout Standard
+If we have tried all the digits, and none fit, then the previous values
+ attempted for one or more cells is not correct, so we return 
+\family typewriter
+false
+\family default
+ to indicate failure, having set the cell data back to a zero.
+\end_layout
+
+\begin_layout Standard
+The only way that we can return from this code having solved the board is
+ if we have iterated through all rows and all columns and managed to legally
+ place a digit there that caused all further recursive calls to also find
+ a legal digit.
+ The puzzle is solved, so we return a 
+\family typewriter
+true
+\family default
+ value to indicate solved.
+\end_layout
+
+\begin_layout Standard
+On return from a recursive call, if a 
+\family typewriter
+true
+\family default
+ was detected, we also return 
+\family typewriter
+true
+\family default
+ back to our caller, unwinding the stack as we go until we reach the top
+ level.
+\end_layout
+
+\begin_layout Standard
+How hard could it be to convert that into Assembly? Read on! Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:solve-board"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code I ended up with, after much wailing an gnashing of teeth.
+ I've added in a scan for the ESC key so that an attempt to solve a puzzle
+ can be aborted if something has gone wrong and it's taking forever to find
+ a solution.
+\end_layout
+
+\begin_layout Standard
+If the scan returns with Z clear, we can continue, otherwise we simply return
+ to the caller with Z clear.
+ This will indicate a failure to solve the puzzle.
+\end_layout
+
+\begin_layout Standard
+The code proper begins by saving our 
+\begin_inset Quotes eld
+\end_inset
+
+local
+\begin_inset Quotes erd
+\end_inset
+
+ variables, or registers in this case.
+ If we are called recursively, which we will be, then we need to save the
+ current values for row, column, and the digit we are trying to fit in.
+ We also save the offset into the board data, register 
+\family typewriter
+D4
+\family default
+, as we need that to be restored before we return back from this recursive
+ call.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D5
+\family default
+ is the row counter, 
+\family typewriter
+D6
+\family default
+ is the column counter and 
+\family typewriter
+D7
+\family default
+ is the value we are attempting to insert into the current cell.
+ D4, as mentioned, has the cell offset and is used as a way of not having
+ to calculate the offset each time for each new row and column in the grid.
+\end_layout
+
+\begin_layout Standard
+One problem, which I might look into, is the fact that every recursive call
+ begins looking for blank cells from the 
+\emph on
+start
+\emph default
+ of the board.
+ This is inefficient as surely, we should be looking one cell onwards from
+ the cell we have just fitted a value into? More homework perhaps? Anyway,
+ the offset, row and column registers are initialised and we loop along
+ looking for a blank cell.
+\end_layout
+
+\begin_layout Standard
+When we find one, 
+\family typewriter
+D7
+\family default
+ is initialised to 1 and we start looping around the values 1 to 9, checking
+ each to see if it can legally be placed in the cell.
+ A legal placement is when the value under test is not in the current row,
+ as per 
+\family typewriter
+D5
+\family default
+, or column as per 
+\family typewriter
+D6
+\family default
+ or box, as per 
+\family typewriter
+D5
+\family default
+,
+\family typewriter
+D6
+\family default
+.
+ If the value in 
+\family typewriter
+D7
+\family default
+ is legal, it is placed in the puzzle data at offset 
+\family typewriter
+D4
+\family default
+, the board printed with the new value, as a recursive call made to 
+\family typewriter
+solveBoard
+\family default
+ to try and solve this new grid.
+\end_layout
+
+\begin_layout Standard
+If we return with Z set, the board has been solved and we return to our
+ caller with Z set, otherwise, we reset the cell's data to zero and try
+ another number at 
+\family typewriter
+sbNextNumber
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={186-245},caption={Solving the Puzzle Grid},label={lis:solve-board}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+If we have run out of numbers to try, then we drop into 
+\family typewriter
+sbUnsolved
+\family default
+ where we give 
+\family typewriter
+D0
+\family default
+ a value of 1, which clears the Z flag, indicating a failure to solve the
+ board, then we return to our caller via the register restoration code at
+ 
+\family typewriter
+sbReturn
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+SbNextColumn
+\family default
+ and 
+\family typewriter
+sbNextRow
+\family default
+ simply increment the column and row counters and skip back to the start
+ of their respective loops to allow the whole grid to be scanned for missing
+ values and attempts made to fill them.
+\end_layout
+
+\begin_layout Standard
+If we manage to exit from the last row iteration, then the grid has been
+ solved.
+ 
+\family typewriter
+D0
+\family default
+ is set to zero, which sets the Z flag to indicate a solution has been found,
+ and we drop into 
+\family typewriter
+sbReturn
+\family default
+ to return to the caller.
+\end_layout
+
+\begin_layout Subsection
+Is Digit in this Row?
+\end_layout
+
+\begin_layout Standard
+The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:in-row"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is used to determine if the digit in 
+\family typewriter
+D7
+\family default
+ is legally able to be placed in the row in 
+\family typewriter
+D5
+\family default
+.
+ If so, we return with the Z flag set to indicate that the digit is already
+ present in the row.
+ If Z is clear, then this is a valid placement for the digit in the row.
+ It might still be found in the column or the box, but the row is fine.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={258-276},caption={Checking if a digit is in a row},label={lis:in-row}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code saves the working registers – all registers are preserved except
+ for 
+\family typewriter
+D0
+\family default
+ – and simply multiplies the row by 9 to get the offset to the start of
+ the row in 
+\family typewriter
+D5
+\family default
+ which is then added to 
+\family typewriter
+A3
+\family default
+ to get the offset into the puzzle data.
+ Yes, I 
+\emph on
+could
+\emph default
+ have used 
+\family typewriter
+MULU
+\family default
+, but I chose not to!
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D0
+\family default
+ is then used as a counter of the number of columns to be checked, and the
+ loop executes 9 times.
+ If the digit in 
+\family typewriter
+D7
+\family default
+ is found in the row, we will drop out of the bottom of the DBEQ loop (decrement
+ and branch 
+\emph on
+unless
+\emph default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Or, if you prefer, decrement and branch 
+\emph on
+until
+\emph default
+ equal
+\end_layout
+
+\end_inset
+
+ equal) with the Z flag set.
+\end_layout
+
+\begin_layout Standard
+If we exit the loop with Z clear, we ran out of columns to check and the
+ digit is not present in the row.
+ The working registers are restored before we return to the caller.
+\end_layout
+
+\begin_layout Subsection
+Is Digit in this Column?
+\end_layout
+
+\begin_layout Standard
+The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:in-column"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is used to determine if the digit in 
+\family typewriter
+D7
+\family default
+ is legally able to be placed in the column in 
+\family typewriter
+D6
+\family default
+.
+ If so, we return with the Z flag set to indicate that the digit is already
+ present in the row.
+ If Z is clear, then this is a valid placement for the digit in the column.
+ It might still be found in the box, but the row and column, if we get this
+ far, are fine.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={288-305},caption={Checking if a digit is in a column},label={lis:in-column}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code saves the working registers – all registers are preserved except
+ for 
+\family typewriter
+D0
+\family default
+ – and simply adds the column number in 
+\family typewriter
+D6
+\family default
+ to the start of the puzzle data in 
+\family typewriter
+A3
+\family default
+, to get the offset to the first cell of the column number in 
+\family typewriter
+D6
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D0
+\family default
+ is then used as a counter of the number of rows in this column to be checked,
+ and the loop executes 9 times.
+ If the digit in 
+\family typewriter
+D7
+\family default
+ is found in the column, we will drop out of the bottom of the DBEQ loop
+ with the Z flag set.
+\end_layout
+
+\begin_layout Standard
+If we exit the loop with Z clear, we ran out of rows to check and the digit
+ is not present in the column.
+ The working registers are restored before we return to the caller.
+\end_layout
+
+\begin_layout Subsection
+Is Digit in this Box?
+\end_layout
+
+\begin_layout Standard
+This one is slightly trickier then the previous two checks.
+ We need to check if the digit in 
+\family typewriter
+D7
+\family default
+ is present in the small, 3 by 3 box, containing row 
+\family typewriter
+D5
+\family default
+ and column 
+\family typewriter
+D6
+\family default
+.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:in-box"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+shows how it is done.
+\end_layout
+
+\begin_layout Standard
+The code begins by saving the working registers as before.
+ We preserve all registers except 
+\family typewriter
+D0
+\family default
+ in this code and return with the Z flag set to indicate that the number
+ is in the box, or clear if not.
+ 
+\family typewriter
+D0
+\family default
+ is cleared as we need to work with all 32 bits for the 
+\family typewriter
+DIVU
+\family default
+, and then the row number is copied over.
+ The remainder of dividing the row number by 3 is then subtracted from the
+ row number to get the top row number in this box.
+ So we have 
+\begin_inset Formula $TopRow=Row-(Row\ Mod\ 3)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D5
+\family default
+, the row number, is again copied to 
+\family typewriter
+D0
+\family default
+ and multiplied by 9 to get the offset to add to 
+\family typewriter
+A3
+\family default
+ for the start of the puzzle data for the row in 
+\family typewriter
+D5
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={317-352},caption={Checking if a digit is in a box},label={lis:in-box}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In a similar vein, we need to get the starting column for the column number
+ in 
+\family typewriter
+D6
+\family default
+.
+ The same division is applied and the remainder subtracted from the column
+ number to get the starting column for the box.
+ Again, we have 
+\begin_inset Formula $TopColumn=Column-(Column\ Mod\ 3)$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+This value is added to 
+\family typewriter
+A3
+\family default
+ to get the correct offset to the starting cell in the 3 by 3 box.
+ 
+\family typewriter
+D5
+\family default
+ and 
+\family typewriter
+D6
+\family default
+ are now redundant, but are used to count rows and columns – and for some
+ reason, I appear to have mixed them up, but it makes no difference, my
+ apologies for any confusion caused — and a double 
+\family typewriter
+DBRA
+\family default
+ loop entered to check each of the 9 cells in the box.
+ As soon as the digit is found, we skip to 
+\family typewriter
+ibDone
+\family default
+ to restore the working registers and return with the Z flag set.
+ If we exit both loops with no sign of the digit, we return with the Z flag
+ cleared.
+\end_layout
+
+\begin_layout Subsection
+Subroutines
+\end_layout
+
+\begin_layout Standard
+All the code so far described constitutes the meat of the code to solve
+ a puzzle.
+ There are, a number of helpful subroutines that are called from one or
+ more places, and those are described in this section.
+\end_layout
+
+\begin_layout Subsubsection
+Print a Byte
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-print-byte"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is a small routine to print the byte in 
+\family typewriter
+D1
+\family default
+ to the channel in 
+\family typewriter
+A0
+\family default
+.
+ All registers are preserved and the Z flag is set if all went well, or
+ cleared if errors were detected.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={364-371},caption={Subroutine: Print a byte},label={lis:sub-print-byte}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After preserving the working registers, the 
+\family typewriter
+IOB.SBYT
+\family default
+ trap call is used to send 
+\family typewriter
+D1.B
+\family default
+ to channel 
+\family typewriter
+A0
+\family default
+.
+ This requires a timeout in register 
+\family typewriter
+D3.W
+\family default
+ and we use -1 as the timeout to indicate that the trap call can take as
+ long as it wants.
+ 
+\end_layout
+
+\begin_layout Subsubsection
+Position the Cursor
+\end_layout
+
+\begin_layout Standard
+In order to preserve the heading for the console channel, where the job
+ name is printed, we set the cursor to row 2 column 0, and the clear from
+ there to the end of the console.
+ Positioning the cursor is done using the subroutine at label 
+\family typewriter
+at
+\family default
+.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-at"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={380-389},caption={Subroutine: Position the cursor at 2,0},label={lis:sub-at}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+All registers except 
+\family typewriter
+D0
+\family default
+ are preserved so the code begins by stacking the ones it must keep safe.
+ The 
+\family typewriter
+IOW.SCUR
+\family default
+ trap call is then set up with 
+\family typewriter
+D1
+\family default
+ indicating the row column number and 
+\family typewriter
+D2
+\family default
+ the row number.
+ 
+\family typewriter
+D3
+\family default
+, as before, is the timeout for the trap.
+\end_layout
+
+\begin_layout Standard
+On error, 
+\family typewriter
+D0
+\family default
+ will hold the error code and the Z flag will be cleared.
+ If all went well, 
+\family typewriter
+D0
+\family default
+ will be zero and the Z flag will be set.
+\end_layout
+
+\begin_layout Subsubsection
+Printing Strings
+\end_layout
+
+\begin_layout Standard
+To print a string, we use the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-print-string"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ As before, everything except 
+\family typewriter
+D0
+\family default
+ is preserved so we begin by saving the registers that will be corrupted.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={399-404},caption={Subroutine: Printing strings},label={lis:sub-print-string}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+UT.WTEXT
+\family default
+ vectored routing is set up next, and this expects the channel id to be
+ in 
+\family typewriter
+A0
+\family default
+ and a pointer to the string to be printed in 
+\family typewriter
+A1
+\family default
+.
+ The vector is loaded into 
+\family typewriter
+A2
+\family default
+ and executed.
+ After restoring the working registers, we return with the Z flag already
+ set to indicate success or failure.
+ 
+\family typewriter
+D0
+\family default
+ will contain any error codes.
+\end_layout
+
+\begin_layout Subsubsection
+Opening the Console
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-console"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the console definition block, and the code – at 
+\family typewriter
+openScreen
+\family default
+ – to open the console, set the ink, paper and strip colours, and apply
+ any desired border settings.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={412-426},caption={Subroutine: Console definition and open code},label={lis:sub-console}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The console definition block is set up using some constants defined way
+ back at the start of the code, as shown previously in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:equates"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ You might wish to amend the 
+\family typewriter
+CON_X
+\family default
+ and 
+\family typewriter
+CON_Y
+\family default
+ settings in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:equates"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ to move the screen over a bit, if necessary on your system.
+\end_layout
+
+\begin_layout Standard
+When this code is called, the application is in its starting state, so we
+ don't really care about the registers used or corrupted.
+ The console is opened and attributes applied using the 
+\family typewriter
+OPW.CON
+\family default
+ vectored utility which expects 
+\family typewriter
+A1
+\family default
+ to be pointing at the definition block.
+\end_layout
+
+\begin_layout Standard
+On exit from 
+\family typewriter
+openScreen
+\family default
+, the Z flag will be set if all was well, otherwise it will be clear and
+ an error code will be in 
+\family typewriter
+D0
+\family default
+.
+\end_layout
+
+\begin_layout Subsubsection
+The Menu
+\end_layout
+
+\begin_layout Standard
+Well, I say 
+\begin_inset Quotes eld
+\end_inset
+
+menu
+\begin_inset Quotes erd
+\end_inset
+
+ but it's not much of a menu – there's no vegetarian or vegan options for
+ starters
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Or indeed, for main course either!
+\end_layout
+
+\end_inset
+
+.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-menu"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code, which doesn't care about preserving registers other than
+ 
+\family typewriter
+A0
+\family default
+ which holds the console channel id.
+ Everything else is deemed expendable.
+\end_layout
+
+\begin_layout Standard
+The menu is displayed starting at line 2, column 0 and offers the three
+ options to run the demo; load a puzzle or quit.
+ After displaying the options, the code reads the keyboard waiting for some
+ input.
+ 
+\family typewriter
+A1
+\family default
+ is returned from 
+\family typewriter
+waitForInput
+\family default
+ pointing at the start of the buffer, where the length of the text is stored.
+ We need the first character in the buffer so the byte at 
+\family typewriter
+2(A1)
+\family default
+ is loaded into 
+\family typewriter
+D2
+\family default
+ and bit 5 set to convert to lower case.
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+D1.W
+\family default
+ holds the size of the text that was entered by the user, so if that was
+ 1, we know the user pressed ENTER only and we are done – the demo puzzle
+ is already loaded and nothing more needs to be done.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={442-470},caption={Subroutine: Menu},label={lis:sub-menu}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Given that we now know some text was entered, we can check if 
+\family typewriter
+D2.B
+\family default
+ is 'q' and if so, exit the application via the code at label 
+\family typewriter
+die
+\family default
+, which terminates the application.
+\end_layout
+
+\begin_layout Standard
+If the character in 
+\family typewriter
+D2.B
+\family default
+ is not an 'l' (lower case L) then we redisplay the menu.
+ If it was an 'l' then we call out to 
+\family typewriter
+loadGame
+\family default
+ to process loading a different puzzle to solve.
+ If Z was set on return, all was well and we are done here, otherwise, we
+ indicate that there was a loading problem and exit.
+ In this case, the inbuilt demo will be solved.
+\end_layout
+
+\begin_layout Standard
+Just prior to returning from this subroutine, the screen is once more cleared
+ from 2,0 across and downwards – only the job name remains untouched!
+\end_layout
+
+\begin_layout Subsubsection
+Clearing Bits of the Screen
+\end_layout
+
+\begin_layout Standard
+As mentioned a few times already, we want to keep the job name printed at
+ the top of the screen.
+ To do this we have to use two trap calls.
+ The code is shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-cls-screen"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and preserves 
+\family typewriter
+A0
+\family default
+ and 
+\family typewriter
+D3
+\family default
+.
+ 
+\family typewriter
+D0
+\family default
+, 
+\family typewriter
+D1
+\family default
+ and 
+\family typewriter
+A1
+\family default
+ are corrupted.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={480-488},caption={Subroutine: Clearing bits of the screen},label={lis:sub-cls-screen}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The first trap call is 
+\family typewriter
+IOW.CLRL
+\family default
+ and will clear the screen from the cursor position to the end of the line.
+ After this call, 
+\family typewriter
+IOW.CLRB
+\family default
+ is used to clear all of the screen below the cursor position.
+\end_layout
+
+\begin_layout Subsubsection
+Loading Games
+\end_layout
+
+\begin_layout Standard
+Puzzle files are assumed to contain ASCII representations of a grid and
+ should contain at least 81 bytes representing the grid.
+ This can be split as your wish desires, into separate more manageable lines,
+ using linefeeds as and when required – those are always ignored.
+ Any character which is not a linefeed or an ASCII digit, is considered
+ a space for a cell to be filled in.
+\end_layout
+
+\begin_layout Standard
+Loading a puzzle preserves all registers except 
+\family typewriter
+D0
+\family default
+.
+ The Z flag will be set if the puzzle loaded and cleared otherwise.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-prompting-the-user"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code executed when the user chooses to load a game from the menu.
+ It begins by setting the cursor position and clearing the screen before
+ prompting the user for a file name, then waits for the user to enter one.
+ If the user simply presses ENTER, we loop around and prompt again.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={502-509},caption={Subroutine: Loading a puzzle - prompting the user},label={lis:sub-load-game-prompting-the-user}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Once we have a potential filename, we drop into the code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-open-file"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ where we attempt to open the file.
+ 
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={511-523},caption={Subroutine: Loading a puzzle - opening the file},label={lis:sub-load-game-open-file}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We use the 
+\family typewriter
+IOA.OPEN
+\family default
+ trap call which requires an owning job id in 
+\family typewriter
+D1
+\family default
+ – I'm using -1 for the current job – an open mode in 
+\family typewriter
+D3
+\family default
+, here I'm using the value 1 for OPEN_IN so the file must exist.
+ Unfortunately, 
+\family typewriter
+A0
+\family default
+ is required to point at the string containing the filename, so I have to
+ save the console id in 
+\family typewriter
+A4
+\family default
+, which is not used or corrupted by the file opening code.
+ It's quicker to use a register than to stack one! 
+\family typewriter
+A1
+\family default
+ currently points at the filename, so that's copied to 
+\family typewriter
+A0
+\family default
+ and the trap executed.
+ If the file opened, we skip to 
+\family typewriter
+lgReadFile
+\family default
+ to read the puzzle data, otherwise we display a message and start again
+ by heading back to Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-prompting-the-user"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-setup"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is next, and here we set up the registers that will not change in the data
+ reading loop.
+ 
+\family typewriter
+D3
+\family default
+ is the timeout and as usual, I'm going infinite! 
+\family typewriter
+A3
+\family default
+ is the puzzle data start address for cell 0,0 and 
+\family typewriter
+D4
+\family default
+ holds the count of bytes we want to read from the file, there should be
+ 81 bytes in a puzzle.
+ As with all 
+\family typewriter
+DBcc
+\family default
+ loops, we load one less than we need.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={525-528},caption={Subroutine: Loading a puzzle - setting up the read},label={lis:sub-load-game-setup}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At label 
+\family typewriter
+lgReadLoop
+\family default
+ in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-reading-data"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, we see the start of the loop to read the 81 bytes of puzzle data from
+ the file.
+ We use the 
+\family typewriter
+IOB.FBYT
+\family default
+ trap call to read a single byte at a time into register 
+\family typewriter
+D1
+\family default
+.
+ If we hit any errors, including EOF, before the load is complete, the program
+ aborts – perhaps not the best idea in the world? Who fancies adding better
+ error handling then? More homework?
+\end_layout
+
+\begin_layout Standard
+If the character in 
+\family typewriter
+D1
+\family default
+ is a linefeed, we ignore it and return to read the next character without
+ affecting the counter of bytes still to be read and processed in 
+\family typewriter
+D4
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={530-551},caption={Subroutine: Loading a puzzle - reading data},label={lis:sub-load-game-reading-data}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+At 
+\family typewriter
+lgDigits
+\family default
+, we test the character to see if it's an ASCII digit, and if so, we subtract
+ the ASCII code for a '0' from 
+\family typewriter
+D1
+\family default
+.
+ If it's not a digit, we just set 
+\family typewriter
+D1
+\family default
+ to zero at 
+\family typewriter
+lgNonDigit
+\family default
+ and in both cases, end up at 
+\family typewriter
+lgStoreByte
+\family default
+ where we write the byte in 
+\family typewriter
+D1
+\family default
+ into the puzzle grid at 
+\family typewriter
+A3
+\family default
+, incrementing 
+\family typewriter
+A3
+\family default
+ to point at the next cell's data space.
+\end_layout
+
+\begin_layout Standard
+After storing the byte, the counter is decremented and if there is more
+ to do, we skip back to read another byte.
+ If we have read all 81 bytes from the file, then we close it using 
+\family typewriter
+IOA.CLOS
+\family default
+ at label 
+\family typewriter
+lgCloseFile
+\family default
+, in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-close-file"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={553-558},caption={Subroutine: Loading a puzzle - closing the data file},label={lis:sub-load-game-close-file}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In QDOS, closing a file which was not open results in a 
+\begin_inset Quotes eld
+\end_inset
+
+File not open
+\begin_inset Quotes erd
+\end_inset
+
+ error, but in SMSQ/E, there is no error reported.
+ The code in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-load-game-close-file"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ assumes the latter case and clears 
+\family typewriter
+D0
+\family default
+ to indicate no errors.
+\end_layout
+
+\begin_layout Standard
+The console is is copied back from 
+\family typewriter
+A4
+\family default
+ to 
+\family typewriter
+A0
+\family default
+ before we return to the calling code, as we will be writing to the console
+ soon and need it!
+\end_layout
+
+\begin_layout Standard
+It should be noted that loading a game makes no attempt to determine if
+ the data are valid.
+ You could load a puzzle with repeating characters in rows, columns and/or
+ boxes, it doesn't care.
+ What happens in this case? The code sill still try to solve the puzzle,
+ but will run for quite some time, and will have to be aborted, probably,
+ when you get fed up!
+\end_layout
+
+\begin_layout Subsubsection
+Reading Input From the Keyboard
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-get-user-input"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code used to obtain input from the user.
+ Any time we call this subroutine, the user is expected to press ENTER.
+ This character will be saved as a linefeed in the input buffer and the
+ count of characters obtained, in 
+\family typewriter
+D1
+\family default
+, will include the linefeed.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={571-586},caption={Subroutine: Getting user input},label={lis:sub-get-user-input}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+We use the 
+\family typewriter
+IOB.FLIN
+\family default
+ trap call to fetch a line of input.
+ 
+\family typewriter
+D2
+\family default
+ tells the trap how big the buffer is and sets the maximum number of bytes
+ than can be returned.
+ 
+\family typewriter
+A1
+\family default
+ points at the buffer start and this is copied to 
+\family typewriter
+A4
+\family default
+ as we need to store the length word there.
+ 
+\family typewriter
+A1
+\family default
+ is incremented by 2 to point at the position where we want the data to
+ be read into.
+ 
+\family typewriter
+D3
+\family default
+ already holds the timeout.
+\end_layout
+
+\begin_layout Standard
+After the trap call, if there were errors, we skip back and attempt to get
+ input from the user again.
+ If no errors were detected, the length word is stored in the start of the
+ buffer but then decremented to delete the trailing linefeed character,
+ which we know is definitely there.
+ 
+\family typewriter
+A4
+\family default
+ is copied to 
+\family typewriter
+A1
+\family default
+ to return the start of the buffer to the caller.
+\end_layout
+
+\begin_layout Standard
+If the user types more characters than will fit in the buffer, then an overflow
+ error will be returned and the final character in the buffer will not be
+ the linefeed.
+ We don't specifically trap this error in the code above as we simply reattempt
+ in the case of errors being detected.
+\end_layout
+
+\begin_layout Standard
+The code expects 
+\family typewriter
+A0
+\family default
+ to be the console id and trashes just about everything else.
+ 
+\family typewriter
+A1
+\family default
+ is returned pointing to the start of the buffer.
+\end_layout
+
+\begin_layout Subsubsection
+Scanning for ESC
+\end_layout
+
+\begin_layout Standard
+I mentioned that puzzle data are not validated when loaded.
+ If a bad data set is loaded, then the code could run for some time and
+ we need a manner of aborting a run.
+ The code in Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-scan-esc"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-keyrow-esc"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ carry out a quick scan of the keyboard, looking for the ESC key.
+\end_layout
+
+\begin_layout Standard
+Please note, this is the same as calling 
+\family typewriter
+KEYROW
+\family default
+ in S*BASIC and it's possible that pressing ESC in another application will
+ be detected by the Sudoku solver, and abort it's current run.
+ Note also, Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-keyrow-esc"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is out of line here, it's at the end of the file in reality, but is listed
+ here as it pertains to this subroutine.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={597-604},caption={Subroutine: Scanning for ESC},label={lis:sub-scan-esc}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-scan-esc"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ saves all registers.
+ Only the Z flag is affected and is set if ESC was not pressed.
+ We use the 
+\family typewriter
+SMS.HDOP
+\family default
+ trap call to run a hardware operation to scan the keyboard for ESC, but
+ we can also detect ENTER, SPACE, '
+\backslash
+' and the 4 arrow keys with the parameters in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-keyrow-esc"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+which are pointed at by register 
+\family typewriter
+A3
+\family default
+.
+ After the trap, bit 3, the ESC key bit, is tested and if set, ESC was pressed.
+ If ESC was not pressed, the bit will be clear and as such, the Z flag will
+ be set.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={697-698},caption={Subroutine: KEYROW command for ESC},label={lis:sub-keyrow-esc}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-keyrow-esc"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the parameter set required by 
+\family typewriter
+SMS.HDOP
+\family default
+ to scan 
+\family typewriter
+KEYROW(1)
+\family default
+ on the keyboard.
+\end_layout
+
+\begin_layout Subsubsection
+The Demo Board
+\end_layout
+
+\begin_layout Standard
+If the user simply presses ENTER at the menu, then the inbuilt demo puzzle
+ will be solved.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-demo-puzzle"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the puzzle's data bytes where a zero is used to indicate an empty
+ cell.
+ Note that the data are 
+\emph on
+not
+\emph default
+ ASCII, they are binary values.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={613-624},caption={Subroutine: Demo puzzle data},label={lis:sub-demo-puzzle}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+There is an alignment check after the puzzle's data as 81 bytes would leave
+ a dangling odd address.
+ This is not a problem on 68020 emulators, but will cause no end of problems
+ for the old bare bones QL, so is best avoided.
+\end_layout
+
+\begin_layout Standard
+The puzzle data is shown here as separate rows of 9 bytes each, but there
+ are no linefeeds in the data, so it is simply a long string of 81 bytes
+ of data.
+ Don't let the way it's printed confuse how it is actually stored.
+\end_layout
+
+\begin_layout Standard
+This 81 byte area is where the main code looks when solving a puzzle.
+ If the user loads a puzzle, it will be loaded here too, overwriting the
+ demo data.
+\end_layout
+
+\begin_layout Subsubsection
+Messages
+\end_layout
+
+\begin_layout Standard
+Various messages used throughout the application are shown in Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-grid-h-sep"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-messages"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-grid-h-sep"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the horizontal separator used by the 
+\family typewriter
+printBoard
+\family default
+ subroutine.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={633-637},caption={Subroutine: Grid horizontal separator},label={lis:sub-grid-h-sep}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:sub-messages"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ contains all the other messages.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm"
+lstparams "linerange={643-691},caption={Subroutine: Messages},label={lis:sub-messages}"
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
