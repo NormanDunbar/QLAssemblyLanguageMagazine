@@ -1707,30 +1707,17 @@ http://www.dilwyn.me.uk/asm/gwassp22.zip
 
 \end_inset
 
- for QPC2 and other 68020 based emulators, or 
-\begin_inset CommandInset href
-LatexCommand href
-name "GWASL"
-target "http://www.dilwyn.me.uk/asm/gwaslp08.zip"
-literal "false"
-
-\end_inset
-
-
-\begin_inset Foot
-status open
-
-\begin_layout Plain Layout
-http://www.dilwyn.me.uk/asm/gwaslp08.zip
-\end_layout
-
-\end_inset
-
- for the QL and 68008 based emulators, and have the code saved as 
+ for QPC2 and other 68020 based emulators, or are using the Quanta version
+ of the GST Qmac assembler for QLs with a 68008 processor, and have the
+ code saved as 
 \family typewriter
 ram1_ReadingFiles_asm
 \family default
 , then assembling the code is as simple as this:
+\end_layout
+
+\begin_layout Subsection
+With GWASS
 \end_layout
 
 \begin_layout Itemize
@@ -1741,10 +1728,6 @@ EXEC
  
 \family typewriter
 gwass60_bin
-\family default
- or 
-\family typewriter
-EXEC gwasl_bin
 \family default
  to start the assembler;
 \end_layout
@@ -1763,8 +1746,88 @@ ram1_ReadingFiles_asm
 Wait.
 \end_layout
 
+\begin_layout Subsection
+With Qmac
+\end_layout
+
 \begin_layout Standard
-After a successful assemble, 
+To pass the commands directly via the command line:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EX qmac;' ram1_readingFiles_asm -data 2048 -filetype 1 -nolink -bin ram1_Reading
+Files_bin'
+\end_layout
+
+\begin_layout Standard
+Alternatively, you can type the command interactively:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EX qmac
+\end_layout
+
+\begin_layout Itemize
+Type the options: 
+\family typewriter
+ram1_readingFiles_asm -data 2048 -filetype 1 -nolink -bin ram1_ReadingFiles_bin
+\end_layout
+
+\begin_layout Itemize
+Wait
+\end_layout
+
+\begin_layout Standard
+What you are doing here, in both cases, is telling the assembler to:
+\end_layout
+
+\begin_layout Itemize
+Assemble the source file 
+\family typewriter
+ram1_ReadingFiles_asm
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+Create an executable file (
+\family typewriter
+-filetype 1
+\family default
+), with 2,048 bytes of data space (
+\family typewriter
+-data 2048
+\family default
+);
+\end_layout
+
+\begin_layout Itemize
+Do not invoke the linker as it is not needed (
+\family typewriter
+-nolink
+\family default
+);
+\end_layout
+
+\begin_layout Itemize
+Create the output file named 
+\family typewriter
+ram1_ReadingFiles_bin
+\family default
+ – which will be in uppercase regardless of what you type here!
+\end_layout
+
+\begin_layout Subsection
+Executing the Code
+\end_layout
+
+\begin_layout Standard
+After a successful assemble, and regardless of which assembler you used,
+ 
 \family typewriter
 ram1_ReadingFiles_bin
 \family default
@@ -1775,11 +1838,11 @@ ram1_ReadingFiles_bin
 \begin_layout Itemize
 
 \family typewriter
-EXEC
+EX
 \family default
  
 \family typewriter
-ram1_ReadingFiles_bin: REMark Alternatively, EX ram1_ReadingFiles_bin
+ram1_ReadingFiles_bin
 \end_layout
 
 \begin_layout Standard
@@ -1850,6 +1913,171 @@ name "fig:ReadingFiles-final-output"
 \end_layout
 
 \begin_layout Section
+Assembler Differences
+\end_layout
+
+\begin_layout Standard
+There are a couple of minor differences between assemblers, as you can see,
+ just invoking them is quite different.
+\end_layout
+
+\begin_layout Itemize
+Qmac doesn't have the ability to assemble instructions for the 68020 processor,
+ only for the 68008 as used in the original QL.
+ Some emulators use a virtual 68020 but these can still execute code assembled
+ for the 68008, the converse is not true though.
+\end_layout
+
+\begin_layout Itemize
+Qmac doesn't like filenames etc in double quotes, it expects single quotes.
+ 
+\family typewriter
+
+\begin_inset Quotes eld
+\end_inset
+
+ram1_test_txt
+\begin_inset Quotes erd
+\end_inset
+
+
+\family default
+ is rejected with the double quotes flagged as invalid characters, but 
+\family typewriter
+'ram1_test_txt'
+\family default
+ is accepted.
+\end_layout
+
+\begin_layout Itemize
+Qmac requires a header and trailer as follows: 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+    section code
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+	blah blah blah
+\end_layout
+
+\begin_layout Plain Layout
+
+    ...
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    end
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+There needs to be a section with a name at the top, and an end at the bottom.
+ You can have lots of sections, with different names but the above is the
+ minimum necessary.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+In Qmac (and GWASS), you can tell it how much data space it requires:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+    section code
+\end_layout
+
+\begin_layout Plain Layout
+
+    data 8192
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+start
+\end_layout
+
+\begin_layout Plain Layout
+
+    ....
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Qmac has a command line option which can be used in make files, GWASS is
+ always interactive.
+\end_layout
+
+\begin_layout Itemize
+Qmac doesn't like this sort of thing:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+label 
+\end_layout
+
+\begin_layout Plain Layout
+
+    equ *
+\end_layout
+
+\end_inset
+
+as it complains about the label being invalid.
+ This is a bit of a bind as I use that a lot to show the end of a string
+ and to save me counting.
+ However, I can do this instead:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+label equ *
+\end_layout
+
+\end_inset
+
+ which is accepted, and makes sure anything following is word aligned.
+\end_layout
+
+\begin_layout Section
 Summary
 \end_layout
 
@@ -1864,7 +2092,19 @@ In future issues, I'll be continuing to delve into a few more of these with,
 \end_layout
 
 \begin_layout Standard
-Get hold of the SMSQ/E Reference Manual from:
+Get hold of the SMSQ/E Reference Manual from: https://www.wlenerz.com/qlstuff/#qdo
+sms for the official version.
+ 
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+TODO
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Itemize
@@ -1909,6 +2149,52 @@ http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt
 \end_inset
 
  for the ODT version.
+\end_layout
+
+\begin_layout Standard
+Get hold of GWASS 
+\begin_inset CommandInset href
+LatexCommand href
+name "here"
+target "http://gwiltprogs.info/gwassp22.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://gwiltprogs.info/gwassp22.zip
+\end_layout
+
+\end_inset
+
+ for 68008 and 68020 processors.
+\end_layout
+
+\begin_layout Standard
+Download Qmac 
+\begin_inset CommandInset href
+LatexCommand href
+name "here"
+target "http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip
+\end_layout
+
+\end_inset
+
+ for 68008 processors.
 \end_layout
 
 \end_body
