@@ -85,7 +85,7 @@
 \defskip medskip
 \is_math_indent 0
 \math_numbering_side default
-\quotes_style english
+\quotes_style british
 \dynamic_quotes 0
 \papercolumns 1
 \papersides 2
@@ -101,7 +101,7 @@
 \begin_body
 
 \begin_layout Chapter
-Beginners' Corner
+Beginners Corner
 \end_layout
 
 \begin_layout Section
@@ -109,7 +109,7 @@ Introduction
 \end_layout
 
 \begin_layout Standard
-In this issue of Beginners' Corner, we are taking a look at file and simple
+In this issue of Beginners Corner, we are taking a look at file and simple
  screen handling.
 \end_layout
 
@@ -269,7 +269,7 @@ EXEC
 \end_layout
 
 \begin_layout Section
-Code Walkthrough
+Code Walk-through
 \end_layout
 
 \begin_layout Standard
@@ -691,27 +691,51 @@ There are a number of open modes that we can use when opening a file:
 \end_layout
 
 \begin_layout Itemize
-0 = OPEN - the file specified must exist;
+0 = 
+\family typewriter
+OPEN
+\family default
+ - the file specified must exist;
 \end_layout
 
 \begin_layout Itemize
-1 = OPEN_IN - the file specified must exist;
+1 = 
+\family typewriter
+OPEN_IN
+\family default
+ - the file specified must exist;
 \end_layout
 
 \begin_layout Itemize
-2 = OPEN_NEW - the file specified should not exist;
+2 = 
+\family typewriter
+OPEN_NEW
+\family default
+ - the file specified should not exist;
 \end_layout
 
 \begin_layout Itemize
-3 = OPEN_OVER - the file specified may, or may not exist;
+3 = 
+\family typewriter
+OPEN_OVER
+\family default
+ - the file specified may, or may not exist;
 \end_layout
 
 \begin_layout Itemize
-4 = OPEN_DIR - opens an existing directory.
+4 = 
+\family typewriter
+OPEN_DIR
+\family default
+ - opens an existing directory.
 \end_layout
 
 \begin_layout Standard
-We are using the OPEN_IN mode in this example, so the file must exist.
+We are using the 
+\family typewriter
+OPEN_IN
+\family default
+ mode in this example, so the file must exist.
  This is handy as we are intending to read and display its contents!
 \end_layout
 
@@ -920,7 +944,7 @@ On return from the trap, we test for errors and if none were found, we skip
 \family typewriter
 setString
 \family default
-, where we store the date length in the two empty bytes at the beginning
+, where we store the data length in the two empty bytes at the beginning
  of the buffer, to make the data into a string, ready to print.
  On return from this trap, the following registers are set:
 \end_layout
@@ -1074,15 +1098,7 @@ The next error we need to test for is end of file,
 ERR.EOF
 \family default
 .
- This is different from S*BASIC, in that we get the error at the same time
- as the read which provided some data, but hit the EOF in the file as well.
- In S*BASIC, this almost never happens when reading into a string, it's
- only returned after a further attempt to read from the file.
- 
-\end_layout
-
-\begin_layout Standard
-If the end of file has been reached, did we read any data into the buffer?
+ If the end of file has been reached, did we read any data into the buffer?
  By testing 
 \family typewriter
 D1.W
@@ -1101,8 +1117,18 @@ suspendJob
 \end_layout
 
 \begin_layout Standard
-If there was data in the buffer, we need to process it as normal, so we
- drop into Listing 
+In assembly code, hitting EOF will raise the error 
+\emph on
+even if
+\emph default
+ some data were read into the buffer.
+ In S*BASIC, the data would be returned with no errors and the following
+ read of the file would raise the EOF error.
+\end_layout
+
+\begin_layout Standard
+If there was data in the buffer, we still need to process it as normal,
+ so we drop into Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "lis:ReadingFiles-buffer-conversion-to-string"
@@ -1220,8 +1246,8 @@ We currently have the channel id for the text file in
 \family typewriter
 A0
 \family default
- and we ned the screen channel id for printing.
- As we took a copy of that channel id in register 
+ and we need the screen channel id for printing.
+ As we kept a copy of that channel id in register 
 \family typewriter
 A5
 \family default
@@ -1300,7 +1326,7 @@ This section of the code just delays closing the files for a few seconds
  It pauses for 300 frames – in the UK/Europe there are 50 frames per second,
  in the USA it's 60.
  This gives a 6 second delay in the UK/Europe, and 5 seconds in the USA.
- To suspend a job, you need the following registers setting:
+ To suspend a job, you need the following register settings:
 \end_layout
 
 \begin_layout Itemize
@@ -1351,7 +1377,11 @@ A0
 A1
 \family default
  is preserved.
- Now, in my copy of Pennel, I have a hand written note saying 
+ 
+\end_layout
+
+\begin_layout Standard
+Now, in my copy of Pennel, I have a hand written note saying 
 \emph on
 no it bloody isn't!
 \emph default
@@ -1471,7 +1501,11 @@ The first file to be closed is the text file, simply because we have the
 \family typewriter
 A0
 \family default
-, we call the subroutine closeFile to do the actual closing.
+, we call the subroutine 
+\family typewriter
+closeFile
+\family default
+ to do the actual closing.
  Closing a file doesn't usually return errors.
  QDOS did return 
 \family typewriter
@@ -1669,7 +1703,7 @@ D0
 \family typewriter
 ERR.ICHN
 \family default
-, which in QDOS terminology ios ERR_NO.
+, which in QDOS terminology is ERR_NO.
 \end_layout
 
 \begin_layout Standard
@@ -1752,13 +1786,53 @@ With Qmac
 
 \begin_layout Standard
 To pass the commands directly via the command line:
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Insert->Formatting->Ragged Line Break in the following to get it to wrap!
+\end_layout
+
+\begin_layout Plain Layout
+Also, needs `` at the start of a string.
+ Using actual LaTeX quotes `' and ``
+\begin_inset Quotes brd
+\end_inset
+
+
+\begin_inset Quotes brd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \begin_layout Itemize
 
 \family typewriter
-EX qmac;' ram1_readingFiles_asm -data 2048 -filetype 1 -nolink -bin ram1_Reading
-Files_bin'
+EX qmac;``ram1_readingFiles_asm -data 2048 -filetype 1 -nolink 
+\begin_inset Newline newline
+\end_inset
+
+-bin ram1_readingFiles_bin
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Note:
+\series default
+ The above command should be typed on one line - I've had to split it for
+ the PDF page width.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -1774,7 +1848,11 @@ EX qmac
 \begin_layout Itemize
 Type the options: 
 \family typewriter
-ram1_readingFiles_asm -data 2048 -filetype 1 -nolink -bin ram1_ReadingFiles_bin
+ram1_readingFiles_asm -data 2048 -filetype 1 -nolink 
+\begin_inset Newline newline
+\end_inset
+
+-bin ram1_readingFiles_bin
 \end_layout
 
 \begin_layout Itemize
@@ -1806,7 +1884,8 @@ Create an executable file (
 \end_layout
 
 \begin_layout Itemize
-Do not invoke the linker as it is not needed (
+Do not invoke the linker as it is not needed because everything is in the
+ same source file (
 \family typewriter
 -nolink
 \family default
@@ -1950,7 +2029,8 @@ ram1_test_txt
 \end_layout
 
 \begin_layout Itemize
-Qmac requires a header and trailer as follows: 
+GWASS allows code without sections, but Qmac requires a header and trailer
+ as follows: 
 \begin_inset listings
 inline false
 status open
@@ -1966,17 +2046,7 @@ status open
 
 \begin_layout Plain Layout
 
-start
-\end_layout
-
-\begin_layout Plain Layout
-
-	blah blah blah
-\end_layout
-
-\begin_layout Plain Layout
-
-    ...
+    ; Your code here
 \end_layout
 
 \begin_layout Plain Layout
@@ -1996,8 +2066,13 @@ start
 \begin_deeper
 \begin_layout Standard
 There needs to be a section with a name at the top, and an end at the bottom.
- You can have lots of sections, with different names but the above is the
- minimum necessary.
+ You 
+\emph on
+can
+\emph default
+ have lots of sections, with different names but the above is the minimum
+ necessary.
+ GWASS doesn't need this.
 \end_layout
 
 \end_deeper
@@ -2023,12 +2098,16 @@ status open
 
 \begin_layout Plain Layout
 
-start
+    ; Your code here
 \end_layout
 
 \begin_layout Plain Layout
 
-    ....
+\end_layout
+
+\begin_layout Plain Layout
+
+    end
 \end_layout
 
 \end_inset
@@ -2037,8 +2116,32 @@ start
 \end_layout
 
 \begin_layout Itemize
-Qmac has a command line option which can be used in make files, GWASS is
- always interactive.
+Qmac has a command line option which can be used in make files, GWASS uses
+ a non-standard method of passing filenames:
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+ex gwass60_bin; 
+\begin_inset Quotes eld
+\end_inset
+
+A/1/filename_1_asm
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+ which tells GWASS to assemble 1 file, named 
+\family typewriter
+filename_1_asm
+\family default
+.
 \end_layout
 
 \begin_layout Itemize
@@ -2078,6 +2181,63 @@ label equ *
 \end_layout
 
 \begin_layout Section
+Whither GWASL?
+\end_layout
+
+\begin_layout Standard
+This was mentioned already in the News section of this issue, but I'm repeating
+ it here in Beginners Corner.
+\end_layout
+
+\begin_layout Standard
+In the past I have used, and occasionally still do, George Gwilt's other
+ fine assembler, GWASL.
+ This one is for the 68008 processor used in the original QL.
+ Unfortunately, GWASL throws errors whenever there is a blank line which
+ contains one or more spaces or tabs or other non-printing characters.
+ It seems that GWASL only accepts blank lines which are truly blank, unlike
+ its big brother GWASS, which has no difficulty with same code.
+\end_layout
+
+\begin_layout Standard
+GWASL throws an 
+\begin_inset Quotes eld
+\end_inset
+
+illegal instruction
+\begin_inset Quotes erd
+\end_inset
+
+ error when it hits one of these lines, which is hugely annoying to me as
+ I then have to found the offending lines and delete them, before adding
+ them back in with the ENTER key.
+\end_layout
+
+\begin_layout Standard
+I do have the source code for GWASL, but unfortunately, George has not made
+ some of the files included by the source, available.
+ This makes bug fixing – without George – difficult.
+ George seems to have vanished off the face of the planet, unfortunately.
+ George kept me on the straight and narrow for many years whole I was writing
+ for QL Today, pointing out errors, bad code, better ways to do something
+ etc.
+\end_layout
+
+\begin_layout Standard
+Because of this, I've resorted to using QMAC for the 68008 processors and
+ GWASS for the bigger, 68020, processors.
+ QMAC has no problems with those 
+\begin_inset Quotes eld
+\end_inset
+
+non-blank
+\begin_inset Quotes erd
+\end_inset
+
+ blank lines.
+\end_layout
+
+\begin_layout Section
 Summary
 \end_layout
 
@@ -2092,19 +2252,27 @@ In future issues, I'll be continuing to delve into a few more of these with,
 \end_layout
 
 \begin_layout Standard
-Get hold of the SMSQ/E Reference Manual from: https://www.wlenerz.com/qlstuff/#qdo
-sms for the official version.
- 
-\begin_inset Note Note
-status open
-
-\begin_layout Plain Layout
-TODO
-\end_layout
+Get hold of the SMSQ/E Reference Manual from 
+\begin_inset CommandInset href
+LatexCommand href
+name "Wolfgang Lenerz's web site"
+target "https://www.wlenerz.com/qlstuff/#qdosms"
+literal "false"
 
 \end_inset
 
 
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://www.wlenerz.com/qlstuff/#qdosms
+\end_layout
+
+\end_inset
+
+ for the official version.
+ Alternatively, there are copies on Dilwyn's pages:
 \end_layout
 
 \begin_layout Itemize
@@ -2126,7 +2294,7 @@ http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf
 
 \end_inset
 
- for the PDF version; or
+ for the PDF for version 4.5; or
 \end_layout
 
 \begin_layout Itemize
@@ -2148,7 +2316,31 @@ http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt
 
 \end_inset
 
- for the ODT version.
+ for the ODT (Libre Office) file for version 4.5.
+\end_layout
+
+\begin_layout Itemize
+If you want to ensure that you have the most recent versions of those files,
+ 
+\begin_inset CommandInset href
+LatexCommand href
+name "Wolfgang Lenerz's web site"
+target "https://www.wlenerz.com/qlstuff/#qdosms"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://www.wlenerz.com/qlstuff/#qdosms
+\end_layout
+
+\end_inset
+
+ is the place to look.
 \end_layout
 
 \begin_layout Standard
@@ -2171,7 +2363,7 @@ http://gwiltprogs.info/gwassp22.zip
 
 \end_inset
 
- for 68008 and 68020 processors.
+ for 68020 processors.
 \end_layout
 
 \begin_layout Standard

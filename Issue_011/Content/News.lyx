@@ -105,11 +105,132 @@ News
 \end_layout
 
 \begin_layout Section
-????
+Beginners Corner
 \end_layout
 
 \begin_layout Standard
-Yada yada yada
+In Beginners Corner this time, we take a look at simple file and screen
+ handling.
+ The code to open a text file and to display it on screen is provided with
+ explanations in excruciating detail!
+\end_layout
+
+\begin_layout Standard
+Buffer overruns are handled safely and without affecting the program's output.
+ EOF is a little more tricky in Assembly than in S*BASIC, and this is –
+ hopefully – well explained too.
+\end_layout
+
+\begin_layout Section
+Sudoku Solver
+\end_layout
+
+\begin_layout Standard
+In this issue, the main article is all about solving Sudoku puzzles using
+ the QL and Assembly Language.
+ This demonstrates recursion and backtracking and uses a brute force 
+\begin_inset Quotes eld
+\end_inset
+
+algorithm
+\begin_inset Quotes erd
+\end_inset
+
+ to solve the puzzles.
+ 
+\end_layout
+
+\begin_layout Standard
+Well, I say 
+\begin_inset Quotes eld
+\end_inset
+
+solve
+\begin_inset Quotes erd
+\end_inset
+
+ but in reality, it stuffs a number into the first blank cell it finds,
+ and then tries, recursively, to solve the new puzzle which has one less
+ blank cell! There's no finesse about it, it just hammers away until it
+ – eventually – solves the puzzle, or doesn't if the puzzle can't be solved.
+\end_layout
+
+\begin_layout Section
+The QL Wiki
+\end_layout
+
+\begin_layout Standard
+For some time now, there has been a problem uploading and/or including graphics
+ on the 
+\begin_inset CommandInset href
+LatexCommand href
+name "QL Wiki"
+target "https://qlwiki.qlforum.co.uk/"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://qlwiki.qlforum.co.uk
+\end_layout
+
+\end_inset
+
+ in that sometimes it works, but on others, it barfs with an 
+\begin_inset Quotes eld
+\end_inset
+
+Error 403, Forbidden
+\begin_inset Quotes erd
+\end_inset
+
+ message.
+ This affects me as well, and I have administrator privileges on the Wiki.
+\end_layout
+
+\begin_layout Standard
+Investigations are ongoing, and sadly, have been for quite some time.
+ We are of the opinion that the host company has done something and barfed
+ things for the Wiki.
+ Rob Heaton is attempting to get some form of support out of the hosts,
+ but so far, this is proving quite elusive, unfortunately.
+\end_layout
+
+\begin_layout Standard
+This is not a good state of affairs to be in, but at the moment, we are
+ working on it as best we can, given the limitations of the hosts.
+ They did apparently resolve it a while back, but it has reared its ugly
+ head once again, but this time, we seem to have stumped them.
+\end_layout
+
+\begin_layout Standard
+If you are trying to insert images into your Wiki pages, and are suffering
+ from this problem, please be patient.
+ There is a 
+\begin_inset CommandInset href
+LatexCommand href
+name "Wiki Topic"
+target "https://qlforum.co.uk/viewforum.php?f=26"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewforum.php?f=26
+\end_layout
+
+\end_inset
+
+ on the QL Forum where you can report problems with images.
+ Just to keep prodding us admin types!
 \end_layout
 
 \end_body

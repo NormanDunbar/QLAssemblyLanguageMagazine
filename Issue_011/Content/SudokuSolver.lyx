@@ -197,21 +197,8 @@ Quick Explanation
 \end_layout
 
 \begin_layout Standard
-Picture a grid with three blank cells
-\begin_inset Foot
-status open
-
-\begin_layout Plain Layout
-I did say, 
-\emph on
-extremely
-\emph default
- simplified!
-\end_layout
-
-\end_inset
-
- and the following explanation extremely simplified.
+Picture a grid with three blank cells and the following explanation extremely
+ simplified.
  The solution will progress as follows:
 \end_layout
 
@@ -454,7 +441,7 @@ If none of the digits
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+X
 \end_layout
 
 \end_inset
@@ -670,7 +657,7 @@ Sudoku_hard
 Sudoku_expert
 \family default
  – but don't be misled, those are simply the puzzle levels from the Sudoku
- app on my table that I stole the grids from! In practice, the easy version
+ app on my tablet that I stole the grids from! In practice, the easy version
  takes longer for the brute force algorithm to solve than it does for the
  other two.
 \end_layout
@@ -871,7 +858,10 @@ lstparams "linerange={67-100},caption={Main Control Code},label={lis:main-contro
 \begin_layout Standard
 On return from the attempt to solve the board, we display a message regarding
  the success or failure of the attempt, then wait for the user to press
- ENTER and quite the program.
+ ENTER and quit the program.
+ The Z flag will be clear if the board cannot be solved, or if the user
+ pressed ESC.
+ Z will be set if the board was solved.
 \end_layout
 
 \begin_layout Standard
@@ -885,7 +875,7 @@ Printing the Board
 \end_layout
 
 \begin_layout Standard
-It's no god solving, or not, the puzzle but never displaying the results.
+It's no good solving, or not, the puzzle but never displaying the results.
  Listing 
 \begin_inset CommandInset ref
 LatexCommand ref
@@ -983,7 +973,7 @@ D1
  and divide by 9 and if the remainder is 8 we print a linefeed.
  We are counting from 0 to 80, so need a linefeed after the counter reached
  8, 17, 26 and so on.
- After printing the linefeed we don;t bother checking for vertical separators
+ After printing the linefeed we don't bother checking for vertical separators
  as they never occur at the end of a line, but we do need to consider the
  horizontal separators every 3 rows.
  These occur when the cell counter is at value 26 or 53, and if so, we print
@@ -1063,7 +1053,7 @@ Def FN solveBoard
 
 \begin_layout Plain Layout
 
-            if (board[r][c] == 0) {
+            if (board[r][c] = 0) {
 \end_layout
 
 \begin_layout Plain Layout
@@ -1127,7 +1117,7 @@ Def FN solveBoard
 
 \begin_layout Plain Layout
 
-            } end if board[][] = 0
+            } end if board[r][c] = 0
 \end_layout
 
 \begin_layout Plain Layout
@@ -1147,7 +1137,6 @@ Def FN solveBoard
 
 \begin_layout Plain Layout
 
-}
 \end_layout
 
 \begin_layout Plain Layout
@@ -1155,7 +1144,6 @@ Def FN solveBoard
 \begin_inset Caption Standard
 
 \begin_layout Plain Layout
-
 Solving the Puzzle Pseudo Code
 \begin_inset CommandInset label
 LatexCommand label
@@ -1178,11 +1166,12 @@ name "lis:Solving-the-puzzle-pseudo-code"
 
 \begin_layout Standard
 We scan each row, and then scan each column within that row.
- If the board data holds a zero for this cell, then we have a blank to find
- a value for.
- The iterate through each digit from 1 to 9 and check if it can be legally
- places in this cell, if so, it is tried and a recursive call made to solve
- the new board with one cell less to find a value for.
+ If the board data holds a zero for this cell, then we have a blank cell
+ for which we need a value.
+ We iterate through each digit from 1 to 9 and check if it can be legally
+ placed in this cell.
+ If so, it is tried and a recursive call made to solve the new board with
+ one cell less to find a value for.
 \end_layout
 
 \begin_layout Standard
@@ -1237,9 +1226,9 @@ noprefix "false"
 \end_layout
 
 \begin_layout Standard
-If the scan returns with Z clear, we can continue, otherwise we simply return
- to the caller with Z clear.
- This will indicate a failure to solve the puzzle.
+If the scan returns with Z clear, then the ESC key was not pressed, so we
+ can continue, otherwise we simply return to the caller with Z set to indicate
+ a failure to solve the puzzle.
 \end_layout
 
 \begin_layout Standard
@@ -1276,8 +1265,12 @@ D6
 D7
 \family default
  is the value we are attempting to insert into the current cell.
- D4, as mentioned, has the cell offset and is used as a way of not having
- to calculate the offset each time for each new row and column in the grid.
+ 
+\family typewriter
+D4
+\family default
+, as mentioned, has the cell offset and is used as a way of not having to
+ calculate the offset each time for each new row and column in the grid.
 \end_layout
 
 \begin_layout Standard
@@ -1326,7 +1319,7 @@ D7
 \family typewriter
 D4
 \family default
-, the board printed with the new value, as a recursive call made to 
+, the board printed with the new value, and a recursive call made to 
 \family typewriter
 solveBoard
 \family default
@@ -1622,7 +1615,7 @@ noprefix "false"
 
 \end_inset
 
-shows how it is done.
+ shows how it is done.
 \end_layout
 
 \begin_layout Standard
@@ -1917,7 +1910,7 @@ The
 \family typewriter
 UT.WTEXT
 \family default
- vectored routing is set up next, and this expects the channel id to be
+ vectored routine is set up next, and this expects the channel id to be
  in 
 \family typewriter
 A0
@@ -2082,7 +2075,7 @@ A0
 
 \begin_layout Standard
 The menu is displayed starting at line 2, column 0 and offers the three
- options to run the demo; load a puzzle or quit.
+ options to run the demo; load a puzzle; or quit.
  After displaying the options, the code reads the keyboard waiting for some
  input.
  
