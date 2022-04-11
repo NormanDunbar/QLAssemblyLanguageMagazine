@@ -1,0 +1,766 @@
+
+\chapter{Sudoku Solver}
+
+This is the most brutal program I think I've ever written. It's a
+Sudoku puzzle ``solver'' in as much as it will, eventually, find
+a solution if a puzzle can be solved, but it does it by brute force
+and complete ignorance of how a puzzle should be solved -- using
+logic and deduction (induction?) -- and, it's recursive!
+
+To put it mildly, it starts with a grid from which some entries are
+missing, it looks for the one closest to the top left corner, and
+tries the digits 1 to 9 in that location. If the digit can be put
+there -- it's not already in the same row, column or small box --
+then it effectively has a new grid to solve, and calls itself recursively,
+to solve the new board. If it successfully places another digit, then
+it recurses again and so on. Eventually though, the board will be
+solved, or a digit will not be able to be placed. 
+
+In the latter case, the recursive call will return -- \emph{backtrack}
+-- to the calling code, reset it's variables, and try again with
+a different starting digit. This will progress until the puzzle is
+solved or every possible combination of digits for every possible
+blank space, has been tried.
+
+Now, you might think this will need a lot of stack space for the recursive
+calls, but it needs $4+(20*depth)$ bytes of stack. By default, the
+solver has a 4,000 byte data space, and so far, I have yet to blow
+that out with any puzzles. That's enough for 199.8 recursive calls.
+
+Did I mention, the code assembles to 1,028 bytes? And that includes
+a demo puzzle and the ability to load games from disc?
+
+The idea for this ``utility'' came from a \emph{You Tube} video\footnote{No, I don't have the URL I'm afraid, I didn't actually watch it --
+I just saw the description.} that was recommended to me, for some reason, by You Tube's so called
+AI, which seemed to think that I was interested in a Java Programming
+series. I'm not and I wasn't, but one of the offered videos was a
+Sudoku Solver in Java. So I stole the idea and wrote it in Assembly!
+
+\section{Quick Explanation}
+
+Picture a grid with three blank cells and the following explanation
+extremely simplified. The solution will progress as follows:
+\begin{enumerate}
+\item Try a `1' in the first cell, %
+\begin{tabular}{|c|c|c|}
+\hline 
+1 &  & \tabularnewline
+\hline 
+\end{tabular}, if it is legal move, recurse to solve the grid with 2 blank cells;
+\item A `1' in the new first cell will obviously be illegal, from the
+previous step, so try a `2', %
+\begin{tabular}{|c|c|c|}
+\hline 
+1 & 2 & \tabularnewline
+\hline 
+\end{tabular}. If legal, recurse to solve the grid with a single blank cell;
+\item Both `1' and `2' are illegal here, so all of the digits `3'
+through `9' will be tried until one is legal. If so, the grid is
+solved, %
+\begin{tabular}{|c|c|c|}
+\hline 
+1 & 2 & 3\tabularnewline
+\hline 
+\end{tabular}, and the code returns through all of the recursive calls to the top
+level, and finishes;
+\item If none of the digits `3' through `9' are legal, %
+\begin{tabular}{|c|c|c|}
+\hline 
+1 & 2 & X\tabularnewline
+\hline 
+\end{tabular}, then the grid is unsolved, so we return to the grid with two blank
+cells and try the remaining numbers -- `3' through `9'. Starting
+with `3', %
+\begin{tabular}{|c|c|c|}
+\hline 
+1 & 3 & \tabularnewline
+\hline 
+\end{tabular}, and another recursive call to see if the grid with one blank cell
+can now be solved;
+\item If we find that we didn't get a solution to the two blank cells grid,
+we return back to the grid with three blanks, and try the next number
+that legally fits, %
+\begin{tabular}{|c|c|c|}
+\hline 
+2 &  & \tabularnewline
+\hline 
+\end{tabular}, and recurse again to solve the new grid with two and then one blank
+cells;
+\item This process repeats until we end up with either a solution, we fitted
+three legal digits in the three blank cells; or no solution -- the
+grid is unsolvable.
+\end{enumerate}
+
+\section{The Solver}
+
+To use the solver, simply EX/EXEC it and you will be presented with
+a menu offering three choices:
+\begin{itemize}
+\item `Q' or `q' to quit;
+\item ENTER to run the built in demonstration puzzle;
+\item `L' or `l' to load a puzzle. You will be further prompted for
+the file name which should contain 81 bytes of grid data -- the puzzle
+only caters for 9 by 9 grids at present -- which can be a stream
+of 81 bytes or separated into 9 lines of 9 bytes using linefeeds.
+Digits are represented by themselves, obviously, and blanks are represented
+by whichever character you wish to use. Linefeeds are ignored but
+anything else that isn't a digit is deemed to be a space.
+\item After a puzzle is solved, or not, you are required to press ENTER
+to quit.
+\end{itemize}
+The load feature only accesses the first 81 bytes of data, ignoring
+linefeeds, to obtain the grid data. You can fill the file with anything
+you like after the first 81 bytes (or 90 if linefeeds are present).
+
+The code repository for this issue contains a couple of example files
+to load -- \texttt{Sudoku\_easy}, \texttt{Sudoku\_hard} and \texttt{Sudoku\_expert}
+-- but don't be misled, those are simply the puzzle levels from the
+Sudoku app on my tablet that I stole the grids from! In practice,
+the easy version takes longer for the brute force algorithm to solve
+than it does for the other two.
+
+The code is written in plain 68008 instructions, there are no 68020
+etc options used, so it will run on a bare bones QL. I have no idea
+how efficiently it will run though. My QPC setup -- Linux under Wine,
+64 bit dual core -- takes a few seconds to solve the demo and the
+hard and expert loadable files, but longer of seconds to solve the
+easy loadable puzzle. 
+
+On with the code.
+
+\section{The Solver Code}
+
+The code is supplied in a format that makes it easy to assemble with
+my preferred assembler, GWASS, but with a couple of very minor changes,
+it can be assembled also by QMAC. The changes are just to remove two
+comment markers, a semicolon form the job header and the end of the
+file. All will be explained below.
+
+\subsection{Equates}
+
+At the start of the file, \texttt{SudokuSolver\_asm}, we begin with
+a list of equates. Listing \ref{lis:equates} shows them all in gory
+detail.
+
+\lstinputlisting[linerange={1-36},caption={Equates},label={lis:equates}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+Most of these are fairly constant, but you might wish to adjust \texttt{CON\_X}
+and/or \texttt{CON\_Y} if you would like a different placement on
+the screen.
+
+\subsection{Job Header}
+
+The standard job header is next and Listing \ref{lis:job-header}
+shows it. The code is laid out in such a way that the ``end'' part
+of the job name is followed by an alignment byte, if necessary, to
+force the following address to be word aligned -- even -- if the
+job name happens to be an odd number of characters. 
+
+\lstinputlisting[linerange={45-58},caption={Job Header},label={lis:job-header}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+The \texttt{equ {*}} is necessary on the same line as the label for
+QMAC to be able to assemble the code without errors and is also the
+reason why the job name is in single quotes -- QMAC doesn't appear
+to like double quotes\footnote{Although a thought strikes me. I wonder if the double quotes I use
+in Linux, where I type the source code, is a different character to
+the QL double quotes? I must find out.} and throws errors.
+
+You will notice a comment line, \texttt{section code}, near the start?
+This is needed to be uncommented for QMAC. Delete the semicolon at
+the start of the line if you are using the QMAC assembler.
+
+\subsection{Main Control Code}
+
+Following the job header, we have the main controlling code for the
+application. Listing \ref{lis:main-control-code} has the details.
+
+We begin by calling \texttt{openScreen} to open the screen console
+we will be using, then printing the job name and the menu. On return
+from the menu, which will only occur if the user chose not to quit,
+we will start to solve whichever board we now have in memory. The
+code at \texttt{solveBoard} does this, and calls itself recursively
+as necessary in order to solve the puzzle.
+
+\lstinputlisting[linerange={67-100},caption={Main Control Code},label={lis:main-control-code}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+On return from the attempt to solve the board, we display a message
+regarding the success or failure of the attempt, then wait for the
+user to press ENTER and quit the program. The Z flag will be clear
+if the board cannot be solved, or if the user pressed ESC. Z will
+be set if the board was solved.
+
+It would be a simple task to perhaps, make the code loop around and
+display the menu again, allowing the user to choose to load and solve
+another board? I leave this as homework and look forward to seeing
+your results.
+
+\subsection{Printing the Board}
+
+It's no good solving, or not, the puzzle but never displaying the
+results. Listing \ref{lis:print-board} is the \texttt{printBoard}
+code which does exactly that, it prints out the board converting any
+zeros in the board data into spaces and printing the vertical and
+horizontal separators to attempt to make the output resemble a Sudoku
+grid. All registers are preserved except \texttt{D0} and on entry,
+the code expects register \texttt{A3} to be holding the address of
+the start of the board data. The board is printed on every call to
+\texttt{solveBoard}.
+
+The code should be easy to follow. It starts by setting the cursor
+position to row 2, column 0 on the screen, and using \texttt{D6} as
+a loop counter for the 81 bytes of data to be processed. Each byte
+is loaded into \texttt{D1} and if not a zero, must be a digit. The
+binary value in \texttt{D1} is then converted to an ASCII digit by
+adding the code for the ASCII character '0' and is printed using the
+handy subroutine \texttt{printeByte}.
+
+If the value in \texttt{D1} was a zero, we set \texttt{D1} to the
+value of an ASCII space minus an ASCII zero. \$20 - \$30 in other
+words and drop in to convert back to an ASCII space, before printing
+it.
+
+\lstinputlisting[linerange={114-168},caption={Printing the Puzzle Grid},label={lis:print-board}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+After printing a digit or space, we check to see if we need a linefeed
+after every 9th character printed. We copy \texttt{D6}, our cell counter,
+to \texttt{D1} and divide by 9 and if the remainder is 8 we print
+a linefeed. We are counting from 0 to 80, so need a linefeed after
+the counter reached 8, 17, 26 and so on. After printing the linefeed
+we don't bother checking for vertical separators as they never occur
+at the end of a line, but we do need to consider the horizontal separators
+every 3 rows. These occur when the cell counter is at value 26 or
+53, and if so, we print the separator.
+
+If a linefeed is not required, a vertical separator might be needed.
+The cell counter is again copied to D1 but this time divided by 3.
+If the remainder is 2, then we print a vertical separator otherwise,
+we don't print anything else.
+
+At \texttt{pbLoopEnd}, we increment the cell counter and if not finished,
+skip back to the start of the loop to print the next cell's data.
+If we are finished, we restore the registers we needed to preserve,
+and return to wherever we were called from.
+
+\subsection{Solving the Board}
+
+Now we are ready to solve the board, and I use the term \emph{solve}
+in its vaguest sense! The algorithm is as shown in listing \ref{lis:Solving-the-puzzle-pseudo-code},
+which is pseudo code for what I figured out would probably work!
+
+\begin{lstlisting}[caption={Solving the Puzzle Pseudo Code},label={lis:Solving-the-puzzle-pseudo-code},language={[Visual]Basic},showstringspaces=false,tabsize=4]
+Def FN solveBoard
+   local r,c,tryMe
+;
+    for (r = 0; r < gridSize; r++) {
+        for (c = 0; c < gridSize; c++) {
+            if (board[r][c] = 0) {
+                for (tryMe = 1; tryMe <= gridSize; tryMe++) {
+                    if (isValidHere() {
+                        board[r][c] = tryMe;
+
+                        if (solveBoard(board)) {
+                            return true;
+                        } else {
+                            board[r][c] = 0;
+                        }
+                    } end if validHere
+                } end for tryMe
+                return false;
+            } end if board[r][c] = 0
+        } end for c
+    } end for r
+    return true
+
+\end{lstlisting}
+
+We scan each row, and then scan each column within that row. If the
+board data holds a zero for this cell, then we have a blank cell for
+which we need a value. We iterate through each digit from 1 to 9 and
+check if it can be legally placed in this cell. If so, it is tried
+and a recursive call made to solve the new board with one cell less
+to find a value for.
+
+If we have tried all the digits, and none fit, then the previous values
+attempted for one or more cells is not correct, so we return \texttt{false}
+to indicate failure, having set the cell data back to a zero.
+
+The only way that we can return from this code having solved the board
+is if we have iterated through all rows and all columns and managed
+to legally place a digit there that caused all further recursive calls
+to also find a legal digit. The puzzle is solved, so we return a \texttt{true}
+value to indicate solved.
+
+On return from a recursive call, if a \texttt{true} was detected,
+we also return \texttt{true} back to our caller, unwinding the stack
+as we go until we reach the top level.
+
+How hard could it be to convert that into Assembly? Read on! Listing
+\ref{lis:solve-board} shows the code I ended up with, after much
+wailing an gnashing of teeth. I've added in a scan for the ESC key
+so that an attempt to solve a puzzle can be aborted if something has
+gone wrong and it's taking forever to find a solution.
+
+If the scan returns with Z clear, then the ESC key was not pressed,
+so we can continue, otherwise we simply return to the caller with
+Z set to indicate a failure to solve the puzzle.
+
+The code proper begins by saving our ``local'' variables, or registers
+in this case. If we are called recursively, which we will be, then
+we need to save the current values for row, column, and the digit
+we are trying to fit in. We also save the offset into the board data,
+register \texttt{D4}, as we need that to be restored before we return
+back from this recursive call.
+
+\texttt{D5} is the row counter, \texttt{D6} is the column counter
+and \texttt{D7} is the value we are attempting to insert into the
+current cell. \texttt{D4}, as mentioned, has the cell offset and is
+used as a way of not having to calculate the offset each time for
+each new row and column in the grid.
+
+One problem, which I might look into, is the fact that every recursive
+call begins looking for blank cells from the \emph{start} of the board.
+This is inefficient as surely, we should be looking one cell onwards
+from the cell we have just fitted a value into? More homework perhaps?
+Anyway, the offset, row and column registers are initialised and we
+loop along looking for a blank cell.
+
+When we find one, \texttt{D7} is initialised to 1 and we start looping
+around the values 1 to 9, checking each to see if it can legally be
+placed in the cell. A legal placement is when the value under test
+is not in the current row, as per \texttt{D5}, or column as per \texttt{D6}
+or box, as per \texttt{D5},\texttt{D6}. If the value in \texttt{D7}
+is legal, it is placed in the puzzle data at offset \texttt{D4}, the
+board printed with the new value, and a recursive call made to \texttt{solveBoard}
+to try and solve this new grid.
+
+If we return with Z set, the board has been solved and we return to
+our caller with Z set, otherwise, we reset the cell's data to zero
+and try another number at \texttt{sbNextNumber}.
+
+\lstinputlisting[linerange={186-245},caption={Solving the Puzzle Grid},label={lis:solve-board}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+If we have run out of numbers to try, then we drop into \texttt{sbUnsolved}
+where we give \texttt{D0} a value of 1, which clears the Z flag, indicating
+a failure to solve the board, then we return to our caller via the
+register restoration code at \texttt{sbReturn}.
+
+\texttt{SbNextColumn} and \texttt{sbNextRow} simply increment the
+column and row counters and skip back to the start of their respective
+loops to allow the whole grid to be scanned for missing values and
+attempts made to fill them.
+
+If we manage to exit from the last row iteration, then the grid has
+been solved. \texttt{D0} is set to zero, which sets the Z flag to
+indicate a solution has been found, and we drop into \texttt{sbReturn}
+to return to the caller.
+
+\subsection{Is Digit in this Row?}
+
+The code in Listing \ref{lis:in-row} is used to determine if the
+digit in \texttt{D7} is legally able to be placed in the row in \texttt{D5}.
+If so, we return with the Z flag set to indicate that the digit is
+already present in the row. If Z is clear, then this is a valid placement
+for the digit in the row. It might still be found in the column or
+the box, but the row is fine.
+
+\lstinputlisting[linerange={258-276},caption={Checking if a digit is in a row},label={lis:in-row}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+The code saves the working registers -- all registers are preserved
+except for \texttt{D0} -- and simply multiplies the row by 9 to get
+the offset to the start of the row in \texttt{D5} which is then added
+to \texttt{A3} to get the offset into the puzzle data. Yes, I \emph{could}
+have used \texttt{MULU}, but I chose not to!
+
+\texttt{D0} is then used as a counter of the number of columns to
+be checked, and the loop executes 9 times. If the digit in \texttt{D7}
+is found in the row, we will drop out of the bottom of the DBEQ loop
+(decrement and branch \emph{unless}\footnote{Or, if you prefer, decrement and branch \emph{until} equal}
+equal) with the Z flag set.
+
+If we exit the loop with Z clear, we ran out of columns to check and
+the digit is not present in the row. The working registers are restored
+before we return to the caller.
+
+\subsection{Is Digit in this Column?}
+
+The code in Listing \ref{lis:in-column} is used to determine if the
+digit in \texttt{D7} is legally able to be placed in the column in
+\texttt{D6}. If so, we return with the Z flag set to indicate that
+the digit is already present in the row. If Z is clear, then this
+is a valid placement for the digit in the column. It might still be
+found in the box, but the row and column, if we get this far, are
+fine.
+
+\lstinputlisting[linerange={288-305},caption={Checking if a digit is in a column},label={lis:in-column}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+The code saves the working registers -- all registers are preserved
+except for \texttt{D0} -- and simply adds the column number in \texttt{D6}
+to the start of the puzzle data in \texttt{A3}, to get the offset
+to the first cell of the column number in \texttt{D6}. 
+
+\texttt{D0} is then used as a counter of the number of rows in this
+column to be checked, and the loop executes 9 times. If the digit
+in \texttt{D7} is found in the column, we will drop out of the bottom
+of the DBEQ loop with the Z flag set.
+
+If we exit the loop with Z clear, we ran out of rows to check and
+the digit is not present in the column. The working registers are
+restored before we return to the caller.
+
+\subsection{Is Digit in this Box?}
+
+This one is slightly trickier then the previous two checks. We need
+to check if the digit in \texttt{D7} is present in the small, 3 by
+3 box, containing row \texttt{D5} and column \texttt{D6}. Listing
+\ref{lis:in-box} shows how it is done.
+
+The code begins by saving the working registers as before. We preserve
+all registers except \texttt{D0} in this code and return with the
+Z flag set to indicate that the number is in the box, or clear if
+not. \texttt{D0} is cleared as we need to work with all 32 bits for
+the \texttt{DIVU}, and then the row number is copied over. The remainder
+of dividing the row number by 3 is then subtracted from the row number
+to get the top row number in this box. So we have $TopRow=Row-(Row\ Mod\ 3)$.
+
+\texttt{D5}, the row number, is again copied to \texttt{D0} and multiplied
+by 9 to get the offset to add to \texttt{A3} for the start of the
+puzzle data for the row in \texttt{D5}.
+
+\lstinputlisting[linerange={317-352},caption={Checking if a digit is in a box},label={lis:in-box}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+In a similar vein, we need to get the starting column for the column
+number in \texttt{D6}. The same division is applied and the remainder
+subtracted from the column number to get the starting column for the
+box. Again, we have $TopColumn=Column-(Column\ Mod\ 3)$.
+
+This value is added to \texttt{A3} to get the correct offset to the
+starting cell in the 3 by 3 box. \texttt{D5} and \texttt{D6} are now
+redundant, but are used to count rows and columns -- and for some
+reason, I appear to have mixed them up, but it makes no difference,
+my apologies for any confusion caused --- and a double \texttt{DBRA}
+loop entered to check each of the 9 cells in the box. As soon as the
+digit is found, we skip to \texttt{ibDone} to restore the working
+registers and return with the Z flag set. If we exit both loops with
+no sign of the digit, we return with the Z flag cleared.
+
+\subsection{Subroutines}
+
+All the code so far described constitutes the meat of the code to
+solve a puzzle. There are, a number of helpful subroutines that are
+called from one or more places, and those are described in this section.
+
+\subsubsection{Print a Byte}
+
+Listing \ref{lis:sub-print-byte} is a small routine to print the
+byte in \texttt{D1} to the channel in \texttt{A0}. All registers are
+preserved and the Z flag is set if all went well, or cleared if errors
+were detected. 
+
+\lstinputlisting[linerange={364-371},caption={Subroutine: Print a byte},label={lis:sub-print-byte}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+After preserving the working registers, the \texttt{IOB.SBYT} trap
+call is used to send \texttt{D1.B} to channel \texttt{A0}. This requires
+a timeout in register \texttt{D3.W} and we use -1 as the timeout to
+indicate that the trap call can take as long as it wants. 
+
+\subsubsection{Position the Cursor}
+
+In order to preserve the heading for the console channel, where the
+job name is printed, we set the cursor to row 2 column 0, and the
+clear from there to the end of the console. Positioning the cursor
+is done using the subroutine at label \texttt{at}. Listing \ref{lis:sub-at}
+shows the code.
+
+\lstinputlisting[linerange={380-389},caption={Subroutine: Position the cursor at 2,0},label={lis:sub-at}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+All registers except \texttt{D0} are preserved so the code begins
+by stacking the ones it must keep safe. The \texttt{IOW.SCUR} trap
+call is then set up with \texttt{D1} indicating the row column number
+and \texttt{D2} the row number. \texttt{D3}, as before, is the timeout
+for the trap.
+
+On error, \texttt{D0} will hold the error code and the Z flag will
+be cleared. If all went well, \texttt{D0} will be zero and the Z flag
+will be set.
+
+\subsubsection{Printing Strings}
+
+To print a string, we use the code in Listing \ref{lis:sub-print-string}.
+As before, everything except \texttt{D0} is preserved so we begin
+by saving the registers that will be corrupted.
+
+\lstinputlisting[linerange={399-404},caption={Subroutine: Printing strings},label={lis:sub-print-string}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+The \texttt{UT.WTEXT} vectored routine is set up next, and this expects
+the channel id to be in \texttt{A0} and a pointer to the string to
+be printed in \texttt{A1}. The vector is loaded into \texttt{A2} and
+executed. After restoring the working registers, we return with the
+Z flag already set to indicate success or failure. \texttt{D0} will
+contain any error codes.
+
+\subsubsection{Opening the Console}
+
+Listing \ref{lis:sub-console} is the console definition block, and
+the code -- at \texttt{openScreen} -- to open the console, set the
+ink, paper and strip colours, and apply any desired border settings.
+
+\lstinputlisting[linerange={412-426},caption={Subroutine: Console definition and open code},label={lis:sub-console}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+The console definition block is set up using some constants defined
+way back at the start of the code, as shown previously in Listing
+\ref{lis:equates}. You might wish to amend the \texttt{CON\_X} and
+\texttt{CON\_Y} settings in Listing \ref{lis:equates} to move the
+screen over a bit, if necessary on your system.
+
+When this code is called, the application is in its starting state,
+so we don't really care about the registers used or corrupted. The
+console is opened and attributes applied using the \texttt{OPW.CON}
+vectored utility which expects \texttt{A1} to be pointing at the definition
+block.
+
+On exit from \texttt{openScreen}, the Z flag will be set if all was
+well, otherwise it will be clear and an error code will be in \texttt{D0}.
+
+\subsubsection{The Menu}
+
+Well, I say ``menu'' but it's not much of a menu -- there's no
+vegetarian or vegan options for starters\footnote{Or indeed, for main course either!}.
+Listing \ref{lis:sub-menu} shows the code, which doesn't care about
+preserving registers other than \texttt{A0} which holds the console
+channel id. Everything else is deemed expendable.
+
+The menu is displayed starting at line 2, column 0 and offers the
+three options to run the demo; load a puzzle; or quit. After displaying
+the options, the code reads the keyboard waiting for some input. \texttt{A1}
+is returned from \texttt{waitForInput} pointing at the start of the
+buffer, where the length of the text is stored. We need the first
+character in the buffer so the byte at \texttt{2(A1)} is loaded into
+\texttt{D2} and bit 5 set to convert to lower case.
+
+\texttt{D1.W} holds the size of the text that was entered by the user,
+so if that was 1, we know the user pressed ENTER only and we are done
+-- the demo puzzle is already loaded and nothing more needs to be
+done.
+
+\lstinputlisting[linerange={442-470},caption={Subroutine: Menu},label={lis:sub-menu}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+Given that we now know some text was entered, we can check if \texttt{D2.B}
+is 'q' and if so, exit the application via the code at label \texttt{die},
+which terminates the application.
+
+If the character in \texttt{D2.B} is not an 'l' (lower case L) then
+we redisplay the menu. If it was an 'l' then we call out to \texttt{loadGame}
+to process loading a different puzzle to solve. If Z was set on return,
+all was well and we are done here, otherwise, we indicate that there
+was a loading problem and exit. In this case, the inbuilt demo will
+be solved.
+
+Just prior to returning from this subroutine, the screen is once more
+cleared from 2,0 across and downwards -- only the job name remains
+untouched!
+
+\subsubsection{Clearing Bits of the Screen}
+
+As mentioned a few times already, we want to keep the job name printed
+at the top of the screen. To do this we have to use two trap calls.
+The code is shown in Listing \ref{lis:sub-cls-screen} and preserves
+\texttt{A0} and \texttt{D3}. \texttt{D0}, \texttt{D1} and \texttt{A1}
+are corrupted.
+
+\lstinputlisting[linerange={480-488},caption={Subroutine: Clearing bits of the screen},label={lis:sub-cls-screen}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+The first trap call is \texttt{IOW.CLRL} and will clear the screen
+from the cursor position to the end of the line. After this call,
+\texttt{IOW.CLRB} is used to clear all of the screen below the cursor
+position.
+
+\subsubsection{Loading Games}
+
+Puzzle files are assumed to contain ASCII representations of a grid
+and should contain at least 81 bytes representing the grid. This can
+be split as your wish desires, into separate more manageable lines,
+using linefeeds as and when required -- those are always ignored.
+Any character which is not a linefeed or an ASCII digit, is considered
+a space for a cell to be filled in.
+
+Loading a puzzle preserves all registers except \texttt{D0}. The Z
+flag will be set if the puzzle loaded and cleared otherwise.
+
+Listing \ref{lis:sub-load-game-prompting-the-user} shows the code
+executed when the user chooses to load a game from the menu. It begins
+by setting the cursor position and clearing the screen before prompting
+the user for a file name, then waits for the user to enter one. If
+the user simply presses ENTER, we loop around and prompt again.
+
+\lstinputlisting[linerange={502-509},caption={Subroutine: Loading a puzzle - prompting the user},label={lis:sub-load-game-prompting-the-user}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+Once we have a potential filename, we drop into the code in Listing
+\ref{lis:sub-load-game-open-file} where we attempt to open the file. 
+
+\lstinputlisting[linerange={511-523},caption={Subroutine: Loading a puzzle - opening the file},label={lis:sub-load-game-open-file}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+We use the \texttt{IOA.OPEN} trap call which requires an owning job
+id in \texttt{D1} -- I'm using -1 for the current job -- an open
+mode in \texttt{D3}, here I'm using the value 1 for OPEN\_IN so the
+file must exist. Unfortunately, \texttt{A0} is required to point at
+the string containing the filename, so I have to save the console
+id in \texttt{A4}, which is not used or corrupted by the file opening
+code. It's quicker to use a register than to stack one! \texttt{A1}
+currently points at the filename, so that's copied to \texttt{A0}
+and the trap executed. If the file opened, we skip to \texttt{lgReadFile}
+to read the puzzle data, otherwise we display a message and start
+again by heading back to Listing \ref{lis:sub-load-game-prompting-the-user}.
+
+Listing \ref{lis:sub-load-game-setup} is next, and here we set up
+the registers that will not change in the data reading loop. \texttt{D3}
+is the timeout and as usual, I'm going infinite! \texttt{A3} is the
+puzzle data start address for cell 0,0 and \texttt{D4} holds the count
+of bytes we want to read from the file, there should be 81 bytes in
+a puzzle. As with all \texttt{DBcc} loops, we load one less than we
+need.
+
+\lstinputlisting[linerange={525-528},caption={Subroutine: Loading a puzzle - setting up the read},label={lis:sub-load-game-setup}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+At label \texttt{lgReadLoop} in Listing \ref{lis:sub-load-game-reading-data},
+we see the start of the loop to read the 81 bytes of puzzle data from
+the file. We use the \texttt{IOB.FBYT} trap call to read a single
+byte at a time into register \texttt{D1}. If we hit any errors, including
+EOF, before the load is complete, the program aborts -- perhaps not
+the best idea in the world? Who fancies adding better error handling
+then? More homework?
+
+If the character in \texttt{D1} is a linefeed, we ignore it and return
+to read the next character without affecting the counter of bytes
+still to be read and processed in \texttt{D4}.
+
+\lstinputlisting[linerange={530-551},caption={Subroutine: Loading a puzzle - reading data},label={lis:sub-load-game-reading-data}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+At \texttt{lgDigits}, we test the character to see if it's an ASCII
+digit, and if so, we subtract the ASCII code for a '0' from \texttt{D1}.
+If it's not a digit, we just set \texttt{D1} to zero at \texttt{lgNonDigit}
+and in both cases, end up at \texttt{lgStoreByte} where we write the
+byte in \texttt{D1} into the puzzle grid at \texttt{A3}, incrementing
+\texttt{A3} to point at the next cell's data space.
+
+After storing the byte, the counter is decremented and if there is
+more to do, we skip back to read another byte. If we have read all
+81 bytes from the file, then we close it using \texttt{IOA.CLOS} at
+label \texttt{lgCloseFile}, in Listing \ref{lis:sub-load-game-close-file}.
+
+\lstinputlisting[linerange={553-558},caption={Subroutine: Loading a puzzle - closing the data file},label={lis:sub-load-game-close-file}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+In QDOS, closing a file which was not open results in a ``File not
+open'' error, but in SMSQ/E, there is no error reported. The code
+in Listing \ref{lis:sub-load-game-close-file} assumes the latter
+case and clears \texttt{D0} to indicate no errors.
+
+The console is is copied back from \texttt{A4} to \texttt{A0} before
+we return to the calling code, as we will be writing to the console
+soon and need it!
+
+It should be noted that loading a game makes no attempt to determine
+if the data are valid. You could load a puzzle with repeating characters
+in rows, columns and/or boxes, it doesn't care. What happens in this
+case? The code sill still try to solve the puzzle, but will run for
+quite some time, and will have to be aborted, probably, when you get
+fed up!
+
+\subsubsection{Reading Input From the Keyboard}
+
+Listing \ref{lis:sub-get-user-input} shows the code used to obtain
+input from the user. Any time we call this subroutine, the user is
+expected to press ENTER. This character will be saved as a linefeed
+in the input buffer and the count of characters obtained, in \texttt{D1},
+will include the linefeed.
+
+\lstinputlisting[linerange={571-586},caption={Subroutine: Getting user input},label={lis:sub-get-user-input}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+We use the \texttt{IOB.FLIN} trap call to fetch a line of input. \texttt{D2}
+tells the trap how big the buffer is and sets the maximum number of
+bytes than can be returned. \texttt{A1} points at the buffer start
+and this is copied to \texttt{A4} as we need to store the length word
+there. \texttt{A1} is incremented by 2 to point at the position where
+we want the data to be read into. \texttt{D3} already holds the timeout.
+
+After the trap call, if there were errors, we skip back and attempt
+to get input from the user again. If no errors were detected, the
+length word is stored in the start of the buffer but then decremented
+to delete the trailing linefeed character, which we know is definitely
+there. \texttt{A4} is copied to \texttt{A1} to return the start of
+the buffer to the caller.
+
+If the user types more characters than will fit in the buffer, then
+an overflow error will be returned and the final character in the
+buffer will not be the linefeed. We don't specifically trap this error
+in the code above as we simply reattempt in the case of errors being
+detected.
+
+The code expects \texttt{A0} to be the console id and trashes just
+about everything else. \texttt{A1} is returned pointing to the start
+of the buffer.
+
+\subsubsection{Scanning for ESC}
+
+I mentioned that puzzle data are not validated when loaded. If a bad
+data set is loaded, then the code could run for some time and we need
+a manner of aborting a run. The code in Listings \ref{lis:sub-scan-esc}
+and \ref{lis:sub-keyrow-esc} carry out a quick scan of the keyboard,
+looking for the ESC key.
+
+Please note, this is the same as calling \texttt{KEYROW} in S{*}BASIC
+and it's possible that pressing ESC in another application will be
+detected by the Sudoku solver, and abort it's current run. Note also,
+Listing \ref{lis:sub-keyrow-esc} is out of line here, it's at the
+end of the file in reality, but is listed here as it pertains to this
+subroutine.
+
+\lstinputlisting[linerange={597-604},caption={Subroutine: Scanning for ESC},label={lis:sub-scan-esc}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+Listing \ref{lis:sub-scan-esc} saves all registers. Only the Z flag
+is affected and is set if ESC was not pressed. We use the \texttt{SMS.HDOP}
+trap call to run a hardware operation to scan the keyboard for ESC,
+but we can also detect ENTER, SPACE, '\textbackslash ' and the 4
+arrow keys with the parameters in Listing \ref{lis:sub-keyrow-esc}which
+are pointed at by register \texttt{A3}. After the trap, bit 3, the
+ESC key bit, is tested and if set, ESC was pressed. If ESC was not
+pressed, the bit will be clear and as such, the Z flag will be set.
+
+\lstinputlisting[linerange={697-698},caption={Subroutine: KEYROW command for ESC},label={lis:sub-keyrow-esc}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+Listing \ref{lis:sub-keyrow-esc} is the parameter set required by
+\texttt{SMS.HDOP} to scan \texttt{KEYROW(1)} on the keyboard.
+
+\subsubsection{The Demo Board}
+
+If the user simply presses ENTER at the menu, then the inbuilt demo
+puzzle will be solved. Listing \ref{lis:sub-demo-puzzle} shows the
+puzzle's data bytes where a zero is used to indicate an empty cell.
+Note that the data are \emph{not} ASCII, they are binary values.
+
+\lstinputlisting[linerange={613-624},caption={Subroutine: Demo puzzle data},label={lis:sub-demo-puzzle}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+There is an alignment check after the puzzle's data as 81 bytes would
+leave a dangling odd address. This is not a problem on 68020 emulators,
+but will cause no end of problems for the old bare bones QL, so is
+best avoided.
+
+The puzzle data is shown here as separate rows of 9 bytes each, but
+there are no linefeeds in the data, so it is simply a long string
+of 81 bytes of data. Don't let the way it's printed confuse how it
+is actually stored.
+
+This 81 byte area is where the main code looks when solving a puzzle.
+If the user loads a puzzle, it will be loaded here too, overwriting
+the demo data.
+
+\subsubsection{Messages}
+
+Various messages used throughout the application are shown in Listings
+\ref{lis:sub-grid-h-sep} and \ref{lis:sub-messages}. Listing \ref{lis:sub-grid-h-sep}
+is the horizontal separator used by the \texttt{printBoard} subroutine.
+
+\lstinputlisting[linerange={633-637},caption={Subroutine: Grid horizontal separator},label={lis:sub-grid-h-sep}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}
+
+Listing \ref{lis:sub-messages} contains all the other messages.
+
+\lstinputlisting[linerange={643-691},caption={Subroutine: Messages},label={lis:sub-messages}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Sudoku/SudokuSolver.asm}

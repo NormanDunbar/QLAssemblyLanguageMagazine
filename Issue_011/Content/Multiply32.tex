@@ -1,0 +1,309 @@
+
+\chapter{32 Bit Multiplication}
+
+I shall confess straight away, I am not a mathematician, nor do I
+play one on TV. There may therefore be some weirdness in this chapter.
+Feel free to correct or update me!
+
+I don't know about you, but when I see code to do multiplication (or
+worse, division) in Assembly Language, I tend to gloss over and skip
+the meaty stuff. For some reason, I get a mental block. So I decided
+to do something about it and find out if I could make myself understand
+it.
+
+Obviously, I'm starting simple with an \emph{unsigned} 32 bit by 32
+bit multiplication routine which takes two registers as the inputs,
+\texttt{D0} and \texttt{D1}, and returns the product in \texttt{D3}
+and \texttt{D2} with \texttt{D3} being the high 32 bits.
+
+\section{The MC68008 and MC68020}
+
+I am aware that the MC68020 already has a 32 bit by 32 bit multiply
+instruction, before anyone starts writing an email! The MC68008 only
+has a 16 bit by 16 bit multiply instruction, and this code is, after
+all, a learning experience for me. And if I have to learn it, then
+don't think you are getting off so easily!
+
+\section{The Theory}
+
+In decimal, if we want to multiply the values 24 and 32, we don't
+usually do the multiplication in one calculation of $24*32$ -- we
+split it up into manageable chunks and perform four multiplications
+and one addition, of the four results, to get the final product:
+
+\begin{align*}
+2*4 & =8\\
+2*2*10 & =40\\
+3*10*4 & =120\\
+3*10*2*10 & =600\\
+8+40+120+600 & =768
+\end{align*}
+
+In general, we end up with the formula:
+
+\[
+\left(U_{1}*U_{2}\right)+\left(U_{2}*T_{1}*Base\right)+\left(T_{2}*Base*U_{1}\right)+\left(T_{1}*Base*T_{2}*Base\right)
+\]
+
+which can be rearranged into the following:
+
+\[
+\left(U_{1}*U_{2}\right)+\left(U_{2}*T_{1}*Base\right)+\left(T_{2}*U_{1}*Base\right)+\left(T_{1}*T_{2}*Base^{2}\right)
+\]
+
+Where:
+\begin{itemize}
+\item `$T_{1}$' and `$T_{2}$' represent the ``tens'' digits of the two
+numbers;
+\item `$U_{1}$' and `$U_{2}$' represent the ``units'' digits of the
+two numbers;
+\item `Base' is the base of the number system in use, 10 in this example.
+\end{itemize}
+Substituting our two values, 24 and 32, into the equation, we get:
+
+\[
+\left(2*4\right)+\left(2*2*10\right)+\left(3*4*10\right)+\left(3*2*100\right)=768
+\]
+
+So far so good! It seems to work perfectly. Can we do the same thing
+with our 32 bit register values? Yes we can! If you consider that
+a 32 bit register value is really just $D_{high}*65,536+D_{low}$
+then we can surely substitute these values into our equation. The
+number base is therefore 65,536 in this case. As multiplying by 65,536
+is simply a 16 bit shift left, then we end up with the following equation:
+
+\[
+\left(D0_{lo}*D1_{lo}\right)+\left(D0_{lo}*D1_{hi}<<16\right)+\left(D0_{hi}*D1_{lo}<<16\right)+\left(D0_{hi}*D1_{hi}<<32\right)
+\]
+
+Of course, we don't have to use the 16 bit words as our ``digits'',
+we could easily\footnote{For certain values of ``easily''!} use the
+4 bytes in each register as our ``digits'', but given that the MC68008
+has a 16 bit multiply, then we might as well use it. 
+
+\section{The Code}
+
+Listings \ref{lst:Unsigned-multiplication-initialisation} through
+\ref{lst:Unsigned-multiplication-all-done} show the code necessary
+to convert the above theory into actual values.
+
+\lstinputlisting[linerange={77-80},caption={Unsigned multiplication - initialisation},label={lst:Unsigned-multiplication-initialisation}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+Listing \ref{lst:Unsigned-multiplication-initialisation} is the initialisation
+code for the unsigned multiplication routine. It saves the working
+registers on the stack, and initialises the result, in \texttt{D3:D2},
+to zero.
+
+\lstinputlisting[linerange={82-86},caption={Unsigned multiplication - testing for zero},label={lst:Unsigned-multiplication-testing-for-zero}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+The code continues in Listing \ref{lst:Unsigned-multiplication-testing-for-zero}
+where both input registers are tested to ensure that neither is holding
+the value zero. If one of the registers is found to be zero, then
+the code makes a rapid exit as the result will also be zero and this
+has been initialised already.
+
+\lstinputlisting[linerange={91-98},caption={Unsigned multiplication - step 1},label={lst:Unsigned-multiplication-step-1}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+As we have two non-zero values, we have to do the multiplication.
+We begin with step one of four, and multiply the two low words of
+registers \texttt{D0} and \texttt{D1} together. Listing \ref{lst:Unsigned-multiplication-step-1}
+shows the code and you will note that the product of the two low words
+is saved in register \texttt{D2.L}, which is the low 32 bits of the
+64 bit result.
+
+As we need the low word of \texttt{D0} again shortly, it is copied
+over to register \texttt{D4}.
+
+\lstinputlisting[linerange={103-107},caption={Unsigned multiplication - step 4},label={lst:Unsigned-multiplication-step-4}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+Listing \ref{lst:Unsigned-multiplication-step-4}, which may appear
+out of sync, is the fourth of four steps. Don't worry, steps two and
+three will be here soon! In this code, we are multiplying the two
+high words of the input values together. To do this, we have to swap
+the top 16 bits to the bottom as the \texttt{MULU} instruction works
+on the lowest 16 bits of the input values.
+
+The result is saved in register \texttt{D3.L} which is the high 32
+bits of the 64 bit result.
+
+You may be wondering about the step two and three. They are pretty
+much identical. However, there's a catch. We need to calculate the
+product of the high word of one register and the low word of the other,
+which gives a 32 bit result. That's easy enough, but the catch is
+this; we have to shift this result 16 bits leftwards before adding
+it to D3:D2. 
+
+We only have 32 bits in a register, and we need 48!
+
+Listing \ref{lst:Unsigned-multiplication-step-2} shows the code for
+step two.
+
+\lstinputlisting[linerange={136-141},caption={Unsigned multiplication - step 2},label={lst:Unsigned-multiplication-step-2}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+When we reach this point, \texttt{D4.W} is holding the low word of
+the value passed in register \texttt{D0.L}, and \texttt{D1} has had
+it's two words swapped around so that the current low word was originally
+the high word of the passed in value. We multiply these two together
+and save the result in \texttt{D4.L}.
+
+We now need to shift this value 16 bits leftwards, and to do this,
+we employ register \texttt{D5}. \texttt{D4} is swapped to put the
+high word into the low word, and this is copied to \texttt{D5} prior
+to clearing the low word of \texttt{D4}. This leaves the register
+pair \texttt{D5:D4} holding the value \$0000HHHH:LLLL0000 where HHHH
+and LLLL are the high and low words of the product of \texttt{D0}
+low and \texttt{D1} high words. (I wish I could write that in better
+English!)
+
+The intermediate result in \texttt{D5:D4} needs to be added to \texttt{D3:D2}
+holding the result of the multiplication so far. Listing \ref{lst:Unsigned-multiplication-step-2-addition}
+is the code to do this addition.
+
+\lstinputlisting[linerange={147-149},caption={Unsigned multiplication - step 2 addition},label={lst:Unsigned-multiplication-step-2-addition}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+Adding the two low registers first might generate a carry, which will
+also set the X (Extended) flag. This is added in to the addition of
+the two high registers to ensure that the carry is properly propagated
+into the high 32 bits of the result so far.
+
+Step three of the calculation comes next and it is very similar to
+step two, which we have just seen. This time the calculation is \texttt{D0}
+high multiplied by \texttt{D1} low and again, shifted 16 bits leftwards
+using registers \texttt{D5:D4} to hold the intermediate result.
+
+\lstinputlisting[linerange={155-162},caption={Unsigned multiplication - step 3},label={lst:Unsigned-multiplication-step-3}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+\lstinputlisting[linerange={168-170},caption={Unsigned multiplication - step 3 addition},label={lst:Unsigned-multiplication-step-3-addition}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+Listings \ref{lst:Unsigned-multiplication-step-3} and \ref{lst:Unsigned-multiplication-step-3-addition}
+show the code to carry out the multiplication and addition. There's
+not much difference between Listing \ref{lst:Unsigned-multiplication-step-3}
+and Listing \ref{lst:Unsigned-multiplication-step-2} other than swapping
+the words in \texttt{D1} around to get them where we need them. 
+
+As we want the two input registers \texttt{D0} and \texttt{D1} to
+be preserved, we need to do a quick swap of register \texttt{D0} to
+accommodate this. Listing \ref{lst:Unsigned-multiplication-restoring-d0}
+shows the one liner that does the needful.
+
+\lstinputlisting[linerange={175-176},caption={Unsigned multiplication - restoring D0},label={lst:Unsigned-multiplication-restoring-d0}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+\lstinputlisting[linerange={178-180},caption={Unsigned multiplication - all done},label={lst:Unsigned-multiplication-all-done}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+All that remains to be done is to restore the working registers and
+exit. Listing \ref{lst:Unsigned-multiplication-all-done} shows the
+necessary code.
+
+\section{What About Signed Values?}
+
+Signed multiplication is \emph{almost} as simple as unsigned, with
+a small caveat. If the two values have different signs -- one negative
+and one positive -- then the product is negative. If both have the
+same sign -- both negative or both positive -- the product is always
+positive.
+
+In the unsigned code discussed in this chapter, multiplying -2 by
+-1, \$FFFFFFFE by \$FFFFFFFF, results in \texttt{D3:D2} holding \$FFFFFFFD:00000002
+when it should simply be \$00000000:00000002. Also, the N flag is
+set to indicate a negative number. This is clearly wrong so we need
+a better bit of code for signed multiplication.
+
+Listings \ref{lst:Signed-multiplication-initialisation} through \ref{lst:Signed-multiplication-termination}
+show the new code that I have added \emph{above} the \texttt{mult32}
+code previously discussed in Listings \ref{lst:Unsigned-multiplication-initialisation}
+through \ref{lst:Unsigned-multiplication-all-done}.
+
+\lstinputlisting[linerange={11-13},caption={Signed multiplication - initialisation},label={lst:Signed-multiplication-initialisation}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+The initialisation code, in Listing \ref{lst:Signed-multiplication-initialisation},
+simply saves register \texttt{D6} on the stack and then initialises
+it. \texttt{D6.B} is used as a flag to determine if any adjustments
+for the signs of the two values being multiplied, are necessary. It
+is initially set to a value of $+1$ to indicate no adjustment required.
+
+\lstinputlisting[linerange={19-23},caption={Signed multiplication - testing D0},label={lst:Signed-multiplication-testing-d0}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+\lstinputlisting[linerange={29-33},caption={Signed multiplication - testing D1},label={lst:Signed-multiplication-testing-d1}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+Listings \ref{lst:Signed-multiplication-testing-d0} and \ref{lst:Signed-multiplication-testing-d1}
+show the code which checks both input values for negativity. If one
+or both of the register values is negative, then the flag byte in
+\texttt{D6} will be negated once for each negative value, and the
+corresponding register value made positive.
+
+\lstinputlisting[linerange={41-44},caption={Signed multiplication - doing the multiplication},label={lst:Signed-multiplication-doing-multiplication}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+After checking the two values, we have a guarantee of two positive
+values in the two registers. As shown in Listing \ref{lst:Signed-multiplication-doing-multiplication}
+we call the unsigned multiplication code already discussed.
+
+\lstinputlisting[linerange={50-52},caption={Signed multiplication - adjusting the result},label={lst:Signed-multiplication-adjusting-the-result}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+On return, we test \texttt{D6.B} and if it is positive, no adjustment
+of the result is necessary. If it is negative, we drop into Listing
+\texttt{\ref{lst:Signed-multiplication-adjusting-the-result}} to
+adjust the result, this is simply a case of negating the low register,
+\texttt{D2}, and then negating with extend (aka carry) the upper register,
+\texttt{D3}.
+
+\lstinputlisting[linerange={54-56},caption={Signed multiplication - termination},label={lst:Signed-multiplication-termination}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm}
+
+All that remains to do is to restore \texttt{D6} and return to the
+caller with the result in registers \texttt{D3:D2}. Listing \ref{lst:Signed-multiplication-termination}
+has the code.
+
+\section{A Final Warning}
+
+So, that's multiplication in a nutshell. I hope I've managed to explain
+it in an understandable manner. It's certainly taken me long enough
+to get up the will to understand it myself! Bear in mind that when
+using the inbuilt multiplication instructions of the MC68020 that
+the flags will be correctly set, however, the code in these routines
+might not be as accurate. The following is what I found in testing.
+\begin{itemize}
+\item The Z (Zero) flag will be correctly set if one or more of the input
+values is zero, or if some weird combination of values results in
+a zero product. Is such a thing valid?
+\item The N (Negative) will be correctly set in either signed or unsigned
+multiplication, if the top bit of the result is a 1. That's bit 31
+of register D3.
+\item The V (Overflow) flag will be set if the multiplication overflows.
+Unsigned multiplication of two 32 bit values must always result in
+a 64 bit product, I can't get it to overflow into 65 bits. I suspect
+therefore that there's a problem with signs. My suspicion is that
+the overflow flag will be set if a product overflows into the top
+bit of register \texttt{D3} thus becoming negative when it should
+be positive.
+\item The C (Carry) and X (Extend) flags \emph{should} be zero. So far in
+testing, they have been.
+\end{itemize}
+Oh yes, I mentioned that MC68020 has a 32 bit multiplication. All
+of the code in Listings \ref{lst:Unsigned-multiplication-initialisation}
+through \ref{lst:Unsigned-multiplication-all-done} and \ref{lst:Signed-multiplication-initialisation}
+through \ref{lst:Signed-multiplication-termination} can be replaced
+by:
+
+\begin{lstlisting}[caption={MC68020 - unsigned 32bit multiplication},label={lis:MC68020-unsigned-32-bit-multiplication}]
+mult32
+    move.l d0,d3
+    mulu.l d1,d3:d2
+    rts
+\end{lstlisting}
+
+and:
+
+\begin{lstlisting}[caption={MC68020 - signed 32bit multiplication},label={lis:MC68020-signed-32-bit-multiplication}]
+smult32
+    move.l d0,d3
+    muls.l d1,d3:d2
+    rts
+\end{lstlisting}
+
+And, the flags will always be correctly set afterwards.
+
+\section{And Finally}
+
+No! No! No! Not under any circumstances! I flatly refuse to do the
+same for 32 bit division by a 32 bit number. Sorry, no can do! If
+anyone wants a guest chapter in a forthcoming issue, be my guest and
+write me a chapter on 32 bit division! 

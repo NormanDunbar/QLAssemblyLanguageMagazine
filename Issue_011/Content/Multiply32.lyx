@@ -1,0 +1,1315 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+32 Bit Multiplication
+\end_layout
+
+\begin_layout Standard
+I shall confess straight away, I am not a mathematician, nor do I play one
+ on TV.
+ There may therefore be some weirdness in this chapter.
+ Feel free to correct or update me!
+\end_layout
+
+\begin_layout Standard
+I don't know about you, but when I see code to do multiplication (or worse,
+ division) in Assembly Language, I tend to gloss over and skip the meaty
+ stuff.
+ For some reason, I get a mental block.
+ So I decided to do something about it and find out if I could make myself
+ understand it.
+\end_layout
+
+\begin_layout Standard
+Obviously, I'm starting simple with an 
+\emph on
+unsigned
+\emph default
+ 32 bit by 32 bit multiplication routine which takes two registers as the
+ inputs, 
+\family typewriter
+D0
+\family default
+ and 
+\family typewriter
+D1
+\family default
+, and returns the product in 
+\family typewriter
+D3
+\family default
+ and 
+\family typewriter
+D2
+\family default
+ with 
+\family typewriter
+D3
+\family default
+ being the high 32 bits.
+\end_layout
+
+\begin_layout Section
+The MC68008 and MC68020
+\end_layout
+
+\begin_layout Standard
+I am aware that the MC68020 already has a 32 bit by 32 bit multiply instruction,
+ before anyone starts writing an email! The MC68008 only has a 16 bit by
+ 16 bit multiply instruction, and this code is, after all, a learning experience
+ for me.
+ And if I have to learn it, then don't think you are getting off so easily!
+\end_layout
+
+\begin_layout Section
+The Theory
+\end_layout
+
+\begin_layout Standard
+In decimal, if we want to multiply the values 24 and 32, we don't usually
+ do the multiplication in one calculation of 
+\begin_inset Formula $24*32$
+\end_inset
+
+ – we split it up into manageable chunks and perform four multiplications
+ and one addition, of the four results, to get the final product:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\begin{align*}
+2*4 & =8\\
+2*2*10 & =40\\
+3*10*4 & =120\\
+3*10*2*10 & =600\\
+8+40+120+600 & =768
+\end{align*}
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+In general, we end up with the formula:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(U_{1}*U_{2}\right)+\left(U_{2}*T_{1}*Base\right)+\left(T_{2}*Base*U_{1}\right)+\left(T_{1}*Base*T_{2}*Base\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+which can be rearranged into the following:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(U_{1}*U_{2}\right)+\left(U_{2}*T_{1}*Base\right)+\left(T_{2}*U_{1}*Base\right)+\left(T_{1}*T_{2}*Base^{2}\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Where:
+\end_layout
+
+\begin_layout Itemize
+`
+\begin_inset Formula $T_{1}$
+\end_inset
+
+' and `
+\begin_inset Formula $T_{2}$
+\end_inset
+
+' represent the 
+\begin_inset Quotes eld
+\end_inset
+
+tens
+\begin_inset Quotes erd
+\end_inset
+
+ digits of the two numbers;
+\end_layout
+
+\begin_layout Itemize
+`
+\begin_inset Formula $U_{1}$
+\end_inset
+
+' and `
+\begin_inset Formula $U_{2}$
+\end_inset
+
+' represent the 
+\begin_inset Quotes eld
+\end_inset
+
+units
+\begin_inset Quotes erd
+\end_inset
+
+ digits of the two numbers;
+\end_layout
+
+\begin_layout Itemize
+`Base' is the base of the number system in use, 10 in this example.
+\end_layout
+
+\begin_layout Standard
+Substituting our two values, 24 and 32, into the equation, we get:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(2*4\right)+\left(2*2*10\right)+\left(3*4*10\right)+\left(3*2*100\right)=768
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+So far so good! It seems to work perfectly.
+ Can we do the same thing with our 32 bit register values? Yes we can! If
+ you consider that a 32 bit register value is really just 
+\begin_inset Formula $D_{high}*65,536+D_{low}$
+\end_inset
+
+ then we can surely substitute these values into our equation.
+ The number base is therefore 65,536 in this case.
+ As multiplying by 65,536 is simply a 16 bit shift left, then we end up
+ with the following equation:
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\left(D0_{lo}*D1_{lo}\right)+\left(D0_{lo}*D1_{hi}<<16\right)+\left(D0_{hi}*D1_{lo}<<16\right)+\left(D0_{hi}*D1_{hi}<<32\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Of course, we don't have to use the 16 bit words as our 
+\begin_inset Quotes eld
+\end_inset
+
+digits
+\begin_inset Quotes erd
+\end_inset
+
+, we could easily
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+For certain values of 
+\begin_inset Quotes eld
+\end_inset
+
+easily
+\begin_inset Quotes erd
+\end_inset
+
+!
+\end_layout
+
+\end_inset
+
+ use the 4 bytes in each register as our 
+\begin_inset Quotes eld
+\end_inset
+
+digits
+\begin_inset Quotes erd
+\end_inset
+
+, but given that the MC68008 has a 16 bit multiply, then we might as well
+ use it.
+ 
+\end_layout
+
+\begin_layout Section
+The Code
+\end_layout
+
+\begin_layout Standard
+Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ through 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-all-done"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ show the code necessary to convert the above theory into actual values.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={77-80},caption={Unsigned multiplication - initialisation},label={lst:Unsigned-multiplication-initialisation}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the initialisation code for the unsigned multiplication routine.
+ It saves the working registers on the stack, and initialises the result,
+ in 
+\family typewriter
+D3:D2
+\family default
+, to zero.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={82-86},caption={Unsigned multiplication - testing for zero},label={lst:Unsigned-multiplication-testing-for-zero}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The code continues in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-testing-for-zero"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ where both input registers are tested to ensure that neither is holding
+ the value zero.
+ If one of the registers is found to be zero, then the code makes a rapid
+ exit as the result will also be zero and this has been initialised already.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={91-98},caption={Unsigned multiplication - step 1},label={lst:Unsigned-multiplication-step-1}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+As we have two non-zero values, we have to do the multiplication.
+ We begin with step one of four, and multiply the two low words of registers
+ 
+\family typewriter
+D0
+\family default
+ and 
+\family typewriter
+D1
+\family default
+ together.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-1"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code and you will note that the product of the two low words
+ is saved in register 
+\family typewriter
+D2.L
+\family default
+, which is the low 32 bits of the 64 bit result.
+\end_layout
+
+\begin_layout Standard
+As we need the low word of 
+\family typewriter
+D0
+\family default
+ again shortly, it is copied over to register 
+\family typewriter
+D4
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={103-107},caption={Unsigned multiplication - step 4},label={lst:Unsigned-multiplication-step-4}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-4"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, which may appear out of sync, is the fourth of four steps.
+ Don't worry, steps two and three will be here soon! In this code, we are
+ multiplying the two high words of the input values together.
+ To do this, we have to swap the top 16 bits to the bottom as the 
+\family typewriter
+MULU
+\family default
+ instruction works on the lowest 16 bits of the input values.
+\end_layout
+
+\begin_layout Standard
+The result is saved in register 
+\family typewriter
+D3.L
+\family default
+ which is the high 32 bits of the 64 bit result.
+\end_layout
+
+\begin_layout Standard
+You may be wondering about the step two and three.
+ They are pretty much identical.
+ However, there's a catch.
+ We need to calculate the product of the high word of one register and the
+ low word of the other, which gives a 32 bit result.
+ That's easy enough, but the catch is this; we have to shift this result
+ 16 bits leftwards before adding it to D3:D2.
+ 
+\end_layout
+
+\begin_layout Standard
+We only have 32 bits in a register, and we need 48!
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-2"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the code for step two.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={136-141},caption={Unsigned multiplication - step 2},label={lst:Unsigned-multiplication-step-2}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+When we reach this point, 
+\family typewriter
+D4.W
+\family default
+ is holding the low word of the value passed in register 
+\family typewriter
+D0.L
+\family default
+, and 
+\family typewriter
+D1
+\family default
+ has had it's two words swapped around so that the current low word was
+ originally the high word of the passed in value.
+ We multiply these two together and save the result in 
+\family typewriter
+D4.L
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+We now need to shift this value 16 bits leftwards, and to do this, we employ
+ register 
+\family typewriter
+D5
+\family default
+.
+ 
+\family typewriter
+D4
+\family default
+ is swapped to put the high word into the low word, and this is copied to
+ 
+\family typewriter
+D5
+\family default
+ prior to clearing the low word of 
+\family typewriter
+D4
+\family default
+.
+ This leaves the register pair 
+\family typewriter
+D5:D4
+\family default
+ holding the value $0000HHHH:LLLL0000 where HHHH and LLLL are the high and
+ low words of the product of 
+\family typewriter
+D0
+\family default
+ low and 
+\family typewriter
+D1
+\family default
+ high words.
+ (I wish I could write that in better English!)
+\end_layout
+
+\begin_layout Standard
+The intermediate result in 
+\family typewriter
+D5:D4
+\family default
+ needs to be added to 
+\family typewriter
+D3:D2
+\family default
+ holding the result of the multiplication so far.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-2-addition"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the code to do this addition.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={147-149},caption={Unsigned multiplication - step 2 addition},label={lst:Unsigned-multiplication-step-2-addition}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Adding the two low registers first might generate a carry, which will also
+ set the X (Extended) flag.
+ This is added in to the addition of the two high registers to ensure that
+ the carry is properly propagated into the high 32 bits of the result so
+ far.
+\end_layout
+
+\begin_layout Standard
+Step three of the calculation comes next and it is very similar to step
+ two, which we have just seen.
+ This time the calculation is 
+\family typewriter
+D0
+\family default
+ high multiplied by 
+\family typewriter
+D1
+\family default
+ low and again, shifted 16 bits leftwards using registers 
+\family typewriter
+D5:D4
+\family default
+ to hold the intermediate result.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={155-162},caption={Unsigned multiplication - step 3},label={lst:Unsigned-multiplication-step-3}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={168-170},caption={Unsigned multiplication - step 3 addition},label={lst:Unsigned-multiplication-step-3-addition}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-3"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-3-addition"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ show the code to carry out the multiplication and addition.
+ There's not much difference between Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-3"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-step-2"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ other than swapping the words in 
+\family typewriter
+D1
+\family default
+ around to get them where we need them.
+ 
+\end_layout
+
+\begin_layout Standard
+As we want the two input registers 
+\family typewriter
+D0
+\family default
+ and 
+\family typewriter
+D1
+\family default
+ to be preserved, we need to do a quick swap of register 
+\family typewriter
+D0
+\family default
+ to accommodate this.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-restoring-d0"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the one liner that does the needful.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={175-176},caption={Unsigned multiplication - restoring D0},label={lst:Unsigned-multiplication-restoring-d0}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={178-180},caption={Unsigned multiplication - all done},label={lst:Unsigned-multiplication-all-done}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+All that remains to be done is to restore the working registers and exit.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-all-done"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the necessary code.
+\end_layout
+
+\begin_layout Section
+What About Signed Values?
+\end_layout
+
+\begin_layout Standard
+Signed multiplication is 
+\emph on
+almost
+\emph default
+ as simple as unsigned, with a small caveat.
+ If the two values have different signs – one negative and one positive
+ – then the product is negative.
+ If both have the same sign – both negative or both positive – the product
+ is always positive.
+\end_layout
+
+\begin_layout Standard
+In the unsigned code discussed in this chapter, multiplying -2 by -1, $FFFFFFFE
+ by $FFFFFFFF, results in 
+\family typewriter
+D3:D2
+\family default
+ holding $FFFFFFFD:00000002 when it should simply be $00000000:00000002.
+ Also, the N flag is set to indicate a negative number.
+ This is clearly wrong so we need a better bit of code for signed multiplication.
+\end_layout
+
+\begin_layout Standard
+Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ through 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-termination"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ show the new code that I have added 
+\emph on
+above
+\emph default
+ the 
+\family typewriter
+mult32
+\family default
+ code previously discussed in Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ through 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-all-done"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={11-13},caption={Signed multiplication - initialisation},label={lst:Signed-multiplication-initialisation}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+The initialisation code, in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, simply saves register 
+\family typewriter
+D6
+\family default
+ on the stack and then initialises it.
+ 
+\family typewriter
+D6.B
+\family default
+ is used as a flag to determine if any adjustments for the signs of the
+ two values being multiplied, are necessary.
+ It is initially set to a value of 
+\begin_inset Formula $+1$
+\end_inset
+
+ to indicate no adjustment required.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={19-23},caption={Signed multiplication - testing D0},label={lst:Signed-multiplication-testing-d0}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={29-33},caption={Signed multiplication - testing D1},label={lst:Signed-multiplication-testing-d1}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-testing-d0"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-testing-d1"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ show the code which checks both input values for negativity.
+ If one or both of the register values is negative, then the flag byte in
+ 
+\family typewriter
+D6
+\family default
+ will be negated once for each negative value, and the corresponding register
+ value made positive.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={41-44},caption={Signed multiplication - doing the multiplication},label={lst:Signed-multiplication-doing-multiplication}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+After checking the two values, we have a guarantee of two positive values
+ in the two registers.
+ As shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-doing-multiplication"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ we call the unsigned multiplication code already discussed.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={50-52},caption={Signed multiplication - adjusting the result},label={lst:Signed-multiplication-adjusting-the-result}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+On return, we test 
+\family typewriter
+D6.B
+\family default
+ and if it is positive, no adjustment of the result is necessary.
+ If it is negative, we drop into Listing 
+\family typewriter
+
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-adjusting-the-result"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+
+\family default
+ to adjust the result, this is simply a case of negating the low register,
+ 
+\family typewriter
+D2
+\family default
+, and then negating with extend (aka carry) the upper register, 
+\family typewriter
+D3
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/Multiply32Bit/SMult3232.asm"
+lstparams "linerange={54-56},caption={Signed multiplication - termination},label={lst:Signed-multiplication-termination}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+All that remains to do is to restore 
+\family typewriter
+D6
+\family default
+ and return to the caller with the result in registers 
+\family typewriter
+D3:D2
+\family default
+.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-termination"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ has the code.
+\end_layout
+
+\begin_layout Section
+A Final Warning
+\end_layout
+
+\begin_layout Standard
+So, that's multiplication in a nutshell.
+ I hope I've managed to explain it in an understandable manner.
+ It's certainly taken me long enough to get up the will to understand it
+ myself! Bear in mind that when using the inbuilt multiplication instructions
+ of the MC68020 that the flags will be correctly set, however, the code
+ in these routines might not be as accurate.
+ The following is what I found in testing.
+\end_layout
+
+\begin_layout Itemize
+The Z (Zero) flag will be correctly set if one or more of the input values
+ is zero, or if some weird combination of values results in a zero product.
+ Is such a thing valid?
+\end_layout
+
+\begin_layout Itemize
+The N (Negative) will be correctly set in either signed or unsigned multiplicati
+on, if the top bit of the result is a 1.
+ That's bit 31 of register D3.
+\end_layout
+
+\begin_layout Itemize
+The V (Overflow) flag will be set if the multiplication overflows.
+ Unsigned multiplication of two 32 bit values must always result in a 64
+ bit product, I can't get it to overflow into 65 bits.
+ I suspect therefore that there's a problem with signs.
+ My suspicion is that the overflow flag will be set if a product overflows
+ into the top bit of register 
+\family typewriter
+D3
+\family default
+ thus becoming negative when it should be positive.
+\end_layout
+
+\begin_layout Itemize
+The C (Carry) and X (Extend) flags 
+\emph on
+should
+\emph default
+ be zero.
+ So far in testing, they have been.
+\end_layout
+
+\begin_layout Standard
+Oh yes, I mentioned that MC68020 has a 32 bit multiplication.
+ All of the code in Listings 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ through 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Unsigned-multiplication-all-done"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ and 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-initialisation"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ through 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:Signed-multiplication-termination"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ can be replaced by:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+mult32
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l d0,d3
+\end_layout
+
+\begin_layout Plain Layout
+
+    mulu.l d1,d3:d2
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MC68020 - unsigned 32bit multiplication
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:MC68020-unsigned-32-bit-multiplication"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+and:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+smult32
+\end_layout
+
+\begin_layout Plain Layout
+
+    move.l d0,d3
+\end_layout
+
+\begin_layout Plain Layout
+
+    muls.l d1,d3:d2
+\end_layout
+
+\begin_layout Plain Layout
+
+    rts
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MC68020 - signed 32bit multiplication
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:MC68020-signed-32-bit-multiplication"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+And, the flags will always be correctly set afterwards.
+\end_layout
+
+\begin_layout Section
+And Finally
+\end_layout
+
+\begin_layout Standard
+No! No! No! Not under any circumstances! I flatly refuse to do the same
+ for 32 bit division by a 32 bit number.
+ Sorry, no can do! If anyone wants a guest chapter in a forthcoming issue,
+ be my guest and write me a chapter on 32 bit division! 
+\end_layout
+
+\end_body
+\end_document

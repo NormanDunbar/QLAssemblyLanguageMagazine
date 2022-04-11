@@ -1,0 +1,639 @@
+
+\chapter{Beginners Corner}
+
+\section{Introduction}
+
+In this issue of Beginners Corner, we are taking a look at file and
+simple screen handling.
+
+\section{Reading Files}
+
+This code in S{*}BASIC looks simple enough, and \emph{should} be able
+to be converted quite simply to assembly, so let's do it.
+
+\begin{lstlisting}[language={[Visual]Basic},showstringspaces=false,tabsize=4]
+OPEN #3,"ram1_test_txt" 
+REPeat readLoop 
+  IF EOF(#3) Then EXIT readLoop: END IF
+  a$ = INPUT(#3)
+  PRINT a$
+END REPeat readLoop 
+CLOSE #3
+\end{lstlisting}
+
+
+\subsection{Converting to Assembly}
+
+The following steps are required in the assembly language source code:
+\begin{itemize}
+\item Decide whether the code will be \texttt{CALL}ed or \texttt{EXEC}'d.
+\item Set up a buffer to hold the data we read from the file. How big should
+we make it? How long is a piece of string\footnote{Silly question! It's obviously twice as long as half a piece of string!}?
+\item Open a channel to the screen. This can be a \texttt{CON\_} or a \texttt{SCR\_}
+channel. \texttt{SCR\_} is most appropriate as we don't need to fetch
+any input from it.
+\item We can set the paper, strip and ink colours as required. The default
+green on black isn't very nice on my old eyes, so that's got to go!
+\item Clear the screen channel.
+\item Open the file and handle errors if it's not found.
+\item Loop around, reading text from the string and printing it, exiting
+when end of file is detected.
+\item Close the file at the end of the loop.
+\item Exit back to S{*}BASIC.
+\end{itemize}
+As I prefer setting up and using separate jobs, I'll make this a job
+and it will be \texttt{EXEC}'d.
+
+\section{Code Walk-through}
+
+As this is Beginner's Corner, the following code fragments will be
+explained on excruciating detail. Experienced coders should probably
+look away now!
+
+The full code is in the code repository for this issue.
+
+\subsection{Preliminaries}
+
+The code file, \texttt{ReadingFiles\_asm}, begins with some constants
+-- \emph{equates} -- which make life easier if we have to make changes
+at some future point. They also have reasonably explanatory names,
+which helps document the code. Listing \ref{lis:ReadingFiles-constants}
+is the constants used in defining the screen channel we wish to use,
+and a couple more to define buffer sizes, to indicate the current
+job identifier and an infinite timeout.
+
+\lstinputlisting[linerange={19-37},caption={ReadingFiles - Constants},label={lis:ReadingFiles-constants}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+Following on from the program constants, we have a list of the various
+trap and vector codes to enable us to access routines within SMSQ/E
+and QDOS. Even though I'm using the SMSQ/E names, that code will still
+work on QDOS as they are the same as QDOS. Listing \ref{lis:ReadingFiles-smsq-e-constants}
+shows the list of SMSQ/E constants we need in this program.
+
+\lstinputlisting[linerange={43-53},caption={ReadingFiles - SMSQ/E Constants},label={lis:ReadingFiles-smsq-e-constants}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+And now the code proper begins. As I have decided to create a separate
+job (or task) for this demonstration, we need a standard job header.
+Listing \ref{lis:ReadingFiles-job-header} is the necessary code for
+just about any job in SMSQ/E.
+
+\lstinputlisting[linerange={60-71},caption={ReadingFiles - Job header},label={lis:ReadingFiles-job-header}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+At label \texttt{Start}, the code skips the header and branches off
+to the \texttt{openScreen} label. Following that we have a 4 byte
+filler followed by the word \$4AFB which SMSQ/E uses to recognise
+a job header. Following the flag word, we have the job's name in the
+form of a standard SMSQ/E string with a leading byte counter followed
+by the bytes of the string.
+
+The strings length word might look a bit strange, however, we simply
+take the address of label \texttt{jobNameEnd}, subtract the current
+address (that of \texttt{jobName}) from it, then subtract another
+2. This gives me the length of the text making up the job name. It
+also means that I can change the job name at any time and not have
+to worry about counting characters!
+
+\textbf{Tip}: The '{*}' used in this way, tells the assembler to use
+the current address.
+
+The last line in Listing \ref{lis:ReadingFiles-job-header} simply
+makes sure that the next address will be even if the job name contained
+an odd number of characters. It reserves zero words of space, but
+because this is word sized, the assembler forces the current address
+to an even address if necessary.
+
+That completes the preliminaries of the job. Next we move on to the
+code proper, opening the screen channel.
+
+\subsection{Opening the Screen Channel}
+
+Listing \ref{lis:ReadingFiles-screen-definition} is the definition
+of the screen channel we wish to open. It consists of 4 bytes defining
+colours and border sizes, followed by 4 words defining the screen
+channel size. The values used here were defined as constants in Listing
+\ref{lis:ReadingFiles-constants} and can be changed there if necessary.
+
+\lstinputlisting[linerange={84-92},caption={ReadingFiles - Screen definition},label={lis:ReadingFiles-screen-definition}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+The definition block is used by the \texttt{OPW.SCR} vectored routine
+to open a channel to the screen, set the paper, strip and ink colours,
+as well as setting the border colour and width. Listing \ref{lis:ReadingFiles-open-screen-channel}
+is the code to do exactly that.
+
+\lstinputlisting[linerange={102-107},caption={ReadingFiles - Open screen channel},label={lis:ReadingFiles-open-screen-channel}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+The \texttt{OPW.SCR} vector requires the address of the definition
+block in register \texttt{A1} and when executed will return the channel
+id in register \texttt{A0} -- most channel functions use \texttt{A0}
+for the channel id -- and there will be an error code, or zero, in
+\texttt{D0}. If there were no errors, the \texttt{Z} flag will be
+set and we test this to ensure we can continue.
+
+In the event of errors, we exit the program via the \texttt{die} routine,
+described later. Otherwise, we copy the screen channel id into register
+\texttt{A5} as the code coming later to print to the screen will require
+the screen channel id in \texttt{A0} and at that time, \texttt{A0}
+will be holding the text file channel id.
+
+\subsection{Clearing the Screen}
+
+After opening the channel, we should clear the screen to get rid of
+any existing detritus that might be in the space where we opened the
+channel. Listing \ref{lis:ReadingFiles-clearing-the-screen-channel}
+shows the code to clear the entire screen channel. SMSQ/E allows different
+parts of the screen to be cleared, but we need to clear all of it.
+
+\lstinputlisting[linerange={124-130},caption={ReadingFiles - Clearing the screen channel},label={lis:ReadingFiles-clearing-the-screen-channel}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+This code requires the screen channel in register \texttt{A0}, where
+it currently is, and a timeout in register \texttt{D3}. We use an
+infinite timeout in this case as we wish the action to complete before
+returning to our code. Most SMSQ/E trap calls preserve the timeout
+in \texttt{D3}, but when we open the text file, and when we print
+data to the screen, \texttt{D3} will be corrupted, so we take a copy
+into register \texttt{D6} for safety.
+
+In the unlikely event of errors being detected when clearing the screen,
+we exit the job via the routine at label, \texttt{die}.
+
+\subsection{Opening the Text File}
+
+Now the good stuff! We get to open the text file named \texttt{ram1\_test\_txt},
+which must exist. In order to do this, we need to have certain registers
+set as follows:
+\begin{itemize}
+\item The trap code, \texttt{IOA.OPEN} should be in \texttt{D0};
+\item A job id, for the job to own the channel, is in \texttt{D1};
+\item The open mode is in \texttt{D3};
+\item \texttt{A0} points at the standard SMSQ/E string defining the job
+name;
+\end{itemize}
+There are a number of open modes that we can use when opening a file:
+\begin{itemize}
+\item 0 = \texttt{OPEN} - the file specified must exist;
+\item 1 = \texttt{OPEN\_IN} - the file specified must exist;
+\item 2 = \texttt{OPEN\_NEW} - the file specified should not exist;
+\item 3 = \texttt{OPEN\_OVER} - the file specified may, or may not exist;
+\item 4 = \texttt{OPEN\_DIR} - opens an existing directory.
+\end{itemize}
+We are using the \texttt{OPEN\_IN} mode in this example, so the file
+must exist. This is handy as we are intending to read and display
+its contents!
+
+Listing \ref{lis:ReadingFiles-opening-the-text-file} shows the code
+that opens the file. In the event of errors, the job simply exits
+in the usual manner, via \texttt{die}.
+
+\lstinputlisting[linerange={141-148},caption={ReadingFiles - Opening  the text file},label={lis:ReadingFiles-opening-the-text-file}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+On return from the trap, the channel ID will be in register \texttt{A0}.
+This has of course overwritten the screen channel id that we have,
+but as we kept a copy of that in \texttt{A5}, it's not a problem.
+Listing \ref{lis:ReadingFiles-text-file-definition} shows the text
+file's definition in the code. This is slightly out of line, as the
+definition is just below the screen definition block in Listing \ref{lis:ReadingFiles-screen-definition}
+but is documented here for clarity.
+
+\lstinputlisting[linerange={94-100},caption={ReadingFiles - Text file definition},label={lis:ReadingFiles-text-file-definition}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+As with the job name, we calculate the size of the file name to ensure
+we get it correct, and so that we can easily change the file name,
+if necessary, without having to keep counting characters.
+
+Once we have the file open, we can start a loop to read the contents.
+
+\subsection{Reading a Line of Text}
+
+Listing \ref{lis:ReadingFiles-reading-a-buffer-of-text} is the code
+which reads a buffer full of text from the text file, into our program.
+How big is the buffer? How do we know?
+
+In S{*}BASIC it's quite simple, just read a line of text into a string
+variable. S{*}BASIC will read as many characters as it can into the
+string, until it hits EOF or reads a linefeed. Our code has a fixed
+buffer size, and I've made it deliberately small in this demonstration,
+to show how a long line can be read without causing buffer overflows
+and perhaps, corrupting the job code in the process. Normally, a buffer
+would be big enough -- whatever that means.
+
+\lstinputlisting[linerange={164-171},caption={ReadingFiles - Reading a buffer of text},label={lis:ReadingFiles-reading-a-buffer-of-text}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+As mentioned above, opening the text file corrupted \texttt{D3}, so
+we copy it back from the safe place, register \texttt{D6}. The registers
+required to read a line of text, terminated by a linefeed, from a
+file, are:
+\begin{itemize}
+\item The trap code, \texttt{IOB.FLIN}, should be in \texttt{D0};
+\item \texttt{D2} should hold the buffer size -- the maximum number of
+characters we can read;
+\item \texttt{D3} is the timeout;
+\item \texttt{A0} is the channel id;
+\item \texttt{A1} points at the location in the buffer where the text will
+be copied into.
+\end{itemize}
+As we intend to print the text we read from the file, we set \texttt{A1}
+to be two bytes higher than the start of the buffer. This leaves space
+to store the string length word prior to printing. This converts the
+buffer into a standard SMSQ/E string and makes for easy printing. 
+
+On return from the trap, we test for errors and if none were found,
+we skip to label \texttt{setString}, where we store the data length
+in the two empty bytes at the beginning of the buffer, to make the
+data into a string, ready to print. On return from this trap, the
+following registers are set:
+\begin{itemize}
+\item \texttt{D0} has the error code, or zero;
+\item \texttt{D1.W} has the size of the data successfully read, which includes
+the linefeed, if one is present;
+\item \texttt{A1.L} points to the first byte after the last byte of data
+read, within the buffer.
+\end{itemize}
+Listing \ref{lis:ReadingFiles-input-buffer-definition} is again,
+out of line with the actual code file, it comes at the very end, but
+it is the buffer definition and is relevant to this discussion.
+
+\lstinputlisting[linerange={253-254},caption={ReadingFiles - Input buffer definition},label={lis:ReadingFiles-input-buffer-definition}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+The size of the buffer is defined in our constants, way back in Listing
+\ref{lis:ReadingFiles-constants}. I've deliberately kept it small
+for this demonstration, as I previously mentioned.
+
+In the event that we hit an error when reading the text file, what
+do we do? Listing \ref{lis:ReadingFiles-text-file-error-handling}
+shows the error handling code.
+
+\lstinputlisting[linerange={172-178},caption={ReadingFiles - Text file error handling},label={lis:ReadingFiles-text-file-error-handling}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+If \texttt{D0} had been zero, then we would have successfully read
+a line of text, terminated by a linefeed, which was smaller (or equal)
+to the maximum buffer size allowed. 
+
+If, on the other hand, no linefeed was found before we filled the
+buffer, then we should receive \texttt{ERR.BFFL} on return from the
+trap. This indicates that we filled the buffer. This is not a proper
+error, it just means we have an extra long line in the file which
+is bigger than the buffer. We can still print it, so we can skip to
+\texttt{setString}.
+
+The same is true if we detected \texttt{ERR.OVFL}. This is something
+that Wolfgang Lenerz advised me to test for, in the last issue, as
+sometimes SMSQ/E (or QDOS?) can return this error instead of \texttt{ERR.BFFL}.
+The action is the same, it's not a proper error, we just filled the
+buffer, so we can skip to \texttt{setString} ready to print the data.
+
+The next error we need to test for is end of file, \texttt{ERR.EOF}.
+If the end of file has been reached, did we read any data into the
+buffer? By testing \texttt{D1.W} we can tell. If there was no data
+read, \texttt{D1.W} will be zero and the Z flag will be set by the
+test. In this case, we skip to \texttt{suspendJob} as there's nothing
+else to do.
+
+In assembly code, hitting EOF will raise the error \emph{even if}
+some data were read into the buffer. In S{*}BASIC, the data would
+be returned with no errors and the following read of the file would
+raise the EOF error.
+
+If there was data in the buffer, we still need to process it as normal,
+so we drop into Listing \ref{lis:ReadingFiles-buffer-conversion-to-string}
+where we set up the string, ready to be printed. This is described
+next. After printing, however, we will skip back to the start of the
+read loop, \texttt{readFile}, but this time, we will get the \texttt{ERR.EOF}
+error again but \texttt{D1.W} will be zero, so we have a get out of
+the loop clause!
+
+\subsection{Printing the Text}
+
+In order to print the string, we need the buffer to be in the style
+of a standard SMSQ/E string. This requires the string length to be
+in a word at the start of the string. When we read the data from the
+file, it was written to the third byte in the buffer, leaving room
+at the start for a word to hold the string (data) length. 
+
+On return from the \texttt{IOB.FLIN} trap, register \texttt{D1.W}
+has the number of bytes read. Listing \ref{lis:ReadingFiles-buffer-conversion-to-string}
+shows that word being stored at the start of the buffer, converting
+the buffer into a string, ready to print. 
+
+\lstinputlisting[linerange={184-186},caption={ReadingFiles - Buffer conversion to a string},label={lis:ReadingFiles-buffer-conversion-to-string}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+In the event that a linefeed was detected, printing the data will
+also print the linefeed, starting a new line in the screen channel
+for the next line of text. If no linefeed was found, the data will
+be printed, but no linefeed means that printing will begin again at
+the next space in the screen channel. This way, long lines can be
+printed correctly as each buffer full of text is simply printed next
+to the previous one, until a linefeed is found.
+
+Listing \ref{lis:ReadingFiles-printing-the-data} prints the buffer
+as a standard string.
+
+\lstinputlisting[linerange={197-203},caption={ReadingFiles - Printing the data},label={lis:ReadingFiles-printing-the-data}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+We currently have the channel id for the text file in \texttt{A0}
+and we need the screen channel id for printing. As we kept a copy
+of that channel id in register \texttt{A5}, we can swap the two channel
+ids over. This means that \texttt{A0} ends up with the screen channel
+id, and \texttt{A5} the text file id.
+
+We then load \texttt{A2} with the vector for the \texttt{UT.WTEXT}
+routine, which expects the following parameters:
+\begin{itemize}
+\item \texttt{A0} is the channel id;
+\item \texttt{A1} is the start of the string to be printed, the length word.
+\end{itemize}
+After the code executes, \texttt{D1-D3} and \texttt{A1} are corrupted.
+\texttt{D0} will hold zero or an error code. If errors are detected,
+we bale out of the job via the \texttt{die} routine. Otherwise, we
+swap the two channel ids back again, and skip back to the start of
+the reading loop to get the next line of text from the file.
+
+\subsection{Suspending the Job}
+
+This section of the code just delays closing the files for a few seconds
+so that the user can see the screen channel has the full text copied
+from the text file. It pauses for 300 frames -- in the UK/Europe
+there are 50 frames per second, in the USA it's 60. This gives a 6
+second delay in the UK/Europe, and 5 seconds in the USA. To suspend
+a job, you need the following register settings:
+\begin{itemize}
+\item The trap code, \texttt{SMS.SSJB} is in \texttt{D0};
+\item The job id is in \texttt{D1};
+\item The number of frames to suspend for is in \texttt{D3};
+\item \texttt{A1} is set to the address of a byte which will be cleared
+when the job's suspension is done and the job is active again. It
+can be zero if not required.
+\end{itemize}
+On exit from the suspension, register \texttt{A0} is set to point
+at the job's header, while \texttt{A1} is preserved. 
+
+Now, in my copy of Pennel, I have a hand written note saying \emph{no
+it bloody isn't!} so I'm assuming I hit a problem some time back and
+noted it. Who is right? The documentation or ``past'' me? My motto
+is \emph{Don't think, find out} so let's go! QMON2, here we come....
+
+Setting a breakpoint at \texttt{suspendJob}, and running the job breaks
+at that label. If I set \texttt{A1} to zero, then it is preserved
+after the suspension is over. So far, so good. What if \texttt{A1}
+was not zero? Well, I tried that too -- and it was also preserved.
+I'm running on SMSQ/E so maybe the problem I noted was in QDOS and
+has been fixed in SMSQ/E. 
+
+Anyway, Listing \ref{lis:ReadingFiles-suspending-the-job} shows the
+job suspension code.
+
+\lstinputlisting[linerange={210-215},caption={ReadingFiles - Suspending the job},label={lis:ReadingFiles-suspending-the-job}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+\subsection{Closing Files}
+
+While it is not strictly required to close files when finished with
+them, it's considered good practice and should be done in applications
+where a file is opened and read once, perhaps at the start, but never
+used afterwards. In those jobs, holding the file open wastes resources,
+and can prevent the file from being edited to make changes. 
+
+The best advice is to keep files open only as long as you need to.
+However, I don't follow my own advice at times, so don't do as I do,
+do as I say! 
+
+Listing \ref{lis:ReadingFiles-closing-all-files} shows the code to
+close both files. As we are doing the same thing more than once, we
+use a subroutine to close one file, and simply call it twice with
+the text file id, then with the screen channel id.
+
+\lstinputlisting[linerange={224-227},caption={ReadingFiles - Closing all files},label={lis:ReadingFiles-closing-all-files}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+The first file to be closed is the text file, simply because we have
+the channel id in register \texttt{A0}, we call the subroutine \texttt{closeFile}
+to do the actual closing. Closing a file doesn't usually return errors.
+QDOS did return \texttt{ERR\_NO} (SMSQ/E uses \texttt{ERR.ICHN}) for
+Channel not open, but SMSQ/E doesn't bother, and doesn't return an
+error.
+
+On return, we swap \texttt{A0} and \texttt{A5} to get the screen channel
+id into \texttt{A0}, and head off to close that channel too.
+
+The code to close one file is shown later, in Listing \ref{lis:ReadingFiles-closing-one-file}
+
+\subsection{Done!}
+
+Nearly done. The job has closed all its open files, and is ready to
+exit. We pass any error codes from \texttt{D0} to \texttt{D3}, as
+is required, and call the \texttt{SMS.FRJB} trap call to kill the
+job and return the error code to S{*}BASIC. The parameters required
+are:
+\begin{itemize}
+\item The trap code, \texttt{SMS.FRJB} is in \texttt{D0};
+\item The error code to return to S{*}BASIC is in \texttt{D3}.
+\end{itemize}
+Obviously, this trap call never returns.
+
+\lstinputlisting[linerange={234-238},caption={ReadingFiles - Death of a job},label={lis:ReadingFiles-death-of-a-job}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+The error code will be reported by S{*}BASIC if, and only if, the
+job was started with \texttt{EXEC\_W}, \texttt{EW} or any similar
+function which executes the job, then waits for it to complete.
+
+Jobs started with \texttt{EXEC}, \texttt{EX} or similar, cannot report
+the jobs exit code as \texttt{EXEC}, \texttt{EX} etc return immediately
+after starting the job, they have no way of knowing how or if the
+job ended as some jobs can run ``for ever'' such as clocks. S{*}BASIC
+has no way of knowing how the job ended.
+
+\subsection{Subroutine(s)}
+
+There is a single subroutine in this issue's code. The code to close
+a single file. Listing 
+
+\ref{lis:ReadingFiles-closing-one-file} shows the code. Closing a
+file requires these parameters:
+\begin{itemize}
+\item The trap code, \texttt{IOA.CLOS} in \texttt{D0};
+\item The channel id in \texttt{A0}.
+\end{itemize}
+SMSQ/E returns no errors in \texttt{D0} but QDOS does, if the file
+is not open, QDOS will return \texttt{ERR.ICHN}, which in QDOS terminology
+is ERR\_NO.
+
+\lstinputlisting[linerange={246-251},caption={ReadingFiles - Closing one file},label={lis:ReadingFiles-closing-one-file}]{/home/norman/SourceCode/Assembly eMagazine/Issue_011/Code/BeginnersCorner/ReadingFiles_asm}
+
+\section{Assembling the Code}
+
+If I were to assume that you have downloaded \href{http://www.dilwyn.me.uk/asm/gwassp22.zip}{GWASS}\footnote{http://www.dilwyn.me.uk/asm/gwassp22.zip}
+for QPC2 and other 68020 based emulators, or are using the Quanta
+version of the GST Qmac assembler for QLs with a 68008 processor,
+and have the code saved as \texttt{ram1\_ReadingFiles\_asm}, then
+assembling the code is as simple as this:
+
+\subsection{With GWASS}
+\begin{itemize}
+\item \texttt{EXEC} \texttt{gwass60\_bin} to start the assembler;
+\item Select the option to start assembling;
+\item Type in the filename: \texttt{ram1\_ReadingFiles\_asm}
+\item Wait.
+\end{itemize}
+
+\subsection{With Qmac}
+
+To pass the commands directly via the command line:
+\begin{itemize}
+\item \texttt{EX qmac;``ram1\_readingFiles\_asm -data 2048 -filetype 1 -nolink
+}~\\
+\texttt{-bin ram1\_readingFiles\_bin''}
+\end{itemize}
+\textbf{Note:} The above command should be typed on one line - I've
+had to split it for the PDF page width. 
+
+Alternatively, you can type the command interactively:
+\begin{itemize}
+\item \texttt{EX qmac}
+\item Type the options: \texttt{ram1\_readingFiles\_asm -data 2048 -filetype
+1 -nolink }~\\
+\texttt{-bin ram1\_readingFiles\_bin}
+\item Wait
+\end{itemize}
+What you are doing here, in both cases, is telling the assembler to:
+\begin{itemize}
+\item Assemble the source file \texttt{ram1\_ReadingFiles\_asm};
+\item Create an executable file (\texttt{-filetype 1}), with 2,048 bytes
+of data space (\texttt{-data 2048});
+\item Do not invoke the linker as it is not needed because everything is
+in the same source file (\texttt{-nolink});
+\item Create the output file named \texttt{ram1\_ReadingFiles\_bin} --
+which will be in uppercase regardless of what you type here!
+\end{itemize}
+
+\subsection{Executing the Code}
+
+After a successful assemble, and regardless of which assembler you
+used, \texttt{ram1\_ReadingFiles\_bin} will be the executable job.
+To run it:
+\begin{itemize}
+\item \texttt{EX} \texttt{ram1\_ReadingFiles\_bin}
+\end{itemize}
+On a successful execution, a small window will open, with black paper,
+white ink and a white, one pixel border. Some lines of text will be
+displayed, and after a delay of about 5 or 6 seconds, the screen channel
+will be closed and vanish.
+
+And finally, Figure \ref{fig:ReadingFiles-final-output} shows what
+the final output should look like.
+
+\begin{figure}[!h]
+\begin{centering}
+\includegraphics{\string"/home/norman/SourceCode/Assembly eMagazine/Issue_011/images/ReadingFiles\string".png}
+\par\end{centering}
+\caption{ReadingFiles final output\label{fig:ReadingFiles-final-output}}
+
+\end{figure}
+
+
+\section{Assembler Differences}
+
+There are a couple of minor differences between assemblers, as you
+can see, just invoking them is quite different.
+\begin{itemize}
+\item Qmac doesn't have the ability to assemble instructions for the 68020
+processor, only for the 68008 as used in the original QL. Some emulators
+use a virtual 68020 but these can still execute code assembled for
+the 68008, the converse is not true though.
+\item Qmac doesn't like filenames etc in double quotes, it expects single
+quotes. \texttt{``ram1\_test\_txt''} is rejected with the double
+quotes flagged as invalid characters, but \texttt{'ram1\_test\_txt'}
+is accepted.
+\item GWASS allows code without sections, but Qmac requires a header and
+trailer as follows: 
+\begin{lstlisting}
+    section code
+
+    ; Your code here
+
+    end
+\end{lstlisting}
+
+There needs to be a section with a name at the top, and an end at
+the bottom. You \emph{can} have lots of sections, with different names
+but the above is the minimum necessary. GWASS doesn't need this.
+\item In Qmac (and GWASS), you can tell it how much data space it requires:
+\begin{lstlisting}
+    section code
+    data 8192
+
+    ; Your code here
+
+    end
+\end{lstlisting}
+\item Qmac has a command line option which can be used in make files, GWASS
+uses a non-standard method of passing filenames:
+\begin{lstlisting}
+ex gwass60_bin; "A/1/filename_1_asm"
+\end{lstlisting}
+ which tells GWASS to assemble 1 file, named \texttt{filename\_1\_asm}.
+\item Qmac doesn't like this sort of thing:
+\begin{lstlisting}
+label 
+    equ *
+\end{lstlisting}
+as it complains about the label being invalid. This is a bit of a
+bind as I use that a lot to show the end of a string and to save me
+counting. However, I can do this instead:
+\begin{lstlisting}
+label equ *
+\end{lstlisting}
+ which is accepted, and makes sure anything following is word aligned.
+\end{itemize}
+
+\section{Whither GWASL?}
+
+This was mentioned already in the News section of this issue, but
+I'm repeating it here in Beginners Corner.
+
+In the past I have used, and occasionally still do, George Gwilt's
+other fine assembler, GWASL. This one is for the 68008 processor used
+in the original QL. Unfortunately, GWASL throws errors whenever there
+is a blank line which contains one or more spaces or tabs or other
+non-printing characters. It seems that GWASL only accepts blank lines
+which are truly blank, unlike its big brother GWASS, which has no
+difficulty with same code.
+
+GWASL throws an ``illegal instruction'' error when it hits one of
+these lines, which is hugely annoying to me as I then have to found
+the offending lines and delete them, before adding them back in with
+the ENTER key.
+
+I do have the source code for GWASL, but unfortunately, George has
+not made some of the files included by the source, available. This
+makes bug fixing -- without George -- difficult. George seems to
+have vanished off the face of the planet, unfortunately. George kept
+me on the straight and narrow for many years whole I was writing for
+QL Today, pointing out errors, bad code, better ways to do something
+etc.
+
+Because of this, I've resorted to using QMAC for the 68008 processors
+and GWASS for the bigger, 68020, processors. QMAC has no problems
+with those ``non-blank'' blank lines.
+
+\section{Summary}
+
+So that's the Assembly Language version of how to open a file, read
+it and display the contents on the screen, before closing it.
+
+In future issues, I'll be continuing to delve into a few more of these
+with, hopefully, enough explanation for beginners to get started with.
+
+Get hold of the SMSQ/E Reference Manual from \href{https://www.wlenerz.com/qlstuff/\#qdosms}{Wolfgang Lenerz's web site}\footnote{https://www.wlenerz.com/qlstuff/\#qdosms}
+for the official version. Alternatively, there are copies on Dilwyn's
+pages:
+\begin{itemize}
+\item \href{http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS\%20Reference\%20Guide\%20v4.5.pdf}{Here}\footnote{http://www.dilwyn.me.uk/docs/manuals/QDOS\_SMS\%20Reference\%20Guide\%20v4.5.pdf}
+for the PDF for version 4.5; or
+\item \href{http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS\%20Reference\%20Guide\%20v4.5.odt}{Here}\footnote{http://www.dilwyn.me.uk/docs/manuals/QDOS\_SMS\%20Reference\%20Guide\%20v4.5.odt}
+for the ODT (Libre Office) file for version 4.5.
+\item If you want to ensure that you have the most recent versions of those
+files, \href{https://www.wlenerz.com/qlstuff/\#qdosms}{Wolfgang Lenerz's web site}\footnote{https://www.wlenerz.com/qlstuff/\#qdosms}
+is the place to look.
+\end{itemize}
+Get hold of GWASS \href{http://gwiltprogs.info/gwassp22.zip}{here}\footnote{http://gwiltprogs.info/gwassp22.zip}
+for 68020 processors.
+
+Download Qmac \href{http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip}{here}\footnote{http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip}
+for 68008 processors.
