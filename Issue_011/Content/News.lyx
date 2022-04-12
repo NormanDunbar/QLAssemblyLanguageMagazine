@@ -156,6 +156,38 @@ solve
 \end_layout
 
 \begin_layout Section
+Multiplication
+\end_layout
+
+\begin_layout Standard
+After many years of avoiding the matter, I've finally decided to look into
+ how the QL could do multiplication of two 32 bit numbers to give a 64 bit
+ result.
+ It turns out to be a lot less mind numbing than I thought it would be.
+ So, anyway, if I had to figure it out for myself, you might as well profit
+ from my trials and tribulations!
+\end_layout
+
+\begin_layout Standard
+In this issue, there's a whole chapter about multiplying two 32 bit 
+\emph on
+unsigned
+\emph default
+ values to give a 64 bit result.
+ Then I figured out that I might as well add an extra bit of code to make
+ signed number multiplication 
+\begin_inset Quotes eld
+\end_inset
+
+easy
+\begin_inset Quotes erd
+\end_inset
+
+ as well.
+ That turned out to be only a few more lines.
+\end_layout
+
+\begin_layout Section
 The QL Wiki
 \end_layout
 
@@ -196,8 +228,12 @@ Error 403, Forbidden
 Investigations are ongoing, and sadly, have been for quite some time.
  We are of the opinion that the host company has done something and barfed
  things for the Wiki.
- Rob Heaton is attempting to get some form of support out of the hosts,
- but so far, this is proving quite elusive, unfortunately.
+ Rob Heaton is 
+\emph on
+still
+\emph default
+ attempting to get some form of support out of the hosts, but so far, this
+ is proving quite elusive, unfortunately.
 \end_layout
 
 \begin_layout Standard
@@ -231,6 +267,80 @@ https://qlforum.co.uk/viewforum.php?f=26
 
  on the QL Forum where you can report problems with images.
  Just to keep prodding us admin types!
+\end_layout
+
+\begin_layout Standard
+Occasionally I am able to get files uploaded, with a bit of hassle from
+ the 
+\begin_inset Quotes eld
+\end_inset
+
+403 Forbidden
+\begin_inset Quotes erd
+\end_inset
+
+ errors, but it can, eventually be done.
+ If you need to get some images uploaded, let me know on the above link
+ and I'll try my best to get them done for you.
+\end_layout
+
+\begin_layout Section
+RIP GWASL
+\end_layout
+
+\begin_layout Standard
+My most used assembler these days is GWASS from George Gwilt which allows
+ me to assemble MC68020 instructions as well as those for the MC68008.
+ In the past I have used, and occasionally still do, George Gwilt's other
+ fine assembler, GWASL.
+ This one is only for the MC68008 processor used in the original QL.
+ 
+\end_layout
+
+\begin_layout Standard
+Unlike its big brother, GWASS, GWASL throws errors if a 
+\begin_inset Quotes eld
+\end_inset
+
+blank
+\begin_inset Quotes erd
+\end_inset
+
+ line in the source code is not completely blank.
+ If there are any unprintable characters – spaces or tabs etc – GWASL will
+ record an 
+\begin_inset Quotes eld
+\end_inset
+
+illegal instruction
+\begin_inset Quotes erd
+\end_inset
+
+ error when it hits one of these lines.
+\end_layout
+
+\begin_layout Standard
+In addition, GWASL doesn't like symbols with a dot in the name.
+ So 
+\family typewriter
+OPW.CON
+\family default
+, for example, is rejected.
+ This means that it's not possible to use the correct names for the SMSQ/E
+ symbols and equates.
+\end_layout
+
+\begin_layout Standard
+Because of this, GWASL, which I have used since 2009, is sadly being retired.
+ I do have the source code for GWASL but looking through it, George has
+ used some of his own libraries and macros for various parts and I don't
+ have those files.
+ I 
+\emph on
+might
+\emph default
+ do a disassembly on the current binary, to see if I can fix it.
+ No promises though!
 \end_layout
 
 \end_body

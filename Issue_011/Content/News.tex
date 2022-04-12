@@ -23,6 +23,20 @@ new puzzle which has one less blank cell! There's no finesse about
 it, it just hammers away until it -- eventually -- solves the puzzle,
 or doesn't if the puzzle can't be solved.
 
+\section{Multiplication}
+
+After many years of avoiding the matter, I've finally decided to look
+into how the QL could do multiplication of two 32 bit numbers to give
+a 64 bit result. It turns out to be a lot less mind numbing than I
+thought it would be. So, anyway, if I had to figure it out for myself,
+you might as well profit from my trials and tribulations!
+
+In this issue, there's a whole chapter about multiplying two 32 bit
+\emph{unsigned} values to give a 64 bit result. Then I figured out
+that I might as well add an extra bit of code to make signed number
+multiplication ``easy'' as well. That turned out to be only a few
+more lines.
+
 \section{The QL Wiki}
 
 For some time now, there has been a problem uploading and/or including
@@ -33,9 +47,9 @@ privileges on the Wiki.
 
 Investigations are ongoing, and sadly, have been for quite some time.
 We are of the opinion that the host company has done something and
-barfed things for the Wiki. Rob Heaton is attempting to get some form
-of support out of the hosts, but so far, this is proving quite elusive,
-unfortunately.
+barfed things for the Wiki. Rob Heaton is \emph{still} attempting
+to get some form of support out of the hosts, but so far, this is
+proving quite elusive, unfortunately.
 
 This is not a good state of affairs to be in, but at the moment, we
 are working on it as best we can, given the limitations of the hosts.
@@ -46,3 +60,31 @@ If you are trying to insert images into your Wiki pages, and are suffering
 from this problem, please be patient. There is a \href{https://qlforum.co.uk/viewforum.php?f=26}{Wiki Topic}\footnote{https://qlforum.co.uk/viewforum.php?f=26}
 on the QL Forum where you can report problems with images. Just to
 keep prodding us admin types!
+
+Occasionally I am able to get files uploaded, with a bit of hassle
+from the ``403 Forbidden'' errors, but it can, eventually be done.
+If you need to get some images uploaded, let me know on the above
+link and I'll try my best to get them done for you.
+
+\section{RIP GWASL}
+
+My most used assembler these days is GWASS from George Gwilt which
+allows me to assemble MC68020 instructions as well as those for the
+MC68008. In the past I have used, and occasionally still do, George
+Gwilt's other fine assembler, GWASL. This one is only for the MC68008
+processor used in the original QL. 
+
+Unlike its big brother, GWASS, GWASL throws errors if a ``blank''
+line in the source code is not completely blank. If there are any
+unprintable characters -- spaces or tabs etc -- GWASL will record
+an ``illegal instruction'' error when it hits one of these lines.
+
+In addition, GWASL doesn't like symbols with a dot in the name. So
+\texttt{OPW.CON}, for example, is rejected. This means that it's not
+possible to use the correct names for the SMSQ/E symbols and equates.
+
+Because of this, GWASL, which I have used since 2009, is sadly being
+retired. I do have the source code for GWASL but looking through it,
+George has used some of his own libraries and macros for various parts
+and I don't have those files. I \emph{might} do a disassembly on the
+current binary, to see if I can fix it. No promises though!

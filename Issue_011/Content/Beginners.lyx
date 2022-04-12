@@ -2190,42 +2190,17 @@ This was mentioned already in the News section of this issue, but I'm repeating
 \end_layout
 
 \begin_layout Standard
-In the past I have used, and occasionally still do, George Gwilt's other
- fine assembler, GWASL.
- This one is for the 68008 processor used in the original QL.
- Unfortunately, GWASL throws errors whenever there is a blank line which
- contains one or more spaces or tabs or other non-printing characters.
- It seems that GWASL only accepts blank lines which are truly blank, unlike
- its big brother GWASS, which has no difficulty with same code.
+In the past I have used, and occasionally still do, George Gwilt's assembler,
+ GWASL, for the MC68008 processor used in the original QL.
+ Unfortunately, because GWASL throws errors whenever there is a blank line
+ which contains one or more spaces or tabs or other non-printing characters;
+ and cannot cope with the SMSQ/E symbols containing a dot in their name,
+ GWASL is sadly now being retired.
 \end_layout
 
 \begin_layout Standard
-GWASL throws an 
-\begin_inset Quotes eld
-\end_inset
-
-illegal instruction
-\begin_inset Quotes erd
-\end_inset
-
- error when it hits one of these lines, which is hugely annoying to me as
- I then have to found the offending lines and delete them, before adding
- them back in with the ENTER key.
-\end_layout
-
-\begin_layout Standard
-I do have the source code for GWASL, but unfortunately, George has not made
- some of the files included by the source, available.
- This makes bug fixing – without George – difficult.
- George seems to have vanished off the face of the planet, unfortunately.
- George kept me on the straight and narrow for many years whole I was writing
- for QL Today, pointing out errors, bad code, better ways to do something
- etc.
-\end_layout
-
-\begin_layout Standard
-Because of this, I've resorted to using QMAC for the 68008 processors and
- GWASS for the bigger, 68020, processors.
+Because of this, I've resorted to using QMAC for the MC68008 processors
+ and GWASS for the bigger, MC68020, processors.
  QMAC has no problems with those 
 \begin_inset Quotes eld
 \end_inset
@@ -2234,7 +2209,7 @@ non-blank
 \begin_inset Quotes erd
 \end_inset
 
- blank lines.
+ blank lines or SMSQ/E names..
 \end_layout
 
 \begin_layout Section
