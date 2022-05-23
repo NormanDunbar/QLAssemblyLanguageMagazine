@@ -1,0 +1,1821 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style british
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Beginners Corner
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+In this issue of Beginners Corner, we are taking a look at Condition codes
+ and, unavoidably, signed and unsigned numbers and tests.
+ I say 
+\begin_inset Quotes bld
+\end_inset
+
+unavoidably
+\begin_inset Quotes brd
+\end_inset
+
+ as I often find myself wondering which of the condition codes are signed
+ and which are unsigned – and it all depends on what type of numbers you
+ are dealing with.
+\end_layout
+
+\begin_layout Section
+The Numbers
+\end_layout
+
+\begin_layout Standard
+You need to know about numbers first, before we dive into the condition
+ codes.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Question
+\emph default
+: If a register holds the byte value 255
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+Dec
+\end_layout
+
+\end_inset
+
+/FF
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+Hex
+\end_layout
+
+\end_inset
+
+/11111111
+\begin_inset script subscript
+
+\begin_layout Plain Layout
+Bin
+\end_layout
+
+\end_inset
+
+ is it signed or unsigned?
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+Answer
+\emph default
+: Yes!
+\end_layout
+
+\begin_layout Standard
+It can be either because it actually depends on what you, the programmer,
+ wants it to be.
+ In many SMSQ/E trap calls, there needs to be a timeout.
+ This is usually a positive value but if infinite timeout is requested,
+ the value 
+\begin_inset Formula $-1$
+\end_inset
+
+ is used.
+ 
+\begin_inset Formula $255$
+\end_inset
+
+ in Decimal is the same bit pattern as 
+\begin_inset Formula $-1$
+\end_inset
+
+ in Decimal.
+ So how does the system know the difference between 
+\begin_inset Formula $-1$
+\end_inset
+
+ and 
+\begin_inset Formula $255$
+\end_inset
+
+?
+\end_layout
+
+\begin_layout Standard
+The leftmost bit of the number, bit 
+\begin_inset Formula $31$
+\end_inset
+
+, 
+\begin_inset Formula $15$
+\end_inset
+
+ or 
+\begin_inset Formula $7$
+\end_inset
+
+, for long, word or byte values, represents the sign of the number.
+ 
+\end_layout
+
+\begin_layout Standard
+If the sign bit is a 
+\begin_inset Formula $1$
+\end_inset
+
+, the number is negative, if it is a zero, the number is positive.
+ 
+\end_layout
+
+\begin_layout Standard
+This representation of signed numbers is known as 2'
+\emph on
+s Compliment
+\emph default
+.
+ There is a lot of detail and explanation on 
+\begin_inset CommandInset href
+LatexCommand href
+name "Wikipedia"
+target "https://en.wikipedia.org/wiki/Two%27s_complement"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://en.wikipedia.org/wiki/Two%27s_complement
+\end_layout
+
+\end_inset
+
+ – if you are interested.
+ 
+\end_layout
+
+\begin_layout Standard
+For unsigned numbers in 
+\begin_inset Formula $B$
+\end_inset
+
+ bits, the range of values is 
+\begin_inset Formula $0$
+\end_inset
+
+ through 
+\begin_inset Formula $2^{B}-1$
+\end_inset
+
+, while for a signed number, with the same number of bits, the range is
+ 
+\begin_inset Formula $-\frac{2^{B}}{2}$
+\end_inset
+
+ through 
+\begin_inset Formula $\frac{2^{B}}{2}-1$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+From this, we can work out that for 
+\begin_inset Formula $8$
+\end_inset
+
+, 
+\begin_inset Formula $16$
+\end_inset
+
+ and 
+\begin_inset Formula $32$
+\end_inset
+
+ bit numbers, byte, word and long, we get:
+\end_layout
+
+\begin_layout Itemize
+8 bit bytes, range from 
+\begin_inset Formula $0$
+\end_inset
+
+ through 
+\begin_inset Formula $255$
+\end_inset
+
+ unsigned, 
+\begin_inset Formula $-128$
+\end_inset
+
+ through 
+\begin_inset Formula $127$
+\end_inset
+
+ signed;
+\end_layout
+
+\begin_layout Itemize
+16 bit words, range from 
+\begin_inset Formula $0$
+\end_inset
+
+ through 
+\begin_inset Formula $65,535$
+\end_inset
+
+ unsigned, 
+\begin_inset Formula $-32,768$
+\end_inset
+
+ through 
+\begin_inset Formula $32,767$
+\end_inset
+
+ signed;
+\end_layout
+
+\begin_layout Itemize
+32 bit longs, range from 
+\begin_inset Formula $0$
+\end_inset
+
+ through 
+\begin_inset Formula $4,293,967,295$
+\end_inset
+
+ unsigned, 
+\begin_inset Formula $-2,147,483,648$
+\end_inset
+
+ through 
+\begin_inset Formula $2,147,483,647$
+\end_inset
+
+ signed.
+\end_layout
+
+\begin_layout Standard
+When you look at a number in binary, it's easy to determine the decimal
+ value simply by adding up all the powers of two where there is a 1 bit
+ present, for example:
+\end_layout
+
+\begin_layout Standard
+10100101 is 
+\begin_inset Formula $2^{7}+2^{5}+2^{2}+2^{0}=165$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+If the number is signed, then it's slightly more complicated as there are
+ at least three different methods.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Option 1
+\series default
+: You take the leftmost power of two and subtract all the remaining powers
+ of two where a 1 bit is present.
+ For example:
+\end_layout
+
+\begin_layout Itemize
+10100101 is 
+\begin_inset Formula $2^{7}-\left(2^{5}+2^{2}+2^{0}\right)=-91$
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Option 2
+\series default
+: Flip all the bits, convert to an unsigned value, add 1 and change the
+ sign to make the value negative, for example:
+\end_layout
+
+\begin_layout Itemize
+10100101 flipped is 01011010;
+\end_layout
+
+\begin_layout Itemize
+Converted to an unsigned value gives 
+\begin_inset Formula $2^{6}+2^{4}+2^{3}+2^{1}+1=91$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+Changing the sign gives 
+\begin_inset Formula $-91$
+\end_inset
+
+ as before.
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Option 3
+\series default
+: Calculate the unsigned value, and subtract from 
+\begin_inset Formula $2^{B}$
+\end_inset
+
+ where 
+\begin_inset Formula $B$
+\end_inset
+
+ is the number of bits, then change the sign to make the value negative.
+ For example:
+\end_layout
+
+\begin_layout Itemize
+10100101 is still 
+\begin_inset Formula $2^{7}+2^{5}+2^{2}+2^{0}=165$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+The number of bits is 8 and we know 
+\begin_inset Formula $2^{8}$
+\end_inset
+
+ is 
+\begin_inset Formula $256$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+Subtract 
+\begin_inset Formula $165$
+\end_inset
+
+ from 
+\begin_inset Formula $256$
+\end_inset
+
+ to get 
+\begin_inset Formula $91$
+\end_inset
+
+;
+\end_layout
+
+\begin_layout Itemize
+Changing the sign gives 
+\begin_inset Formula $-91$
+\end_inset
+
+, yet again!
+\end_layout
+
+\begin_layout Standard
+Pick the version you prefer.
+\end_layout
+
+\begin_layout Standard
+Right, that's enough about numbers, signed or otherwise, for now at least!
+\end_layout
+
+\begin_layout Section
+The Flags
+\end_layout
+
+\begin_layout Standard
+So, moving slightly ahead, we now need to think about the Status Register,
+ often known as SR, where the MC680xx CPUs hold their status flags.
+ Some of these are available to the programmer for use in code to determine
+ the outcome of a calculation, a register load, a test and so on.
+\end_layout
+
+\begin_layout Standard
+If you need more information, grab hold of 
+\begin_inset CommandInset href
+LatexCommand href
+name "my eBook"
+target "https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest
+\end_layout
+
+\end_inset
+
+, based on many years of writing Assembly Language articles for the, sadly
+ defunct, 
+\emph on
+QL Today
+\emph default
+ magazine.
+ That will explain all.
+\end_layout
+
+\begin_layout Standard
+In the meantime, all you need to know at the moment is that various flags
+ in the SR are set or cleared according to the results of some operation.
+ If the flags are set as the result of some arithmetic operation, or by
+ loading a value into a register, for example, then some flags indicate
+ whether the number is signed or unsigned – in a roundabout way!
+\end_layout
+
+\begin_layout Standard
+Ok, I lied, slightly, sorry.
+ What the flags indicate is whether the number is positive, negative – amongst
+ others – regardless of whether you intended the number to be signed or
+ unsigned.
+ Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:MC680xx-Status-Register"
+
+\end_inset
+
+ shows the full set of flags and Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:MC680xx-Condition-Codes"
+
+\end_inset
+
+ shows what they are set to for certain conditions which can be tested.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="6" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top" width="70text%">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Flag
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Flag Name
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Description
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+X
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Extend
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Usually the same as Carry, but used separately.
+ (The manual is no help!)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Negative
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Indicates if the top bit is set or clear.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Z
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Zero
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Indicates the last operation resulted in a zero result.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+V
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Overflow
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The last operation caused arithmetic overflow.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Carry
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+The last operation resulted in a carry.
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MC680xx Status Register
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:MC680xx-Status-Register"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+The Condition Codes
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+You are here.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+To get the line breaks in the table below, I had to:
+\end_layout
+
+\begin_layout Plain Layout
+* Set a width on the column 
+\begin_inset Quotes bld
+\end_inset
+
+Flags
+\begin_inset Quotes brd
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Plain Layout
+* Insert where I wanted breaks by CTRL-ENTER (Insert->Formatting->Ragged
+ line break)
+\end_layout
+
+\begin_layout Plain Layout
+Easy? (No!)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="13" columns="4">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top" width="35text%">
+<column alignment="center" valignment="top" width="30text%">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Condition
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Flags
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Description
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Signed
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+CC
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C=0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Carry Clear
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+U
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+CS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C=1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Carry Set
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+U
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+EQ
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Z=1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Equal/Zero
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+U and S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+NE
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Z=0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Not Equal/Not Zero
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+U and S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+HI
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C=0 and Z=0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Higher
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+U
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+LS
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+C=1 or Z=1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Lower or Same
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+U
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+PL
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N=1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Plus/Positive
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+MI
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+N=1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Minus/Negative
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+GE
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+(N=1 and V=1) or
+\begin_inset Newline newline
+\end_inset
+
+(N=0 and V=0)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Greater Than or Equal
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+GT
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+(N=1 and V=1 and Z=0) or 
+\begin_inset Newline newline
+\end_inset
+
+(N=0 and V=0 and Z=0)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Greater Than
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+LE
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+(Z=1) or 
+\begin_inset Newline newline
+\end_inset
+
+(N=1 and V=0) or 
+\begin_inset Newline newline
+\end_inset
+
+(N=0 and V=1)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Less Than or Equal
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+LT
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+(N=1 and V=0) or 
+\begin_inset Newline newline
+\end_inset
+
+(N=0 and V=1)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Less Than
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+S
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+MC680xx Condition Codes
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:MC680xx-Condition-Codes"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Condition Codes
+\end_layout
+
+\begin_layout Standard
+Signed and unsigned condition codes.
+\end_layout
+
+\begin_layout Standard
+Bcc, DBcc, CMP.
+ Explain.
+\end_layout
+
+\begin_layout Standard
+Signed: EQ, GE, GT, LS, LT, MI, NE, PL, 
+\end_layout
+
+\begin_layout Standard
+Unsigned: EQ, HI, LE, NE, 
+\end_layout
+
+\begin_layout Standard
+Others: F, T, VC, VS,
+\end_layout
+
+\begin_layout Section
+Assembling the Code
+\end_layout
+
+\begin_layout Standard
+Assembling the code requires that you have an assembler installed.
+ See Section 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sec:Tools-and-Manuals"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+, 
+\begin_inset CommandInset ref
+LatexCommand nameref
+reference "sec:Tools-and-Manuals"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ for links to allow you to obtain the assemblers that I frequently use for
+ this eMagazine.
+\end_layout
+
+\begin_layout Standard
+Once you have installed an assembler, assembling the code is simple and
+ is described in the following sections.
+ Pick the section for your own assembler.
+\end_layout
+
+\begin_layout Subsection
+With GWASS
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EXEC
+\family default
+ 
+\family typewriter
+gwass60_bin
+\family default
+ to start the assembler;
+\end_layout
+
+\begin_layout Itemize
+Select option 1 to start assembling;
+\end_layout
+
+\begin_layout Itemize
+Type in the filename: 
+\family typewriter
+ram1_??????????_asm
+\end_layout
+
+\begin_layout Itemize
+Wait.
+\end_layout
+
+\begin_layout Subsection
+With Qmac
+\end_layout
+
+\begin_layout Standard
+To pass the commands directly via the command line:
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+Insert->Formatting->Ragged Line Break in the following to get it to wrap!
+\end_layout
+
+\begin_layout Plain Layout
+Also, needs `` at the start of a string.
+ Using actual LaTeX quotes `' and ``
+\begin_inset Quotes brd
+\end_inset
+
+
+\begin_inset Quotes brd
+\end_inset
+
+ doesn't work!
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EX qmac;``ram1_??????????_asm -data 2048 -filetype 1 -nolink 
+\begin_inset Newline newline
+\end_inset
+
+-bin ram1_??????????_bin
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
+\series bold
+Note:
+\series default
+ The above command should be typed on one line - I've had to split it for
+ the PDF page width.
+ 
+\end_layout
+
+\begin_layout Standard
+Alternatively, you can type the command interactively:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EX qmac
+\end_layout
+
+\begin_layout Itemize
+Type the options: 
+\family typewriter
+ram1_??????????_asm -data 2048 -filetype 1 -nolink 
+\begin_inset Newline newline
+\end_inset
+
+-bin ram1_??????????_bin
+\end_layout
+
+\begin_layout Itemize
+Wait
+\end_layout
+
+\begin_layout Standard
+What you are doing here, in both cases, is telling the assembler to:
+\end_layout
+
+\begin_layout Itemize
+Assemble the source file 
+\family typewriter
+ram1_??????????_asm
+\family default
+;
+\end_layout
+
+\begin_layout Itemize
+Create an executable file (
+\family typewriter
+-filetype 1
+\family default
+), with 2,048 bytes of data space (
+\family typewriter
+-data 2048
+\family default
+);
+\end_layout
+
+\begin_layout Itemize
+Do not invoke the linker as it is not needed because everything is in the
+ same source file (
+\family typewriter
+-nolink
+\family default
+);
+\end_layout
+
+\begin_layout Itemize
+Create the output file named 
+\family typewriter
+ram1_??????????_bin
+\family default
+ – which will be in uppercase regardless of what you type here!
+\end_layout
+
+\begin_layout Subsection
+Executing the Code
+\end_layout
+
+\begin_layout Standard
+After a successful assemble, and regardless of which assembler you used,
+ 
+\family typewriter
+ram1_??????????_bin
+\family default
+ will be the executable job.
+ To run it:
+\end_layout
+
+\begin_layout Itemize
+
+\family typewriter
+EX
+\family default
+ 
+\family typewriter
+ram1_??????????_bin
+\end_layout
+
+\begin_layout Standard
+On a successful execution, ..................................................
+\end_layout
+
+\begin_layout Section
+Summary
+\end_layout
+
+\begin_layout Standard
+That, hopefully, will help make writing structured Assembly Language programs
+ more manageable.
+ Let me know if there's anything you didn't follow or which may need more
+ explanation, and I'll do my best to assist.
+\end_layout
+
+\begin_layout Section
+Tools and Manuals
+\begin_inset CommandInset label
+LatexCommand label
+name "sec:Tools-and-Manuals"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Get hold of the SMSQ/E Reference Manual from 
+\begin_inset CommandInset href
+LatexCommand href
+name "Wolfgang Lenerz's web site"
+target "https://www.wlenerz.com/qlstuff/#qdosms"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://www.wlenerz.com/qlstuff/#qdosms
+\end_layout
+
+\end_inset
+
+ for the official version.
+ Alternatively, there are copies on Dilwyn's pages:
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "Here"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.pdf
+\end_layout
+
+\end_inset
+
+ for the PDF for version 4.5; or
+\end_layout
+
+\begin_layout Itemize
+\begin_inset CommandInset href
+LatexCommand href
+name "Here"
+target "http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS%20Reference%20Guide%20v4.5.odt
+\end_layout
+
+\end_inset
+
+ for the ODT (Libre Office) file for version 4.5.
+\end_layout
+
+\begin_layout Itemize
+If you want to ensure that you have the most recent versions of those files,
+ 
+\begin_inset CommandInset href
+LatexCommand href
+name "Wolfgang Lenerz's web site"
+target "https://www.wlenerz.com/qlstuff/#qdosms"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://www.wlenerz.com/qlstuff/#qdosms
+\end_layout
+
+\end_inset
+
+ is the place to look.
+\end_layout
+
+\begin_layout Standard
+Get hold of GWASS 
+\begin_inset CommandInset href
+LatexCommand href
+name "here"
+target "http://gwiltprogs.info/gwassp22.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://gwiltprogs.info/gwassp22.zip
+\end_layout
+
+\end_inset
+
+ for 68020 processors.
+\end_layout
+
+\begin_layout Standard
+Download Qmac 
+\begin_inset CommandInset href
+LatexCommand href
+name "here"
+target "http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status collapsed
+
+\begin_layout Plain Layout
+http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip
+\end_layout
+
+\end_inset
+
+ for 68008 processors.
+\end_layout
+
+\end_body
+\end_document

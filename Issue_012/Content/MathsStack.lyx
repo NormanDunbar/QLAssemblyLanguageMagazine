@@ -1,0 +1,1206 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Maths Stack Update
+\end_layout
+
+\begin_layout Standard
+Years ago I wrote an article for 
+\emph on
+QL Today
+\emph default
+ about the Maths Stack in QDOS and how the value in 
+\family typewriter
+A1
+\family default
+, on entry to a function or procedure, was 
+\emph on
+not
+\emph default
+ pointing to the top of the maths stack, as documented in the various QDOS
+ manuals, and books around at that time.
+ In brief, I discovered that on entry, we have three possibilities:
+\end_layout
+
+\begin_layout Itemize
+If 
+\family typewriter
+A1
+\family default
+ is 
+\emph on
+negative
+\emph default
+, it means that the function/procedure in question has been called as part
+ of an expression, and 
+\family typewriter
+A1
+\family default
+ shows how much space has been used on the stack for the expression, so
+ far.
+ The code would resemble this: 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+PRINT 1234 * myFunction(...)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+If 
+\family typewriter
+A1
+\family default
+ is 
+\emph on
+positive
+\emph default
+, it means that the maths stack has some free space available for use without
+ any requirement to allocate more.
+ 
+\end_layout
+
+\begin_layout Itemize
+If 
+\family typewriter
+A1
+\family default
+ is 
+\emph on
+zero
+\emph default
+, it means that the function/procedure in question has been called on it's
+ own, or at the beginning of an expression.
+ 
+\family typewriter
+A1
+\family default
+ shows how much space has been used on the stack for the expression, so
+ far.
+ The code would resemble this: The code would resemble this: 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+PRINT myFunction(...)
+\end_layout
+
+\end_inset
+
+ or 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+PRINT myFunction(...) * 1234
+\end_layout
+
+\end_inset
+
+ or any expression where 
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
+inline true
+status open
+
+\begin_layout Plain Layout
+
+myFunction()
+\end_layout
+
+\end_inset
+
+ is at the beginning.
+\end_layout
+
+\begin_layout Standard
+This is covered in my eBook which you can download from 
+\begin_inset CommandInset href
+LatexCommand href
+name "GitHub"
+target "https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest
+\end_layout
+
+\end_inset
+
+ – section 7.8 is the location you will need.
+\end_layout
+
+\begin_layout Standard
+There was a recent exercise by Derek Stewart to scan Andy Pennell's 
+\emph on
+QDOS Companion
+\emph default
+ book and make it available as a PDF.
+ Andy did give his blessing to this, in case anyone is worried about copyright.
+ There's a thread on the QL Forum, 
+\begin_inset CommandInset href
+LatexCommand href
+name "here"
+target "https://qlforum.co.uk/viewtopic.php?f=12&t=4137"
+literal "false"
+
+\end_inset
+
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://qlforum.co.uk/viewtopic.php?f=12&t=4137
+\end_layout
+
+\end_inset
+
+, which shows the process and updates so far.
+ See this issues News chapter for download details.
+\end_layout
+
+\begin_layout Standard
+As part of the ensuing discussion, it was mentioned that Andy's book didn't
+ correctly document A1 when entering a procedure or function.
+ I responded with the above information and was brought before the select
+ committee
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+Per Witte
+\end_layout
+
+\end_inset
+
+ to explain:
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+You don't say whether your findings apply to: JM, JS, Minerva, SMSQ/E etc.
+ It could, in other words just be random.
+\end_layout
+
+\begin_layout Itemize
+
+\emph on
+I'm no authority, but I would advise to not rely on this unless it were
+ documented to be valid across the board, and to be there for a particular
+ reason, ie as a result of the way things by necessity are done, or as a
+ particular service to keyword writers.
+ I wont go into reasons as I hope they are self evident.
+ 
+\end_layout
+
+\begin_layout Standard
+Which are excellent points of order.
+\end_layout
+
+\begin_layout Standard
+Let's dive into the maelstrom then!
+\end_layout
+
+\begin_layout Section
+The Process Outline
+\end_layout
+
+\begin_layout Standard
+In order to test I will be following these few steps:
+\end_layout
+
+\begin_layout Itemize
+Create a function with no parameters, and another with one parameters, as
+ the test code.
+ A 
+\family typewriter
+TRAP #15
+\family default
+ instruction will be placed at the very start of the function code.
+ On normal running, this has no effect, but when I do some fiddling in the
+ commands of QMON2, it will immediately jump into QMON2 and I can debug
+ from there.
+\end_layout
+
+\begin_layout Itemize
+When the debugger has control, examine the registers paying close attention
+ to A1.
+\end_layout
+
+\begin_layout Itemize
+The code will be tested on SMSQ/E under QPC2.
+ It has already been tested in QDOS under the JS ROM, back in the day.
+ I don't have Minerva or other ROMS, but I do have emulators which do!
+\end_layout
+
+\begin_layout Itemize
+The functions will be tested stand-alone, and as part of an expression where
+ it occurs at the beginning and another where it appears after the beginning.
+\end_layout
+
+\begin_layout Itemize
+The functions will be tested in integer, float and string (coercion) expressions.
+\end_layout
+
+\begin_layout Section
+The Test Functions
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:TestFunction-fn\\_0"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the code I'll be using for the test function 
+\family typewriter
+FN_0
+\family default
+ and Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:TestFunction-fn\\_1"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the code for function 
+\family typewriter
+FN_1
+\family default
+.
+ The function names match the number of parameters they take.
+ I have not shown the code that links the functions into S*BASIC, but this
+ is present in the code download for this issue.
+\end_layout
+
+\begin_layout Standard
+There's nothing special about the two functions, other than the 
+\family typewriter
+TRAP #15
+\family default
+ instructions which appear at the start of each function.
+ This causes execution to jump into QMON2, if that has been loaded and set
+ up correctly.
+ 
+\family typewriter
+FN_0
+\family default
+ returns a word integer of zero as it's result, while 
+\family typewriter
+FN_1
+\family default
+ returns its parameter, incremented by 1, as another word integer.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_012/Code/MathsStack/testFunctions.asm"
+lstparams "linerange={39-47},firstnumber=39,numbers=left,caption={Test Function: FN\\_0},label={lst:TestFunction-fn\\_0}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_012/Code/MathsStack/testFunctions.asm"
+lstparams "linerange={49-71},firstnumber=49,numbers=left,caption={Test Function: FN\\_1},label={lst:TestFunction-fn\\_1}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Obviously, as 
+\family typewriter
+FN_0
+\family default
+ takes no parameters, we need to allocate space on the maths stack before
+ we can return a result.
+ We do this by fetching the current maths stack pointer from 
+\family typewriter
+SV_ARTHP(A6)
+\family default
+ into 
+\family typewriter
+A1
+\family default
+, and requesting 
+\family typewriter
+D6.W
+\family default
+ bytes of space for the result.
+ In this case, 
+\family typewriter
+D6.W
+\family default
+ is 2 as we are returning a word integer.
+ After the space has been allocated, it is possible that the maths stack,
+ plus its contents, has been moved, so we need to refresh 
+\family typewriter
+A1
+\family default
+ from 
+\family typewriter
+SV_ARTHP(A6)
+\family default
+.
+ 
+\end_layout
+
+\begin_layout Standard
+
+\family typewriter
+FN_1
+\family default
+, on the other hand, takes a word integer parameter and as such, has already
+ got enough space on the maths stack to return its result.
+ For 
+\family typewriter
+FN_1
+\family default
+ then, 
+\family typewriter
+D6.W
+\family default
+ is zero to indicate that we don't need any space so we simply store the
+ value in 
+\family typewriter
+D7.W
+\family default
+ into the word pointed to by 
+\family typewriter
+(A6,A1.L)
+\family default
+.
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lst:TestFunctions-return-results"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ is the code that handles the returning of results and the allocation of
+ maths stack space, as required, in order to do so.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_012/Code/MathsStack/testFunctions.asm"
+lstparams "linerange={73-97},firstnumber=73,numbers=left,caption={Returning results},label={lst:TestFunctions-return-results}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Debugging with QMON2
+\end_layout
+
+\begin_layout Standard
+After loading the QMON2 binary, we need to tell it to execute when a 
+\family typewriter
+TRAP #15
+\family default
+ instruction is executed.
+ to do this we simply execute QMON2 in S*BASIC channel #1 – so that when
+ it executed, it comes up in the same channel – and then tell it to intercept
+ those 
+\family typewriter
+TRAP #15
+\family default
+ instructions.
+ This is done as follows:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+QMON #1
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+Qmon> TL 14
+\end_layout
+
+\begin_layout Plain Layout
+
+Qmon> g
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+That's all there is to do.
+ Now whenever a 
+\family typewriter
+TRAP #15
+\family default
+ instruction is executed, QMON2 will intercept it, and break execution,
+ giving us full control over the system at the instruction immediately after
+ the 
+\family typewriter
+TRAP #15
+\family default
+ instruction.
+\end_layout
+
+\begin_layout Standard
+The 
+\family typewriter
+TL
+\family default
+ command in QMON2 will execute QMON2 every time a 
+\family typewriter
+TRAP
+\family default
+ 
+\emph on
+higher
+\emph default
+ than that indicated, is executed.
+\end_layout
+
+\begin_layout Standard
+After setting up QMON2, testing was done by calling 
+\family typewriter
+PRINT
+\family default
+ with various expressions as its parameters, each using the appropriate
+ test function in one of three places:
+\end_layout
+
+\begin_layout Itemize
+As the only term in the expression.
+\end_layout
+
+\begin_layout Itemize
+As the first term in the expression.
+\end_layout
+
+\begin_layout Itemize
+As the final term in the expression.
+\end_layout
+
+\begin_layout Standard
+My debugging session looked something like this:
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+lstparams "basicstyle={\ttfamily},showstringspaces=false,tabsize=4"
+inline false
+status open
+
+\begin_layout Plain Layout
+
+X=1234
+\end_layout
+
+\begin_layout Plain Layout
+
+X% = 1234
+\end_layout
+
+\begin_layout Plain Layout
+
+x$=
+\begin_inset Quotes erd
+\end_inset
+
+1234
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_0
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_0 * X
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_0 * X%
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_0 * X$
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT X * FN_0
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT X% * FN_0
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT X$ * FN_0
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_1
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_1 * X
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_1 * X%
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT FN_1 * X$
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT X * FN_1
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT X% * FN_1
+\end_layout
+
+\begin_layout Plain Layout
+
+PRINT X$ * FN_1
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Results
+\end_layout
+
+\begin_layout Standard
+On SMSQ/E the results are slightly different from that in QDOS with the
+ JS ROM.
+ There was no difference when the function called was 
+\family typewriter
+FN_0
+\family default
+ or 
+\family typewriter
+FN_1
+\family default
+, they both showed the same values in 
+\family typewriter
+A1.L
+\family default
+ when QMON2 intercepted execution.
+ Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Test-function-results"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the results of testing on SMSQ/E.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float table
+placement !h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\noindent
+\align center
+\begin_inset Tabular
+<lyxtabular version="3" rows="8" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+Test
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+A1 (Hex)
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+
+\series bold
+A1 (Decimal)
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Function only
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Function * integer
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Function * float
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Function * string
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Integer * function
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FFFFFFFC
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-4
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Float * function
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FFFFFFF8
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-8
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+String * function
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FFFFFFFA
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-6
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+Test function results
+\begin_inset CommandInset label
+LatexCommand label
+name "tab:Test-function-results"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+I repeated the tests with other arithmetic operators, the results are the
+ same as Table 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "tab:Test-function-results"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ regardless of the operator in question.
+ 
+\end_layout
+
+\begin_layout Standard
+Looking at the figures, it appears that on SMSQ/E, the value in 
+\family typewriter
+A1
+\family default
+ at the start of a procedure or function is 2 bytes greater than that used
+ by QDOS under the same conditions.
+\end_layout
+
+\begin_layout Itemize
+When 
+\family typewriter
+A1
+\family default
+ is zero, the SMSQ/E result is the same as the QDOS: JS result, no space
+ yet used on the maths stack.
+\end_layout
+
+\begin_layout Itemize
+When 
+\family typewriter
+A1
+\family default
+ is negative, the SMSQ/E result appears to show an extra 2 bytes over the
+ size of the space used on the maths stack so far.
+ So for a word sized integer, 2 bytes, the value in 
+\family typewriter
+A1
+\family default
+ is -4, for a 6 byte float it's -8 and for a string, which was never tested
+ on QDOS: JS, it's always -6 regardless of the length of the string.
+\end_layout
+
+\begin_layout Itemize
+I was unable to remember
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+I'm getting old.
+ When I learn new stuff these days, something else has to be forgotten to
+ make room for it!
+\end_layout
+
+\end_inset
+
+ how I managed to get a positive value in 
+\family typewriter
+A1
+\family default
+ back in the QDOS: JS days, and I was unable to get one in SMSQ/E.
+\end_layout
+
+\begin_layout Section
+Summary
+\end_layout
+
+\begin_layout Standard
+Even without testing Minerva ROMs under QDOS, it is obvious that there are
+ indeed differences – at least between QDOS and SMSQ/E.
+ For this reason, it's best to ignore what I've said in the past, and simply
+ treat 
+\family typewriter
+A1
+\family default
+ on entry to a procedure or function as 
+\emph on
+not being a suitable value for the top of the maths stack
+\emph default
+ so it must always be loaded from 
+\family typewriter
+BV_RIP(A6)
+\family default
+ on QDOS or from 
+\family typewriter
+SV_ARTHP(A6)
+\family default
+ on SMSQ/E.
+\end_layout
+
+\begin_layout Itemize
+If your function takes no parameters, 
+\family typewriter
+A1
+\family default
+ 
+\emph on
+must
+\emph default
+ be loaded before attempting to request maths stack space to return the
+ result.
+\end_layout
+
+\begin_layout Itemize
+If your function takes any parameters, then until such time as you call
+ the appropriate vector to fetch the parameters, 
+\family typewriter
+A1
+\family default
+ is not usable as the maths stack top.
+ After fetching the parameters, it will be correctly set.
+\end_layout
+
+\end_body
+\end_document

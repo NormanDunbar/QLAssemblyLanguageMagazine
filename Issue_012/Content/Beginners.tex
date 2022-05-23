@@ -1,0 +1,273 @@
+
+\chapter{Beginners Corner}
+
+\section{Introduction}
+
+In this issue of Beginners Corner, we are taking a look at Condition
+codes and, unavoidably, signed and unsigned numbers and tests. I say
+`unavoidably' as I often find myself wondering which of the condition
+codes are signed and which are unsigned -- and it all depends on
+what type of numbers you are dealing with.
+
+\section{The Numbers}
+
+You need to know about numbers first, before we dive into the condition
+codes. 
+
+\emph{Question}: If a register holds the byte value 255\textsubscript{Dec}/FF\textsubscript{Hex}/11111111\textsubscript{Bin}
+is it signed or unsigned?
+
+\emph{Answer}: Yes!
+
+It can be either because it actually depends on what you, the programmer,
+wants it to be. In many SMSQ/E trap calls, there needs to be a timeout.
+This is usually a positive value but if infinite timeout is requested,
+the value $-1$ is used. $255$ in Decimal is the same bit pattern
+as $-1$ in Decimal. So how does the system know the difference between
+$-1$ and $255$?
+
+The leftmost bit of the number, bit $31$, $15$ or $7$, for long,
+word or byte values, represents the sign of the number. 
+
+If the sign bit is a $1$, the number is negative, if it is a zero,
+the number is positive. 
+
+This representation of signed numbers is known as 2'\emph{s Compliment}.
+There is a lot of detail and explanation on \href{https://en.wikipedia.org/wiki/Two\%27s_complement}{Wikipedia}\footnote{https://en.wikipedia.org/wiki/Two\%27s\_complement}
+-- if you are interested. 
+
+For unsigned numbers in $B$ bits, the range of values is $0$ through
+$2^{B}-1$, while for a signed number, with the same number of bits,
+the range is $-\frac{2^{B}}{2}$ through $\frac{2^{B}}{2}-1$.
+
+From this, we can work out that for $8$, $16$ and $32$ bit numbers,
+byte, word and long, we get:
+\begin{itemize}
+\item 8 bit bytes, range from $0$ through $255$ unsigned, $-128$ through
+$127$ signed;
+\item 16 bit words, range from $0$ through $65,535$ unsigned, $-32,768$
+through $32,767$ signed;
+\item 32 bit longs, range from $0$ through $4,293,967,295$ unsigned, $-2,147,483,648$
+through $2,147,483,647$ signed.
+\end{itemize}
+When you look at a number in binary, it's easy to determine the decimal
+value simply by adding up all the powers of two where there is a 1
+bit present, for example:
+
+10100101 is $2^{7}+2^{5}+2^{2}+2^{0}=165$.
+
+If the number is signed, then it's slightly more complicated as there
+are at least three different methods. 
+
+\textbf{Option 1}: You take the leftmost power of two and subtract
+all the remaining powers of two where a 1 bit is present. For example:
+\begin{itemize}
+\item 10100101 is $2^{7}-\left(2^{5}+2^{2}+2^{0}\right)=-91$.
+\end{itemize}
+\textbf{Option 2}: Flip all the bits, convert to an unsigned value,
+add 1 and change the sign to make the value negative, for example:
+\begin{itemize}
+\item 10100101 flipped is 01011010;
+\item Converted to an unsigned value gives $2^{6}+2^{4}+2^{3}+2^{1}+1=91$;
+\item Changing the sign gives $-91$ as before.
+\end{itemize}
+\textbf{Option 3}: Calculate the unsigned value, and subtract from
+$2^{B}$ where $B$ is the number of bits, then change the sign to
+make the value negative. For example:
+\begin{itemize}
+\item 10100101 is still $2^{7}+2^{5}+2^{2}+2^{0}=165$;
+\item The number of bits is 8 and we know $2^{8}$ is $256$;
+\item Subtract $165$ from $256$ to get $91$;
+\item Changing the sign gives $-91$, yet again!
+\end{itemize}
+Pick the version you prefer.
+
+Right, that's enough about numbers, signed or otherwise, for now at
+least!
+
+\section{The Flags}
+
+So, moving slightly ahead, we now need to think about the Status Register,
+often known as SR, where the MC680xx CPUs hold their status flags.
+Some of these are available to the programmer for use in code to determine
+the outcome of a calculation, a register load, a test and so on.
+
+If you need more information, grab hold of \href{https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest}{my eBook}\footnote{https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest},
+based on many years of writing Assembly Language articles for the,
+sadly defunct, \emph{QL Today} magazine. That will explain all.
+
+In the meantime, all you need to know at the moment is that various
+flags in the SR are set or cleared according to the results of some
+operation. If the flags are set as the result of some arithmetic operation,
+or by loading a value into a register, for example, then some flags
+indicate whether the number is signed or unsigned -- in a roundabout
+way!
+
+Ok, I lied, slightly, sorry. What the flags indicate is whether the
+number is positive, negative -- amongst others -- regardless of
+whether you intended the number to be signed or unsigned. Table \ref{tab:MC680xx-Status-Register}
+shows the full set of flags and Table \ref{tab:MC680xx-Condition-Codes}
+shows what they are set to for certain conditions which can be tested.
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|c|>{\centering}p{0.7\textwidth}|}
+\hline 
+\textbf{Flag} & \textbf{Flag Name} & \textbf{Description}\tabularnewline
+\hline 
+\hline 
+X & Extend & Usually the same as Carry, but used separately. (The manual is no
+help!)\tabularnewline
+\hline 
+N & Negative & Indicates if the top bit is set or clear.\tabularnewline
+\hline 
+Z & Zero & Indicates the last operation resulted in a zero result.\tabularnewline
+\hline 
+V & Overflow & The last operation caused arithmetic overflow.\tabularnewline
+\hline 
+C & Carry & The last operation resulted in a carry.\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{MC680xx Status Register\label{tab:MC680xx-Status-Register}}
+\end{table}
+
+\begin{table}[!h]
+\begin{centering}
+\begin{tabular}{|c|>{\centering}p{0.35\textwidth}|>{\centering}p{0.3\textwidth}|c|}
+\hline 
+\textbf{Condition} & \textbf{Flags} & \textbf{Description} & \textbf{Signed}\tabularnewline
+\hline 
+\hline 
+CC & C=0 & Carry Clear & U\tabularnewline
+\hline 
+CS & C=1 & Carry Set & U\tabularnewline
+\hline 
+EQ & Z=1 & Equal/Zero & U and S\tabularnewline
+\hline 
+NE & Z=0 & Not Equal/Not Zero & U and S\tabularnewline
+\hline 
+HI & C=0 and Z=0 & Higher & U\tabularnewline
+\hline 
+LS & C=1 or Z=1 & Lower or Same & U\tabularnewline
+\hline 
+PL & N=1 & Plus/Positive & S\tabularnewline
+\hline 
+MI & N=1 & Minus/Negative & S\tabularnewline
+\hline 
+GE & (N=1 and V=1) or\\
+(N=0 and V=0) & Greater Than or Equal & S\tabularnewline
+\hline 
+GT & (N=1 and V=1 and Z=0) or \\
+(N=0 and V=0 and Z=0) & Greater Than & S\tabularnewline
+\hline 
+LE & (Z=1) or \\
+(N=1 and V=0) or \\
+(N=0 and V=1) & Less Than or Equal & S\tabularnewline
+\hline 
+LT & (N=1 and V=0) or \\
+(N=0 and V=1) & Less Than & S\tabularnewline
+\hline 
+\end{tabular}
+\par\end{centering}
+\caption{MC680xx Condition Codes\label{tab:MC680xx-Condition-Codes}}
+\end{table}
+
+
+\section{Condition Codes}
+
+Signed and unsigned condition codes.
+
+Bcc, DBcc, CMP. Explain.
+
+Signed: EQ, GE, GT, LS, LT, MI, NE, PL, 
+
+Unsigned: EQ, HI, LE, NE, 
+
+Others: F, T, VC, VS,
+
+\section{Assembling the Code}
+
+Assembling the code requires that you have an assembler installed.
+See Section \ref{sec:Tools-and-Manuals}, \nameref{sec:Tools-and-Manuals}
+for links to allow you to obtain the assemblers that I frequently
+use for this eMagazine.
+
+Once you have installed an assembler, assembling the code is simple
+and is described in the following sections. Pick the section for your
+own assembler.
+
+\subsection{With GWASS}
+\begin{itemize}
+\item \texttt{EXEC} \texttt{gwass60\_bin} to start the assembler;
+\item Select option 1 to start assembling;
+\item Type in the filename: \texttt{ram1\_??????????\_asm}
+\item Wait.
+\end{itemize}
+
+\subsection{With Qmac}
+
+To pass the commands directly via the command line:
+\begin{itemize}
+\item \texttt{EX qmac;``ram1\_??????????\_asm -data 2048 -filetype 1 -nolink
+}~\\
+\texttt{-bin ram1\_??????????\_bin''}
+\end{itemize}
+\textbf{Note:} The above command should be typed on one line - I've
+had to split it for the PDF page width. 
+
+Alternatively, you can type the command interactively:
+\begin{itemize}
+\item \texttt{EX qmac}
+\item Type the options: \texttt{ram1\_??????????\_asm -data 2048 -filetype
+1 -nolink }~\\
+\texttt{-bin ram1\_??????????\_bin}
+\item Wait
+\end{itemize}
+What you are doing here, in both cases, is telling the assembler to:
+\begin{itemize}
+\item Assemble the source file \texttt{ram1\_??????????\_asm};
+\item Create an executable file (\texttt{-filetype 1}), with 2,048 bytes
+of data space (\texttt{-data 2048});
+\item Do not invoke the linker as it is not needed because everything is
+in the same source file (\texttt{-nolink});
+\item Create the output file named \texttt{ram1\_??????????\_bin} -- which
+will be in uppercase regardless of what you type here!
+\end{itemize}
+
+\subsection{Executing the Code}
+
+After a successful assemble, and regardless of which assembler you
+used, \texttt{ram1\_??????????\_bin} will be the executable job. To
+run it:
+\begin{itemize}
+\item \texttt{EX} \texttt{ram1\_??????????\_bin}
+\end{itemize}
+On a successful execution, ..................................................
+
+\section{Summary}
+
+That, hopefully, will help make writing structured Assembly Language
+programs more manageable. Let me know if there's anything you didn't
+follow or which may need more explanation, and I'll do my best to
+assist.
+
+\section{Tools and Manuals\label{sec:Tools-and-Manuals}}
+
+Get hold of the SMSQ/E Reference Manual from \href{https://www.wlenerz.com/qlstuff/\#qdosms}{Wolfgang Lenerz's web site}\footnote{https://www.wlenerz.com/qlstuff/\#qdosms}
+for the official version. Alternatively, there are copies on Dilwyn's
+pages:
+\begin{itemize}
+\item \href{http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS\%20Reference\%20Guide\%20v4.5.pdf}{Here}\footnote{http://www.dilwyn.me.uk/docs/manuals/QDOS\_SMS\%20Reference\%20Guide\%20v4.5.pdf}
+for the PDF for version 4.5; or
+\item \href{http://www.dilwyn.me.uk/docs/manuals/QDOS_SMS\%20Reference\%20Guide\%20v4.5.odt}{Here}\footnote{http://www.dilwyn.me.uk/docs/manuals/QDOS\_SMS\%20Reference\%20Guide\%20v4.5.odt}
+for the ODT (Libre Office) file for version 4.5.
+\item If you want to ensure that you have the most recent versions of those
+files, \href{https://www.wlenerz.com/qlstuff/\#qdosms}{Wolfgang Lenerz's web site}\footnote{https://www.wlenerz.com/qlstuff/\#qdosms}
+is the place to look.
+\end{itemize}
+Get hold of GWASS \href{http://gwiltprogs.info/gwassp22.zip}{here}\footnote{http://gwiltprogs.info/gwassp22.zip}
+for 68020 processors.
+
+Download Qmac \href{http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip}{here}\footnote{http://www.dilwyn.me.uk/asm/gst/gstmacroquanta.zip}
+for 68008 processors.
