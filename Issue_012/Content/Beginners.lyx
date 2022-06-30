@@ -101,7 +101,7 @@
 \begin_body
 
 \begin_layout Chapter
-Beginners Corner
+Beginner's Corner
 \end_layout
 
 \begin_layout Section
@@ -109,7 +109,7 @@ Introduction
 \end_layout
 
 \begin_layout Standard
-In this issue of Beginners Corner, we are taking a look at Condition codes
+In this issue of Beginner's Corner, we are taking a look at Condition codes
  and, unavoidably, signed and unsigned numbers and tests.
  I say 
 \begin_inset Quotes bld

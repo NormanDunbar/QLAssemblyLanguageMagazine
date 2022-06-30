@@ -1,0 +1,188 @@
+
+\chapter{Hash Tables}
+
+\section{Oracle Databases}
+
+``Hang on! What does Oracle Databases have to do with hash tables'',
+I hear you think.
+
+Well, in the past, whenever anyone using the database tried to submit
+an SQL query for processing, the system used to cause a slowdown as
+the query had to be parsed, then a syntax and semantic validation
+was carried out. If all that checking worked fine, an execution plan
+would be constructed and in doing so, a lot of different trial execution
+plans would be considered until the best one was decided upon. The
+plan was then executed and the results returned to the user. However,
+the execution plan was also cached in memory so that, in the event
+of the same query arriving again, all that parsing and such like could
+be avoided, and the execution could be started \emph{almost}\footnote{After hashing and checking the cache for any plans with the same hash
+value that is.} immediately.
+
+The problem was, there was a latch that had to be taken to be able
+to run the parsing, and there was only one latch! Some badly written
+systems would submit similar queries very frequently, causing a lot
+of parsing and as more and more users attempted to submit queries,
+there would be a queue build up as sessions waited to take out the
+parsing latch.
+
+These days things are much more different. Oracle still hashes the
+SQL query that was submitted -- more on this soon -- but it now
+assigns the query to one of 65,536 different slots in a hash table.
+There is no longer a need for a single parsing latch as we now have
+65,536 slots in our hash table so we can be parsing that many different
+queries at the same time. Much better throughput is the result.
+
+Unfortunately, some queries hash to the same value, and this means
+that they are either identical, or they are different but have the
+same hash value. Not good as you cannot have two queries in the one
+slot in the hash table. What to do?
+
+\section{Hash Duplicates}
+
+The hash table can be configured in a number of ways to resolve the
+problem of duplicate hashes:
+\begin{itemize}
+\item Reject duplicates.
+\item Scan forward in the table for the first free slot.
+\item Use hash chains.
+\end{itemize}
+Rejecting duplicates is pretty much a non-starter. If your code can't
+handle duplicates, then it's not the best code to be using, \emph{unless}
+there are not supposed to be any duplicates. In which case, rejecting
+the duplicates is a viable method of operation. 
+
+Scanning the table means that the slot that is returned from the hashing
+function is full, so you start looking forward in the table, with
+wrap around, until you find a free slot. This is ok for inserts, but
+with larger tables, it can slow things down an awful lot. The same
+goes for deleting entries -- as you have to find the desired object
+to delete it and it might not be in the slot that you expect it to
+be. Furthermore, using up someone else's slot means that their attempts
+to store an object also has to start wandering through then table
+looking for a home. Not good.
+
+So, hash chains appears to be the most acceptable option. How does
+it work?
+
+This is the method used in modern versions of the Oracle Database.
+When a query is parsed, a hash value is created and used to select
+a slot in the hash table. As mentioned, there are 65,536 slots available
+but with potentially millions of queries being processed every second
+(yes, second!) duplicate hash values are bound to appear. When this
+happens, they are stored in their chosen slot, and if the slot is
+already occupied, the new entry is added and linked to the existing
+entry/entries in a linked list.
+
+This is efficient for storage -- the new entry always goes at the
+head of the list -- and also for deletions as only the hash chain
+for this particular slot is required to be scanned, not the entire
+library cache. Deletions are also simple for the same reason.
+
+\section{Hash Functions}
+
+A hash function is simply a function, which when given some input,
+returns a value. The value must be the same if given the same input
+-- it must be \emph{deterministic} in other words. The Oracle Database
+uses a simply hash function, it adds up the character codes in the
+query that has been submitted, then does a bit of jiggery-pokery\footnote{This is a technical term.}
+in the background, before ending up with a 126 bit value indicating
+the hash table slot. If I remember correctly, it doesn't include spaces
+or tabs in the calculation. The value returned determines the slot
+in the hash table that this query belongs to. All that is stored in
+the table is an address, the address in memory for this query's memory
+area where all the working out etc will be carried out, and results
+returned from the database engine, to the user, will pass through
+a cursor store in this area.
+
+Obviously, the values returned from the hash function should spread
+the values across all the slots in the hash table, there's no point
+having a table with 65,536 entries if only 10 of them get used! One
+way to manage this is to have a hash table with the number of slots
+equal to a power of two. The hash function should calculate ``a number''
+then AND it with that power of two minus 1 which will result in a
+range of `n' values where `n' is the afore mentioned power of two
+and also, the table size.
+
+Obviously, choosing a decent hash function requires a good knowledge
+of maths, which I don't have, so I'll come up with a hash function
+that will hopefully be random enough! Time will tell if I'm successful\footnote{That's its job after all!}.
+
+According to \href{http://www.cse.yorku.ca/~oz/hash.html}{http://www.cse.yorku.ca/$\sim$oz/hash.html},
+the ``SDBM'' hash function is a good one, in that it was \emph{created
+for sdbm (a public-domain reimplementation of ndbm) database library.
+it was found to do well in scrambling bits, causing better distribution
+of the keys and fewer splits. it also happens to be a good general
+hashing function with good distribution. the actual function is hash(i)
+= hash(i - 1) {*} 65599 + str{[}i{]}; what is included below is the
+faster version used in gawk. {[}there is even a faster, duff-device
+version{]} the magic constant 65599 was picked out of thin air while
+experimenting with different constants, and turns out to be a prime.
+this is one of the algorithms used in berkeley db (see sleepycat)
+and elsewhere.}
+
+The C code for the sdbm hash function is shown in Listing \ref{lis:SDBM-hashing-function}.
+
+\begin{lstlisting}[caption={SDBM hashing function},label={lis:SDBM-hashing-function}]
+unsigned long sdbm(unsigned char *str) {
+    unsigned long hash = 0;
+    int c;
+
+    while (c = *str++)
+        hash = c + (hash << 6) + (hash << 16) - hash;
+
+    return hash;
+}
+\end{lstlisting}
+
+Effectively, this is taking a character code, c, and adding it to
+the existing hash multiplied by 65599 which we get from $(hash<<6)+(hash<<16)-hash$
+which is, as we all know, equivalent to $(hash*64)+(hash*65536)-hash$
+or $hash*65599$. 
+
+Unfortunately for us in the QL World, this function will soon overflow
+a 32 bit register. In fact, on a QL in S{*}BASIC, it cannot even get
+all the way through hashing my name -- ``Norman Dunbar'' before
+it gives up with ``Arithmetic overflow'' errors. It would appear
+that we need 64 bit integers to be able to use the sdbm hash function.
+However, as I mentioned, I'm not a mathematician, so lets amend it
+slightly and rename it to ``NDBM'', Listing \ref{lis:NDBM-hashing-function}
+has the new C code.
+
+\begin{lstlisting}[caption={NDBM hashing function},label={lis:NDBM-hashing-function}]
+unsigned long ndbm(uint8_t *str) {
+    uint32_t hash = 0;
+    uint8_t c;
+
+    while (c = *str++)
+        hash = hash + (c * c);
+
+    return hash;
+}
+\end{lstlisting}
+
+Let's write some Assembly code. 
+
+We can easily start with the hash function. Mine has been saved to
+\texttt{ndbm\_hash\_function.asm}, feel free to name yours accordingly.
+Listing \ref{Ndbm_hash_function.asm} shows the complete hash function
+-- the file on the source code ``disc'' for this issue has comments
+describing the use and abuse of the function. Those are not shown
+here.
+
+The function expects a pointer to an SMSQ string in \texttt{A1.L}
+on entry. 
+
+On exit, \texttt{A1.L} will be preserved, \texttt{D1.L} will be the
+hash value in 32 bits, \texttt{D0.L} will be zero, or \texttt{ERR.OVFL}
+if overflow was detected during the hash calculation. 
+
+All other registers are preserved.
+
+Note that overflow is highly unlikely. I tested this in S{*}BASIC
+where a string is allowed to be 32,764 characters in length. I filled
+a string of maximum length with CHR\$(255) and managed to get a hash
+value that didn't overflow, \$7EFC87FC or 2,130,479,100.
+
+\lstinputlisting[linerange={25-51},caption={Ndbm\_hash\_function.asm},label={Ndbm_hash_function.asm}]{/home/norman/SourceCode/Assembly eMagazine/Issue_012/Code/HashTables/ndbm_hash_function.asm}
+
+

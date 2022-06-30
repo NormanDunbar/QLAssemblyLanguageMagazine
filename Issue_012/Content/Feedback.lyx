@@ -117,7 +117,7 @@ This is feedback from myself!
 \end_layout
 
 \begin_layout Standard
-GWASL is George Gwilt's 68008 assembler for the QL, I mentioned it in Beginners'
+GWASL is George Gwilt's 68008 assembler for the QL, I mentioned it in Beginner's
  Corner last issue and since then, I've found that GWASL will not assemble
  code written with the SMSQ/E trap codes and vector names which they have
  a dot in their names, 

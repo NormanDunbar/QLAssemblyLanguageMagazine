@@ -1,0 +1,787 @@
+#LyX 2.3 created this file. For more info see http://www.lyx.org/
+\lyxformat 544
+\begin_document
+\begin_header
+\save_transient_properties true
+\origin unavailable
+\textclass scrbook
+\begin_preamble
+% Required for the setup of the listings.
+\usepackage{xcolor}
+\definecolor{ocre}{RGB}{243,102,25}
+\definecolor{wwwDarkGreen}{HTML}{006400}
+\definecolor{wwwDarkOrchid}{HTML}{9932CC}
+\definecolor{wwwDarkOrange}{HTML}{FF8C00}
+\end_preamble
+\use_default_options true
+\maintain_unincluded_children false
+\language british
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman "default" "default"
+\font_sans "default" "default"
+\font_typewriter "default" "default"
+\font_math "auto" "auto"
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100 100
+\font_tt_scale 100 100
+\use_microtype false
+\use_dash_ligatures true
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize 11
+\spacing single
+\use_hyperref true
+\pdf_title "PlatformIO for the Arduino User"
+\pdf_author "Norman Dunbar"
+\pdf_subject "PlatformIO"
+\pdf_keywords "PlatformIO Arduino AVR ATMEGA ATMEGA328"
+\pdf_bookmarks true
+\pdf_bookmarksnumbered false
+\pdf_bookmarksopen false
+\pdf_bookmarksopenlevel 1
+\pdf_breaklinks false
+\pdf_pdfborder true
+\pdf_colorlinks true
+\pdf_backref false
+\pdf_pdfusetitle true
+\papersize default
+\use_geometry false
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification false
+\use_refstyle 1
+\use_minted 0
+\boxbgcolor #ff557f
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\is_math_indent 0
+\math_numbering_side default
+\quotes_style english
+\dynamic_quotes 0
+\papercolumns 1
+\papersides 2
+\paperpagestyle default
+\listings_params "backgroundcolor={\color{ocre!10}},basicstyle={\small},breakatwhitespace=false,breaklines=false,captionpos=b,commentstyle={\color{wwwDarkGreen}},deletekeywords={...},escapeinside={\%*}{*)},extendedchars=true,frame=leftline,framerule=4pt,keepspaces=true,keywordstyle={\color{blue}},morekeywords={*,...},numbers=left,numbersep=10pt,numberstyle={\color{ocre}},rulecolor={\color{ocre}},showspaces=false,showstringspaces=false,showtabs=false,stepnumber=1,stringstyle={\color{wwwDarkOrange}},tabsize=2,title={\lstname},breaklines=true,postbreak={\mbox{\textcolor{ocre}{\textbf{$\Longrightarrow$}}\space}},language={[Motorola68k]Assembler}"
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Chapter
+Hash Tables
+\end_layout
+
+\begin_layout Section
+Oracle Databases
+\end_layout
+
+\begin_layout Standard
+\begin_inset Quotes eld
+\end_inset
+
+Hang on! What does Oracle Databases have to do with hash tables
+\begin_inset Quotes erd
+\end_inset
+
+, I hear you think.
+\end_layout
+
+\begin_layout Standard
+Well, in the past, whenever anyone using the database tried to submit an
+ SQL query for processing, the system used to cause a slowdown as the query
+ had to be parsed, then a syntax and semantic validation was carried out.
+ If all that checking worked fine, an execution plan would be constructed
+ and in doing so, a lot of different trial execution plans would be considered
+ until the best one was decided upon.
+ The plan was then executed and the results returned to the user.
+ However, the execution plan was also cached in memory so that, in the event
+ of the same query arriving again, all that parsing and such like could
+ be avoided, and the execution could be started 
+\emph on
+almost
+\emph default
+
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+After hashing and checking the cache for any plans with the same hash value
+ that is.
+\end_layout
+
+\end_inset
+
+ immediately.
+\end_layout
+
+\begin_layout Standard
+The problem was, there was a latch that had to be taken to be able to run
+ the parsing, and there was only one latch! Some badly written systems would
+ submit similar queries very frequently, causing a lot of parsing and as
+ more and more users attempted to submit queries, there would be a queue
+ build up as sessions waited to take out the parsing latch.
+\end_layout
+
+\begin_layout Standard
+These days things are much more different.
+ Oracle still hashes the SQL query that was submitted – more on this soon
+ – but it now assigns the query to one of 65,536 different slots in a hash
+ table.
+ There is no longer a need for a single parsing latch as we now have 65,536
+ slots in our hash table so we can be parsing that many different queries
+ at the same time.
+ Much better throughput is the result.
+\end_layout
+
+\begin_layout Standard
+Unfortunately, some queries hash to the same value, and this means that
+ they are either identical, or they are different but have the same hash
+ value.
+ Not good as you cannot have two queries in the one slot in the hash table.
+ What to do?
+\end_layout
+
+\begin_layout Section
+Hash Duplicates
+\end_layout
+
+\begin_layout Standard
+The hash table can be configured in a number of ways to resolve the problem
+ of duplicate hashes:
+\end_layout
+
+\begin_layout Itemize
+Reject duplicates.
+\end_layout
+
+\begin_layout Itemize
+Scan forward in the table for the first free slot.
+\end_layout
+
+\begin_layout Itemize
+Use hash chains.
+\end_layout
+
+\begin_layout Standard
+Rejecting duplicates is pretty much a non-starter.
+ If your code can't handle duplicates, then it's not the best code to be
+ using, 
+\emph on
+unless
+\emph default
+ there are not supposed to be any duplicates.
+ In which case, rejecting the duplicates is a viable method of operation.
+ 
+\end_layout
+
+\begin_layout Standard
+Scanning the table means that the slot that is returned from the hashing
+ function is full, so you start looking forward in the table, with wrap
+ around, until you find a free slot.
+ This is ok for inserts, but with larger tables, it can slow things down
+ an awful lot.
+ The same goes for deleting entries – as you have to find the desired object
+ to delete it and it might not be in the slot that you expect it to be.
+ Furthermore, using up someone else's slot means that their attempts to
+ store an object also has to start wandering through then table looking
+ for a home.
+ Not good.
+\end_layout
+
+\begin_layout Standard
+So, hash chains appears to be the most acceptable option.
+ How does it work?
+\end_layout
+
+\begin_layout Standard
+This is the method used in modern versions of the Oracle Database.
+ When a query is parsed, a hash value is created and used to select a slot
+ in the hash table.
+ As mentioned, there are 65,536 slots available but with potentially millions
+ of queries being processed every second (yes, second!) duplicate hash values
+ are bound to appear.
+ When this happens, they are stored in their chosen slot, and if the slot
+ is already occupied, the new entry is added and linked to the existing
+ entry/entries in a linked list.
+\end_layout
+
+\begin_layout Standard
+This is efficient for storage – the new entry always goes at the head of
+ the list – and also for deletions as only the hash chain for this particular
+ slot is required to be scanned, not the entire library cache.
+ Deletions are also simple for the same reason.
+\end_layout
+
+\begin_layout Section
+Hash Functions
+\end_layout
+
+\begin_layout Standard
+A hash function is simply a function, which when given some input, returns
+ a value.
+ The value must be the same if given the same input – it must be 
+\emph on
+deterministic
+\emph default
+ in other words.
+ The Oracle Database uses a simply hash function, it adds up the character
+ codes in the query that has been submitted, then does a bit of jiggery-pokery
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+This is a technical term.
+\end_layout
+
+\end_inset
+
+ in the background, before ending up with a 126 bit value indicating the
+ hash table slot.
+ If I remember correctly, it doesn't include spaces or tabs in the calculation.
+ The value returned determines the slot in the hash table that this query
+ belongs to.
+ All that is stored in the table is an address, the address in memory for
+ this query's memory area where all the working out etc will be carried
+ out, and results returned from the database engine, to the user, will pass
+ through a cursor store in this area.
+\end_layout
+
+\begin_layout Standard
+Obviously, the values returned from the hash function should spread the
+ values across all the slots in the hash table, there's no point having
+ a table with 65,536 entries if only 10 of them get used! One way to manage
+ this is to have a hash table with the number of slots equal to a power
+ of two.
+ The hash function should calculate 
+\begin_inset Quotes eld
+\end_inset
+
+a number
+\begin_inset Quotes erd
+\end_inset
+
+ then AND it with that power of two minus 1 which will result in a range
+ of `n' values where `n' is the afore mentioned power of two and also, the
+ table size.
+\end_layout
+
+\begin_layout Standard
+Obviously, choosing a decent hash function requires a good knowledge of
+ maths, which I don't have, so I'll come up with a hash function that will
+ hopefully be random enough! Time will tell if I'm successful
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+That's its job after all!
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+According to 
+\begin_inset CommandInset href
+LatexCommand href
+name "http://www.cse.yorku.ca/~oz/hash.html"
+target "http://www.cse.yorku.ca/~oz/hash.html"
+literal "false"
+
+\end_inset
+
+, the 
+\begin_inset Quotes eld
+\end_inset
+
+SDBM
+\begin_inset Quotes erd
+\end_inset
+
+ hash function is a good one, in that it was 
+\emph on
+created for sdbm (a public-domain reimplementation of ndbm) database library.
+ it was found to do well in scrambling bits, causing better distribution
+ of the keys and fewer splits.
+ it also happens to be a good general hashing function with good distribution.
+ the actual function is hash(i) = hash(i - 1) * 65599 + str[i]; what is
+ included below is the faster version used in gawk.
+ [there is even a faster, duff-device version] the magic constant 65599
+ was picked out of thin air while experimenting with different constants,
+ and turns out to be a prime.
+ this is one of the algorithms used in berkeley db (see sleepycat) and elsewhere.
+\end_layout
+
+\begin_layout Standard
+The C code for the sdbm hash function is shown in Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:SDBM-hashing-function"
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+unsigned long sdbm(unsigned char *str) {
+\end_layout
+
+\begin_layout Plain Layout
+
+    unsigned long hash = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+    int c;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    while (c = *str++)
+\end_layout
+
+\begin_layout Plain Layout
+
+        hash = c + (hash << 6) + (hash << 16) - hash;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    return hash;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+SDBM hashing function
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:SDBM-hashing-function"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Effectively, this is taking a character code, c, and adding it to the existing
+ hash multiplied by 65599 which we get from 
+\begin_inset Formula $(hash<<6)+(hash<<16)-hash$
+\end_inset
+
+ which is, as we all know, equivalent to 
+\begin_inset Formula $(hash*64)+(hash*65536)-hash$
+\end_inset
+
+ or 
+\begin_inset Formula $hash*65599$
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Standard
+Unfortunately for us in the QL World, this function will soon overflow a
+ 32 bit register.
+ In fact, on a QL in S*BASIC, it cannot even get all the way through hashing
+ my name – 
+\begin_inset Quotes eld
+\end_inset
+
+Norman Dunbar
+\begin_inset Quotes erd
+\end_inset
+
+ before it gives up with 
+\begin_inset Quotes eld
+\end_inset
+
+Arithmetic overflow
+\begin_inset Quotes erd
+\end_inset
+
+ errors.
+ It would appear that we need 64 bit integers to be able to use the sdbm
+ hash function.
+ However, as I mentioned, I'm not a mathematician, so lets amend it slightly
+ and rename it to 
+\begin_inset Quotes eld
+\end_inset
+
+NDBM
+\begin_inset Quotes erd
+\end_inset
+
+, Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "lis:NDBM-hashing-function"
+
+\end_inset
+
+ has the new C code.
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+unsigned long ndbm(uint8_t *str) {
+\end_layout
+
+\begin_layout Plain Layout
+
+    uint32_t hash = 0;
+\end_layout
+
+\begin_layout Plain Layout
+
+    uint8_t c;
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    while (c = *str++)
+\end_layout
+
+\begin_layout Plain Layout
+
+        hash = hash + (c * c);
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+
+    return hash;
+\end_layout
+
+\begin_layout Plain Layout
+
+}
+\end_layout
+
+\begin_layout Plain Layout
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+
+NDBM hashing function
+\begin_inset CommandInset label
+LatexCommand label
+name "lis:NDBM-hashing-function"
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Let's write some Assembly code.
+ 
+\end_layout
+
+\begin_layout Standard
+We can easily start with the hash function.
+ Mine has been saved to 
+\family typewriter
+ndbm_hash_function.asm
+\family default
+, feel free to name yours accordingly.
+ Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Ndbm_hash_function.asm"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ shows the complete hash function – the file on the source code 
+\begin_inset Quotes eld
+\end_inset
+
+disc
+\begin_inset Quotes erd
+\end_inset
+
+ for this issue has comments describing the use and abuse of the function.
+ Those are not shown here.
+\end_layout
+
+\begin_layout Standard
+The function expects a pointer to an SMSQ string in 
+\family typewriter
+A1.L
+\family default
+ on entry.
+ 
+\end_layout
+
+\begin_layout Standard
+On exit, 
+\family typewriter
+A1.L
+\family default
+ will be preserved, 
+\family typewriter
+D1.L
+\family default
+ will be the hash value in 32 bits, 
+\family typewriter
+D0.L
+\family default
+ will be zero, or 
+\family typewriter
+ERR.OVFL
+\family default
+ if overflow was detected during the hash calculation.
+ 
+\end_layout
+
+\begin_layout Standard
+All other registers are preserved.
+\end_layout
+
+\begin_layout Standard
+Note that overflow is 
+\emph on
+highly
+\emph default
+ unlikely.
+ I tested this in S*BASIC where a string is allowed to be 32,764 characters
+ in length.
+ I filled a string of maximum length with CHR$(255) and still managed to
+ get a hash value that didn't overflow, $7EFC87FC or 2,130,479,100.
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset include
+LatexCommand lstinputlisting
+filename "/home/norman/SourceCode/Assembly eMagazine/Issue_012/Code/HashTables/ndbm_hash_function.asm"
+lstparams "linerange={25-51},caption={Ndbm\\_hash\\_function.asm},label={Ndbm_hash_function.asm}"
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Listing 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "Ndbm_hash_function.asm"
+plural "false"
+caps "false"
+noprefix "false"
+
+\end_inset
+
+ starts by defining the error code for an overflow error.
+ As mentions above, overflow is unlikely, but it's best to check for errors
+ wherever possible.
+\end_layout
+
+\begin_layout Standard
+In the function body proper, the three working registers are preserved on
+ the stack then the current hash value, in 
+\family typewriter
+D1.L
+\family default
+ is cleared as is register 
+\family typewriter
+D3.L
+\family default
+ which we are using to hold the value zero – it's quicker to load a register
+ from another register, remember? The string length word is loaded into
+ 
+\family typewriter
+D2.W
+\family default
+ and we then skip to the end of the loop to make sure that we exit cleanly
+ if the string size is zero.
+\end_layout
+
+\begin_layout Standard
+Within the loop, 
+\family typewriter
+D0.L
+\family default
+ is cleared – we need it for the coming multiplication – and the next character
+ in the string is loaded into it.
+ This character value is multiplied by itself and added to the current hash
+ value in 
+\family typewriter
+D1.L
+\family default
+.
+ If overflow is detected, we exit with an error code in 
+\family typewriter
+D0.L
+\family default
+.
+ The loop repeats until all characters in the string have been hashed, or
+ until overflow occurs.
+\end_layout
+
+\begin_layout Standard
+The function exits with the hash value in 
+\family typewriter
+D1.L
+\family default
+ and 
+\family typewriter
+D0.L
+\family default
+ will be set to either zero – if all went well – or 
+\family typewriter
+ERR.OVFL
+\family default
+ otherwise.
+ The working registers will be restored before we exit the function.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+YOu are here now.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Plain Layout
+1.
+ Start simple, with a hash function for 256 entries.
+\end_layout
+
+\begin_layout Plain Layout
+2.
+ Test it, but reject duplicates for now.
+ Once demonstrated, go to 3.
+\end_layout
+
+\begin_layout Plain Layout
+3.
+ Start adding on the hash chains.
+\end_layout
+
+\begin_layout Plain Layout
+4.
+ Do insets and deletes.
+ Maybe based on an assembler parsing the user's input to get the function
+ to run for the individual mnemonics detected????? Or maybe not!
+\end_layout
+
+\begin_layout Plain Layout
+5.
+ I would just store an address in the table, that and a pointer to NEXT.
+ The address can point back at the location of the object in the code, heap,
+ whatever?
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document
