@@ -9,13 +9,14 @@ Some of what we will discuss is hopefully familiar from S*BASIC, but other const
 
 Read on.
 
-\section{Repeat Loops}
+\section{Repeat Loop}
 
 The simplest of all the looping constructs. You have a loop start and a loop end. Between the two is the loop body, which is where all the work you wish to carry out repeatedly is located. The loop end simply passes program control back to the beginning of the loop.
 
 \begin{lstlisting}[caption={Repeat loops in Assembly Code},label={lis: Repeat loop}]
 loopStart
     ; Do loop body code here.
+    ...
 
 loopEnd
     bra loopStart
@@ -26,32 +27,36 @@ Of course Listing \ref{lis: Repeat loop} is an infinite loop; there is no ``get 
 \begin{lstlisting}[caption={Repeat loops with exit in Assembly Code},label={lis: Repeat loop with exit}]
 loopStart
     ; Do loop body code here.
+    ...
     
 loopEnd
     ; Test for exit condition and ...
     ; continue looping until D0 = 0.
     tst.l d0   
-    brne loopStart
+    bne loopStart
     
 loopDone
     ; Continue onwards from here.
+    ...
 \end{lstlisting}
 
 \begin{lstlisting}[caption={Repeat loops with alternative exit in Assembly Code},label={lis: Repeat loop with alternative exit}]
 loopStart
     ; Do loop body code here.
+    ...
 
 loopEnd
     ; Test for exit condition and ...
     ; continue looping until D0 = 0.
     tst.l d0
-    breq loopDone
+    beq loopDone
 
     ; It appears we are not yet done.
     bra loopStart
 
 loopDone
     ; Continue onwards from here.
+    ...
 \end{lstlisting}
 
 Obviously, Listing \ref{lis: Repeat loop with exit} is the better option as it is slightly shorter, however, there may be code where it is not the better option. It all depends.
@@ -84,21 +89,21 @@ errorEOF equ 10
 start
     ; Open the input file. Handle any errors
     ; and exit the job/code if necessary.
-    bsr openFile			; Handles errors.
+    bsr openFile            ; Handles errors.
 
 readLoop
     ; Read input file.
-    bsr readInputFile		; Errors in D0.
+    bsr readInputFile       ; Errors in D0.
     
     ; Copy error code.
     move.l d0,d7
 
     ; If no errors, go to processData.
-    breq processData
+    beq processData
     
     ; If EOF, go to processData.
     cmpi.l #errorEOF,d0
-    breq processData
+    beq processData
     
 handleErrors
     ; Handle the non-EOF errors here and
@@ -107,16 +112,16 @@ handleErrors
 
 processData
     ; Process each record.
-    bsr processInputData	; Handles errors
+    bsr processInputData    ; Handles errors
 
 endLoop
     ; Test for EOF again.
     cmpi.l #errorEOF,d7
-    brne readLoop
+    bne readLoop
 
 exitLoop
     ; Close file.    
-    bsr closeInputFile		; Never errors!
+    bsr closeInputFile      ; Never errors!
 \end{lstlisting}
 
 Here we have a bit of messing about as we need to correctly process the remaining data when we receive the EOF error on the read, but we need to handle any other read errors accordingly. After the read, if there are no errors, or if the error is EOF, we end up at \asmlabel{processData}, otherwise we handle the non-EOF errors and bale out---or otherwise---as appropriate.
@@ -130,16 +135,159 @@ There is, of course, duplicated code here. We are making more than one test for 
 %TODO: Test this  concept!
 
 
-\section{Repeat \ldots\protect Until Loops}
+\section{Repeat \ldots\protect Until Loop}\label{section: repeat until loops}
 
-\section{Do \ldots\protect While Loops}
+This is not a structure available on the QL, but it is available in other languages, so might be useful to know about. The body of the loop will be executed at least once as the condition test is at the bottom of the loop. Had the condition test been at the top of the loop, it would have been a \nameref{section: while loops} as discussed in Section \ref{section: while loops}.
 
-\section{Do \ldots\protect Until Loops}
+Listing \ref{lst:Repeat until loop} shows a minimal example where we test \register{D0} and it it is zero, we don't wish to execute the loop body---effectively, \texttt{Repeat until D0 = 0}.
 
-\section{For Loops}
+\begin{lstlisting}[caption={Repeat until loop},label={lst:Repeat until loop}]
+repeatLoop
+    ; Do loop body code here
+    ...
+    
+until
+    ; Do condition test last.
+    tst.l d0
+    brne repeatLoop
+    
+    ; Continue from here.
+    ...
+\end{lstlisting}
+
+You will note that the test of \register{D0} is negated in order to keep looping around. 
+
+This construct is also known as the \texttt{Do \ldots Until loop}.
+
+\section{While \ldots\protect End While Loop}\label{section: while loops}
+
+This is another structure that isn't available on the QL, but is in other languages. It is similar to the \nameref{section: repeat until loops} discussed in Section \ref{section: repeat until loops} but with the condition test at the top of the loop rather than at the end. As the test is carried out at the top of the loop, the loop body may not be executed if the condition is true on entry to the loop.
+
+Listing \ref{lst:while loop} shows a minimal example of this structure---effectively, \texttt{While D0 = 0}.
+
+\begin{lstlisting}[caption={While loop},label={lst:while loop}]
+whileLoop
+    ; Do condition test first.
+    tst.l d0
+    brne exitWhile
+
+    ; Do loop body code here
+    ...
+    
+endWhile
+    bra whileLoop
+
+exitWhile
+    ; Continue from here.
+    ...
+\end{lstlisting}
+
+You will, hopefully, note that the condition has again been reversed, we loop back to \asmlabel{whileLoop} if \register{D0} is not equal to zero
+
+\section{For \ldots\protect End For Loop}
+
+texttt{FOR} loops are available on the QL. In Assembly Language we can count up or down, as we can in S*BASIC, but the CPU in the QL, and emulators, has a looping instruction---\opcode{dbra} also known as \opcode{dbf}---Decrement  and branch until false. False in this case being the value -1.
+
+Counting upwards can't use that instruction though. Listing \ref{lst: for loop counting upwards} shows a small example of a FOR loop in Assembly. The condition to determine the end of the loop is at the top of the loop. This example is effectively \texttt{FOR d0 = 0 TO 10 STEP 1 \ldots{} END FOR}.
+
+\begin{lstlisting}[caption={For loop - counting upwards},label={lst: for loop counting upwards}]
+forLoop
+    clr.b d0                ; For do = 0 ...
+    
+nextFor
+    cmpi.b #10,d0           ; To 10 ...
+    beq exitFor
+    
+    ; Do loop body code here.
+    ...
+
+endFor
+    addq.b #1,d0            ; ... Step 1
+    bra nextFor
+
+exitFor
+    ; Continue from here
+    ...
+\end{lstlisting}
+
+Counting downwards, of course, can make use of \opcode{dbra} as Listing \ref{lst: for loop counting downwards} shows. This example is effectively \texttt{FOR d0 = 10 TO 0 step -1 \ldots{} END FOR} but uses values from 9 down to -1.
+
+\begin{lstlisting}[caption={For loop - counting downwards},label={lst: for loop counting downwards}]
+forLoop
+    moveq.b #10-1,d0        ; For d0 = 10 ...
+    
+nextFor
+    tst.b,d0                ; To 0 ...
+    beq exitFor
+    
+    ; Do loop body code here.
+    ...
+    
+endFor
+    dbra d0,nextFor         ; Step -1
+    
+exitFor
+    ; Continue from here
+    ...
+\end{lstlisting}
+
+In Assembly, it is just as simple to use the actual values from 10 to 1 in the register but the \opcode{dbra} instruction wouldn't then be possible as that instruction, as we know, terminates the loop when the register value is -1 as opposed to zero.
+
+\section{For \ldots\protect Next \ldots\protect End For Loop}
+
+Sometimes, in a \texttt{FOR} statement, we want to skip one or more values in the loop. In those cases we make a test and if true, we call \texttt{NEXT} in our loop body. Listing \ref{lst: for loop with next} shows an example where we execute \texttt{NEXT} if the value in \register{D0} is 7.
+
+\begin{lstlisting}[caption={For loop with next clause},label={lst: for loop with next}]
+forLoop
+    clr.b d0                ; For do = 0 ...
+    
+nextFor
+    cmpi.b #10,d0           ; To 10 ...
+    beq exitFor
+    
+    cmpi.b #7,d0            ; Is D0 = 7? If so ...
+    bra nextFor             ; ... NEXT.
+    
+    ; Do loop body code here.
+    ...
+    
+endFor
+    addq.b #1,d0            ; ... Step 1
+    bra nextFor
+    
+ exitFor
+    ; Continue from here
+    ...
+\end{lstlisting}
 
 \section{If \ldots\protect End If}
 
 \section{If \ldots\protect Else \ldots\protect End If}
 
-\section{Exit and Continue}
+\section{Exit and Next}
+
+You've seen \texttt{exit} already. Based on some condition or other, we \texttt{exit} the construct by jumping to just past the end of it; or we jump back to the beginning for \texttt{next}. Listing \ref{lst: exit and next examples} shows simple examples of each.
+
+\begin{lstlisting}[caption={Exit and Next examples},label={lst: exit and next examples}]
+loopStart
+    ; Do some loop body stuff.
+    ...
+    
+    ; Do a `next loop' if D0 = 0 at this point.
+    tst.l d0                ; Is D0 = 0?
+    beq loopStart           ; If so, next loop
+    
+    ; Do more loop body stuff.
+    ...
+    
+    ; Do an `exit loop' if D7 = 0 at this point.
+    tst.l d7                ; Is D7 = 0?
+    beq loopExit            ; If so, exit loop  
+    
+loopEnd
+    bra loopStart           ; Let's go round again!
+    
+loopExit
+    ; Rest of code ....
+    ...
+\end{lstlisting}
