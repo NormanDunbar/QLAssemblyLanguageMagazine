@@ -1,12 +1,12 @@
 
-\chapter{Beginner's Corner}
+\chapter{Beginner's Corner}\label{chpater: beginners corner}
 
 \section{Introduction}
 
-In this issue of Beginner's Corner, we are taking a look at Condition
+In this issue of Beginner's Corner, we are taking a look at condition
 codes and, unavoidably, signed and unsigned numbers and tests. I say
-`unavoidably' as I often find myself wondering which of the condition
-codes are signed and which are unsigned -- and it all depends on
+``unavoidably'' as I often find myself wondering which of the condition
+codes are signed and which are unsigned---and it all depends on
 what type of numbers you are dealing with.
 
 \section{The Numbers}
@@ -14,7 +14,7 @@ what type of numbers you are dealing with.
 You need to know about numbers first, before we dive into the condition
 codes. 
 
-\emph{Question}: If a register holds the byte value 255 aka \$FF aka \%11111111
+\emph{Question}: If a register holds the byte value 255;  \$FF;  \%11111111;
 is it signed or unsigned?
 
 \emph{Answer}: Yes!
@@ -26,7 +26,7 @@ the value $-1$ is used. $255$ in Decimal is the same bit pattern
 as $-1$ in Decimal. So how does the system know the difference between
 $-1$ and $255$?
 
-The leftmost bit of the number, bit $31$, $15$ or $7$, for long,
+The leftmost bit of the number, bit $31$; $15$; or $7$, for long,
 word or byte values, represents the sign of the number. 
 
 If the sign bit is a $1$, the number is negative, if it is a zero,
@@ -45,11 +45,14 @@ byte, word and long, we get:
 \begin{itemize}
 \item 8 bit bytes, range from $0$ through $255$ unsigned, $-128$ through
 $127$ signed;
+
 \item 16 bit words, range from $0$ through $65,535$ unsigned, $-32,768$
 through $32,767$ signed;
+
 \item 32 bit longs, range from $0$ through $4,293,967,295$ unsigned, $-2,147,483,648$
 through $2,147,483,647$ signed.
 \end{itemize}
+
 When you look at a number in binary, it's easy to determine the decimal
 value simply by adding up all the powers of two where there is a 1
 bit present, for example:
@@ -59,10 +62,10 @@ bit present, for example:
 If the number is signed, then it's slightly more complicated as there
 are at least three different methods. 
 
-\textbf{Option 1}: You take the leftmost power of two and subtract
+\textbf{Option 1}: You take the negative of the leftmost power of two bit---bit $31$; $15$; or $7$---and add
 all the remaining powers of two where a 1 bit is present. For example:
 \begin{itemize}
-\item 10100101 is $2^{7}-\left(2^{5}+2^{2}+2^{0}\right)=-91$.
+\item 10100101 is $-2^{7}+2^{5}+2^{2}+2^{0}=-91$.
 \end{itemize}
 \textbf{Option 2}: Flip all the bits, convert to an unsigned value,
 add 1 and change the sign to make the value negative, for example:
@@ -71,14 +74,11 @@ add 1 and change the sign to make the value negative, for example:
 \item Converted to an unsigned value gives $2^{6}+2^{4}+2^{3}+2^{1}+1=91$;
 \item Changing the sign gives $-91$ as before.
 \end{itemize}
-\textbf{Option 3}: Calculate the unsigned value, and subtract from
-$2^{B}$ where $B$ is the number of bits, then change the sign to
-make the value negative. For example:
+\textbf{Option 3}: Calculate the unsigned value, and subtract $2^{B}$ where $B$ is the number of bits. For example:
 \begin{itemize}
 \item 10100101 is still $2^{7}+2^{5}+2^{2}+2^{0}=165$;
-\item The number of bits is 8 and we know $2^{8}$ is $256$;
-\item Subtract $165$ from $256$ to get $91$;
-\item Changing the sign gives $-91$, yet again!
+\item The number of bits is eight and we know $2^{8}$ is $256$;
+\item Subtract $256$ from $165$ to get $-91$;
 \end{itemize}
 Pick the version you prefer.
 
@@ -154,7 +154,7 @@ HI & C=0 and Z=0 & Higher & U\tabularnewline
 \hline 
 LS & C=1 or Z=1 & Lower or Same & U\tabularnewline
 \hline 
-PL & N=1 & Plus/Positive & S\tabularnewline
+PL & N=0 & Plus/Positive & S\tabularnewline
 \hline 
 MI & N=1 & Minus/Negative & S\tabularnewline
 \hline 
@@ -171,6 +171,14 @@ LE & (Z=1) or \\
 LT & (N=1 and V=0) or \\
 (N=0 and V=1) & Less Than & S\tabularnewline
 \hline 
+VC & V = 0 & Overflow Clear & S \tabularnewline
+\hline
+VS & V = 1 & Overflow Set & S \tabularnewline
+\hline
+F & N/A & False & U and S \tabularnewline
+\hline
+T & N/A & True & U and S \tabularnewline
+\hline
 \end{tabular}
 \par\end{centering}
 \caption{MC680xx Condition Codes\label{tab:MC680xx-Condition-Codes}}
@@ -179,13 +187,49 @@ LT & (N=1 and V=0) or \\
 
 \section{Condition Codes}
 
-Signed and unsigned condition codes.
+You can see from Table \ref{tab:MC680xx-Condition-Codes} that some condition codes are signed while others are unsigned. It's your  code and your data, so you are the one who decides which to use. If you are performing signed arithmetic, for example, then you should be using the signed condition codes; for unsigned arithmetic, the unsigned codes. 
 
-Bcc, DBcc, CMP. Explain.
+The condition codes can be used to determine if the code will branch after an operation---\texttt{CMP}; \texttt{SUB}; \texttt{MOVE}; etc---using the \texttt{Bcc} or \texttt{DBcc} instructions as appropriate.
 
-Signed: EQ, GE, GT, LS, LT, MI, NE, PL, 
+The \texttt{Bcc} instruction simply branches if the condition codes are set as desired by the instruction.
 
-Unsigned: EQ, HI, LE, NE, 
+Listings \ref{lst: signed condition codes} and \ref{lst: unsigned condition codes} show a few examples of the use of the \texttt{Bcc} instruction for signed and unsigned values.
+
+\begin{lstlisting}[caption={Signed condition codes},label={lst: signed condition codes}]
+    ; Signed value in D4.
+    tst.l d4        ; Sets the flags according to value of D4.
+    beq d4IsZero    ; Branch if D4 is zero. (Signed/Unsigned)
+    blt d4IsMinus   ; Branch if D4 is negative. (Signed)
+    bgt d4IsPlus    ; Branch if D4 is positive. (Signed)
+\end{lstlisting}    
+
+\begin{lstlisting}[caption={Unsigned condition codes},label={lst: unsigned condition codes}]
+    ; Unsigned value in D4.
+    tst.l d4        ; Sets the flags according to value of D4.
+    beq d4IsZero    ; Branch if D4 is zero. (Signed/Unsigned)
+    bls d4IsMinus   ; Branch if D4 is negative. (Unsigned)
+    bhi d4IsPlus    ; Branch if D4 is positive. (Unsigned)
+\end{lstlisting}
+
+You should note that while signed condition codes allow for a test for greater than; greater than or equal; equal; less than; and less than or equal, unsigned values only have higher; equal; lower or same. This means that in Listing \ref{lst: unsigned condition codes}, we had to do the check for equality first because the test for lower would include equal had we done the \texttt{bls} instruction first.
+
+In the above examples, we tested the actual value in \register{D4} but we could have tested after a \texttt{CMP} or \texttt{SUB} instruction, as per the example code in Listing \ref{lst: signed condition codes with CMP}.
+
+\begin{lstlisting}[caption={Signed condition codes with CMP},label={lst: signed condition codes with CMP}]
+    ; Signed value in D4.
+    cmp.l d4,d5     ; Sets the flags according to value of D5 minus D4.
+    beq d4equals    ; Branch if D4 = D5.
+    blt d4IsLess    ; Branch if D4 < D5. (Signed)
+    bgt d4IsMore    ; Branch if D4 > D5. (Signed)
+\end{lstlisting}  
+
+The \texttt{DBcc} family of instructions are similar but have the advantage of decrementing a counter register and branching \emph{until} the condition is true. \texttt{DBEQ D0, someLabel}, for example, means that register \register{D0} will be decremented by 1 and if the Z flag is set, the branch \emph{will not} take place. If Z is clear, the branch will be taken. Confused? I was too when I first started learning MC680xx Assembly.
+
+If you remember that \text{DBcc} means ``decrement and branch \emph{until} `cc' is true'' then you won't go wrong.
+
+\texttt{DBF} also known as \texttt{DBRA}, and \texttt{DBT} need a little extra explanation. \texttt{DBF}/texttt{DBRA} always branch unless the register value was decremented to minus one. In that case, the branch is not taken. \texttt{DBT} is a tad weird to say the least, it means that the branch will never be taken as the test always is true.
+
+
 
 Others: F, T, VC, VS,
 
