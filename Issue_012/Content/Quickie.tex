@@ -3,7 +3,7 @@
 
 In this issue's ``Quickie Corner'' I shall take a brief look at program structure. What I mean by this is how to set up the various constructs much loved in structured programming. Plus some other hopefully useful stuff as well. I won't be showing any fully executable code, just the basics.
 
-It's all very well, in SuperBASIC and S*BASIC\footnote{Henceforth referred to as simply S*BASIC.}, having stuff like \texttt{REPeat} \ldots \texttt{END REPeat} or \texttt{IF \ldots ELSE \ldots END IF}, for example, but how do we do this in Assembly Language? 
+It's all very well, in SuperBASIC and S*BASIC\footnote{Henceforth referred to as simply S*BASIC.}, having stuff like \texttt{REPeat}\ldots{}\texttt{END REPeat} or \texttt{IF\ldots{}ELSE\ldots{}END IF}, for example, but how do we do this in Assembly Language? 
 
 Some of what we will discuss is hopefully familiar from S*BASIC, but other constructs may not be. Worry not!
 
@@ -22,7 +22,7 @@ endRepeat
     bra loopStart
 \end{lstlisting}
 
-Of course Listing \ref{lis: Repeat loop} is an infinite loop; there is no ``get out'' clause, so once it starts it will continue until power is removed or the world ends! This sort of loop is acceptable under certain circumstances, but normally, users need an opportunity to finish things off nicely. Listings \ref{lis: Repeat loop with exit} and \ref{lis: Repeat loop with alternative exit} should improve things by offering an exit clause. I'm assuming that \register{D0} is zero if wish to exit. Other exit conditions are available!
+Of course Listing \ref{lis: Repeat loop} is an infinite loop; there is no ``get out'' clause, so once it starts it will continue until power is removed or the world ends! This sort of loop is acceptable under certain circumstances, but normally, users need an opportunity to finish things off nicely. Listings \ref{lis: Repeat loop with exit} and \ref{lis: Repeat loop with alternative exit} should improve things by offering an exit clause. I'm assuming that \register{D0} is zero if we wish to exit. Other exit conditions are available!
 
 \begin{lstlisting}[caption={REPEAT \ldots EXIT \ldots END REPEAT},label={lis: Repeat loop with exit}]
 repeat
@@ -67,7 +67,7 @@ The test for the exit condition can come anywhere in the loop body. You can test
 
 This is not a structure available on the QL, but it is available in other languages, so might be useful to know about. The body of the loop will be executed at least once as the condition test is at the bottom of the loop. Had the condition test been at the top of the loop, it would have been a \nameref{section: while loops} as discussed in Section \ref{section: while loops}.
 
-Listing \ref{lst:Repeat until loop} shows a minimal example where we test \register{D0} and it it is zero, we don't wish to execute the loop body---effectively, \texttt{Repeat until D0 = 0}.
+Listing \ref{lst:Repeat until loop} shows a minimal example where we test \register{D0} and it it is zero, we don't wish to execute the loop body---effectively \texttt{REPEAT\ldots{}UNTIL D0 = 0}.
 
 \begin{lstlisting}[caption={REPEAT UNTIL \ldots},label={lst:Repeat until loop}]
 repeatLoop
@@ -85,7 +85,7 @@ until
 
 You will note that the test of \register{D0} is negated in order to keep looping around. 
 
-This construct is also known as the \texttt{Do \ldots Until loop}.
+This construct is also known as the \texttt{Do\ldots{}Until loop}.
 
 \section{While \ldots\protect End While Loop}\label{section: while loops}
 
@@ -114,9 +114,9 @@ You will, hopefully, note that the condition has again been reversed, we loop ba
 
 \section{For \ldots\protect End For Loop}
 
-texttt{FOR} loops are available on the QL. In Assembly Language we can count up or down, as we can in S*BASIC, but the CPU in the QL, and emulators, has a looping instruction---\opcode{dbra} also known as \opcode{dbf}---Decrement  and branch until false. False in this case being the value -1.
+\texttt{FOR} loops are available on the QL. In Assembly Language we can count up or down, as we can in S*BASIC, but the CPU in the QL, and emulators, has a looping instruction---\opcode{dbra} also known as \opcode{dbf}---Decrement  and branch until false. As the terminating condition is False, the loop will only terminate when the counter register decrements from zero to $-1$.
 
-Counting upwards can't use that instruction though. Listing \ref{lst: for loop counting upwards} shows a small example of a FOR loop in Assembly. The condition to determine the end of the loop is at the top of the loop. This example is effectively \texttt{FOR d0 = 0 TO 10 STEP 1 \ldots{} END FOR}.
+Counting upwards can't use that instruction though. Listing \ref{lst: for loop counting upwards} shows a small example of a FOR loop in Assembly. The condition to determine the end of the loop is at the top of the loop. This example is effectively \texttt{FOR d0 = 0 TO 10 STEP 1\ldots{}END FOR}.
 
 \begin{lstlisting}[caption={FOR \ldots END FOR forwards STEP},label={lst: for loop counting upwards}]
 forLoop
@@ -138,7 +138,7 @@ exitFor
     ...
 \end{lstlisting}
 
-Counting downwards, of course, can make use of \opcode{dbra} as Listing \ref{lst: for loop counting downwards} shows. This example is effectively \texttt{FOR d0 = 10 TO 0 step -1 \ldots{} END FOR} but uses values from 9 down to -1.
+Counting downwards, of course, can make use of \opcode{dbra} as Listing \ref{lst: for loop counting downwards} shows. This example is effectively \texttt{FOR d0 = 10 TO 0 STEP -1\ldots{}END FOR} but uses values from 9 down to -1.
 
 \begin{lstlisting}[caption={FOR \ldots END FOR backwards STEP},label={lst: for loop counting downwards}]
 forLoop
@@ -192,7 +192,7 @@ endFor
 
 The \texttt{IF} statement can lead you down a rabbit hole or two! There are all sorts of potential conditions, signed and unsigned. For more details, see this issue's \nameref{chpater: beginners corner} on page \pageref{chpater: beginners corner} for details. For the descriptions below, I'll be sticking to equals and not equals, as these are the simplest to explain and understand; plus we don't have to consider signs either!
 
-Listing \ref{lst: if then endif} has the code for a simple \texttt{IF D0 = 10 THEN ... END IF} statement.
+Listing \ref{lst: if then endif} has the code for a simple \texttt{IF D0 = 10 THEN\ldots{}END IF} statement.
 
 \begin{lstlisting}[caption={If \ldots THEN \ldots END IF},label={lst: if then endif}]
 ifTest
@@ -213,7 +213,7 @@ Once again, you will notice that we reverse the flow and the test. The code is a
 
 \section{If \ldots\protect Else \ldots\protect End If}
 
-Listing \ref{lst: if then else endif} shows an \texttt{IF D0 = 10 THEN ... ELSE ... END IF} statement. There's only a small difference here, after executing the code when \register{D0} was equal to 10, there's a jump over the code that gets executed when \register{D0} wasn't equal to 10.
+Listing \ref{lst: if then else endif} shows an \texttt{IF D0 = 10 THEN\ldots{}ELSE\ldots{}END IF} statement. There's only a small difference here, after executing the code when \register{D0} was equal to 10, there's a jump over the code that gets executed when \register{D0} wasn't equal to 10.
 
 
 \begin{lstlisting}[caption={If \ldots THEN \ldots ELSE \ldots END IF},label={lst: if then else endif}]

@@ -32,8 +32,7 @@ PRINT myFunction(...) * 1234
  or any expression where \lstinline[basicstyle={\ttfamily},showstringspaces=false,tabsize=4]!myFunction()!
 is at the beginning.
 \end{itemize}
-This is covered in my eBook which you can download from \href{https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest}{GitHub}\footnote{\url{https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest}}
--- section 7.8 is the location you will need.
+This is covered in my eBook which you can download from \href{https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest}{GitHub}\footnote{\url{https://github.com/NormanDunbar/QLAssemblyLanguageBook/releases/latest}}---section 7.8 is the location you will need.
 
 There was a recent exercise by Derek Stewart to scan Andy Pennell's
 \emph{QDOS Companion} book and make it available as a PDF. Andy did
@@ -43,7 +42,7 @@ which shows the process and updates so far. See this issues News chapter
 for download details.
 
 As part of the ensuing discussion, it was mentioned that Andy's book
-didn't correctly document A1 when entering a procedure or function.
+didn't correctly document \register{A1} when entering a procedure or function.
 I responded with the above information and was brought before the
 select committee\footnote{Per Witte} to explain:
 \begin{itemize}
@@ -69,7 +68,7 @@ at the very start of the function code. On normal running, this has
 no effect, but when I do some fiddling in the commands of QMON2, it
 will immediately jump into QMON2 and I can debug from there.
 \item When the debugger has control, examine the registers paying close
-attention to A1.
+attention to \register{A1}.
 \item The code will be tested on SMSQ/E under QPC2. It has already been
 tested in QDOS under the JS ROM, back in the day. I don't have Minerva
 or other ROMS, but I do have emulators which do!
@@ -202,11 +201,11 @@ Function {*} float & 0 & 0\tabularnewline
 \hline 
 Function {*} string & 0 & 0\tabularnewline
 \hline 
-Integer {*} function & FFFFFFFC & -4\tabularnewline
+Integer {*} function & FFFFFFFC & $-4$\tabularnewline
 \hline 
-Float {*} function & FFFFFFF8 & -8\tabularnewline
+Float {*} function & FFFFFFF8 & $-8$\tabularnewline
 \hline 
-String {*} function & FFFFFFFA & -6\tabularnewline
+String {*} function & FFFFFFFA & $-6$\tabularnewline
 \hline 
 \end{tabular}
 \par\end{centering}
@@ -227,8 +226,8 @@ JS result, no space yet used on the maths stack.
 \item When \texttt{A1} is negative, the SMSQ/E result appears to show an
 extra 2 bytes over the size of the space used on the maths stack so
 far. So for a word sized integer, 2 bytes, the value in \texttt{A1}
-is -4, for a 6 byte float it's -8 and for a string, which was never
-tested on QDOS: JS, it's always -6 regardless of the length of the
+is $-4$, for a 6 byte float it's $-8$ and for a string, which was never
+tested on QDOS: JS, it's always $-6$ regardless of the length of the
 string.
 \item I was unable to remember\footnote{I'm getting old. When I learn new stuff these days, something else
 has to be forgotten to make room for it!} how I managed to get a positive value in \texttt{A1} back in the
