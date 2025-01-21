@@ -20,7 +20,7 @@ is it signed or unsigned?
 \emph{Answer}: Yes!
 
 It can be either because it actually depends on what you, the programmer,
-wants it to be. In many SMSQ/E trap calls, there needs to be a timeout.
+want it to be. In many SMSQ/E trap calls, there needs to be a timeout.
 This is usually a positive value but if infinite timeout is requested,
 the value $-1$ is used. $255$ in Decimal is the same bit pattern
 as $-1$ in Decimal. So how does the system know the difference between
@@ -68,7 +68,7 @@ all the remaining powers of two where a 1 bit is present. For example:
 add 1 and change the sign to make the value negative, for example:
 \begin{itemize}
 \item 10100101 flipped is 01011010;
-\item Converted to an unsigned value an adding 1 gives $2^{6}+2^{4}+2^{3}+2^{1}+1=91$;
+\item Converted to an unsigned value and adding 1 gives $2^{6}+2^{4}+2^{3}+2^{1}+1=91$;
 \item Changing the sign gives $-91$ as before.
 \end{itemize}
 \textbf{Option 3}: Calculate the unsigned value, and subtract $2^{B}$ where $B$ is the number of bits. For example:
@@ -209,7 +209,7 @@ Listings \ref{lst: signed condition codes} and \ref{lst: unsigned condition code
 \end{lstlisting}
 
 You should note that while signed condition codes allow for a test for greater than; greater than or equal; equal; less than; and less than or equal, unsigned values only have higher; equal; lower or same. This means that in Listing \ref{lst: unsigned condition codes}, we had to do the check for equality first because the test for lower would include equal had we done the \texttt{bls} instruction first.
-That, h
+
 In the above examples, we tested the actual value in \register{D4} but we could have tested after a \texttt{CMP} or \texttt{SUB} instruction, as per the example code in Listing \ref{lst: signed condition codes with CMP}.
 
 \begin{lstlisting}[caption={Signed condition codes with CMP},label={lst: signed condition codes with CMP}]
